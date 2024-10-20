@@ -8,7 +8,7 @@ import className from "classnames";
 
 const MAX_DICE = 20;
 const MAX_ROLL = 10;
-const MODIFIER_CLASSES = "flex-1";
+const MODIFIER_CLASSES = "flex-1 rounded";
 
 const App = () => {
   const [dice, setDice] = useState(6);
@@ -79,6 +79,33 @@ const App = () => {
     setDefensivePower((dp) => (dp + mod) % MAX_ROLL);
   };
 
+  const handleIncAttack = (mod) => {
+    const [d, os, op] = mod || [];
+    handleIncDice(d);
+    handleIncOffensiveSkill(os);
+    handleIncOffensivePower(op);
+  };
+
+  useMemo(() => handleIncAttack(disrupted ? [-1, -1, -1] : [1,1,1]) , [disrupted]);
+  // useMemo(() => handleIncAttack(frightened ? [-1, -1, -1] : [1,1,1]) , [frightened]);
+  useMemo(() => handleIncAttack(inTheYellow ? [-1, 0, 0] : [1,0,0]) , [inTheYellow]);
+  useMemo(() => handleIncAttack(inTheRed ? [-2,0,0] : [2,0,0]) , [inTheRed]);
+  useMemo(() => handleIncAttack(attackingToFlank ? [1,0,0,] : [-1,0,0]) , [attackingToFlank]);
+  useMemo(() => handleIncAttack(attackingToRear ? [0,-1,-1] : [0,1,1]) , [attackingToRear]);
+  useMemo(() => handleIncAttack(chargingFourOrMoreDice ? [+2,0,0] : [-2,0,0]) , [chargingFourOrMoreDice]);
+  useMemo(() => handleIncAttack(chargingThreeOrLessDice ? [1,0,0] : [-1,0,0]) , [chargingThreeOrLessDice]);
+  useMemo(() => handleIncAttack(flanking ? [0,1,0] : [0,-1,0]) , [flanking]);
+  useMemo(() => handleIncAttack(pinching ? [0,1,1] : [0,-1,-1]) , [pinching]);
+  useMemo(() => handleIncAttack(rearAttacking ? [0,1,1] : [0,-1,-1]) , [rearAttacking]);
+  useMemo(() => handleIncAttack(calvaryTarget ? [0,-1,0] : [0,1,0]) , [calvaryTarget]);
+  useMemo(() => handleIncAttack(collosalTarget ? [0,2,0] : [0,-2,0]) , [collosalTarget]);
+  useMemo(() => handleIncAttack(extremeRange ? [0,-2,0] : [0,2,0]) , [extremeRange]);
+  useMemo(() => handleIncAttack(fastMovingTarget ? [0,-1,0] : [0,1,0]) , [fastMovingTarget]);
+  useMemo(() => handleIncAttack(largeTarget ? [0,1,0] : [0,-1,0]) , [largeTarget]);
+  useMemo(() => handleIncAttack(longRange ? [0,-1,0] : [0,1,0]) , [longRange]);
+  useMemo(() => handleIncAttack(moveAndShoot ? [0,-1,0] : [0,1,0]) , [moveAndShoot]);
+  useMemo(() => handleIncAttack(notClosestTarget ? [0,-1,0] : [0,1,0]) , [notClosestTarget]);
+
   const handleClearAll = () => {
     setDice(6);
     setOffensiveSkill(0);
@@ -109,30 +136,30 @@ const App = () => {
   return (
     <div className="BattleDeck flex flex-col h-screen bg-black gap-4">
       <div className="Roll flex flex-1 text-9xl mx-4 mt-4 my-2 mb-0 gap-4">
-        <button className="Dice flex-1 flex items-center justify-center bg-white" onClick={() => handleIncDice(1)}>
+        <button className="Dice flex-1 flex items-center justify-center bg-white rounded" onClick={() => handleIncDice(1)}>
           {dice}
         </button>
-        <div className="RollToHit flex-1 flex items-center justify-center bg-white">
+        <div className="RollToHit flex-1 flex items-center justify-center bg-white rounded">
           {rollToHit}
         </div>
-        <div className="RollToWound flex-1 flex items-center justify-center bg-white">
+        <div className="RollToWound flex-1 flex items-center justify-center bg-white rounded">
           {rollToWound}
         </div>
       </div>
       <div className="Offense flex flex-1 text-9xl gap-4 mx-4">
         <div className="OffensiveSkill flex flex-1">
-          <button className="OffensiveSkillRank flex-1 bg-rose-900 text-white" onClick={() => handleIncOffensiveSkill(1)}>{offensiveSkill}</button>
+          <button className="OffensiveSkillRank flex-1 bg-rose-900 text-rose-50 rounded" onClick={() => handleIncOffensiveSkill(1)}>{offensiveSkill}</button>
         </div>
         <div className="OffensivePower flex flex-1">
-          <button className="OffensivePowerRank flex-1 bg-rose-700 text-white" onClick={() => handleIncOffensivePower(1)}>{offensivePower}</button>
+          <button className="OffensivePowerRank flex-1 bg-rose-700 text-rose-50 rounded" onClick={() => handleIncOffensivePower(1)}>{offensivePower}</button>
         </div>
       </div>
       <div className="Defense flex flex-1 text-9xl gap-4 mx-4">
         <div className="DefensiveSkill flex flex-1">
-          <button className="DefensiveSkillRank flex-1 bg-blue-500 text-blue-50" onClick={() => handleIncDefensiveSkill(1)}>{defensiveSkill}</button>
+          <button className="DefensiveSkillRank flex-1 bg-blue-900 text-blue-50 rounded" onClick={() => handleIncDefensiveSkill(1)}>{defensiveSkill}</button>
         </div>
         <div className="DefensivePower flex flex-1">
-          <button className="DefensivePowerRank flex-1 bg-blue-300 text-blue-50" onClick={() => handleIncDefensivePower(1)}>{defensivePower}</button>
+          <button className="DefensivePowerRank flex-1 bg-blue-700 text-blue-50 rounded" onClick={() => handleIncDefensivePower(1)}>{defensivePower}</button>
         </div>
       </div>
       <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-4">
@@ -162,8 +189,10 @@ const App = () => {
         </div>
       </div>
       <div className="CommandActionModifiers flex h-20 gap-4 mx-4 mb-4">
-        <button className="Plus1 flex-1 bg-red-400">-1</button>
-        <button className="Plus1 flex-1 bg-green-400">+1</button>
+        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => handleIncOffensiveSkill(-1)}>-1 Offensive Skill</button>
+        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => handleIncOffensiveSkill(1)}>+1 Offensive Skill</button>
+        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => handleIncOffensivePower(-1)}>-1 Offensive Power</button>
+        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => handleIncOffensivePower(1)}>+1 Offensive Power</button>
       </div>
     </div>
   )
