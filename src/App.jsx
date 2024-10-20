@@ -139,21 +139,21 @@ const App = () => {
     <div className="BattleDeck flex flex-col h-screen bg-black gap-4">
       <div className="Roll flex h-1/5 text-9xl mx-4 mt-4 my-2 mb-0 gap-4">
         <div className="Dice flex-1 flex flex-col items-center justify-between bg-white rounded">
-          {dice}
+          <span className="text-green-900">{dice}</span>
           <div className="text-7xl flex w-full h-1/2 gap-2 pb-2">
             <button className="flex-1 ml-2 border-white rounded bg-green-400 text-green-900" onClick={() => handleIncDice(1)}>+</button>
             <button className="flex-1 mr-2 border-white rounded bg-red-400 text-red-900" onClick={() => handleIncDice(-1)}>-</button>
           </div>
         </div>
         <div className="RollToHit flex-1 flex flex-col items-center justify-between bg-white rounded">
-          {rollToHit}
+          <span className="text-red-900">{rollToHit}</span>
           <div className="text-5xl flex w-full h-1/2 gap-2 pb-2">
             <button className="OffensiveSkillRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"  onClick={() => handleIncOffensiveSkill(1)}>{offensiveSkill}</button>
             <button className="DefensiveSkillRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100" onClick={() => handleIncDefensiveSkill(1)}>{defensiveSkill}</button>
           </div>
         </div>
         <div className="RollToWound flex-1 flex flex-col items-center justify-between bg-white rounded">
-          {rollToWound}
+          <div className="text-blue-900">{rollToWound}</div>
           <div className="text-5xl flex w-full h-1/2 gap-2 pb-2">
             <button className="OffensivePowerRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"  onClick={() => handleIncOffensivePower(1)}>{offensivePower}</button>
             <button className="DefensivePowerRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100" onClick={() => handleIncDefensivePower(1)}>{defensivePower}</button>
@@ -170,11 +170,11 @@ const App = () => {
       <div className="text-white font-bold flex justify-center">Situational Modifiers</div>
       <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-4">
         <div className="flex flex-1 gap-4 min-h-20">
-          <button className={className("Disrupted flex-1", MODIFIER_CLASSES, disrupted ? "bg-red-400" : "bg-white")} onClick={toggleDisrupted}>Disrupted</button>
-          <button className={className("Frightened flex-1", MODIFIER_CLASSES, frightened ? "bg-red-400" : "bg-white")} onClick={toggleFrightened}>Frightened</button>
-          <button className={className("InTheYellow flex-1", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={toggleInTheYellow}>In Yellow</button>
-          <button className={className("InTheRed flex-1", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={toggleInTheRed}>In Red</button>
-          <button className={className("AttackingToFlank flex-1", MODIFIER_CLASSES, attackingToFlank ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToFlank}>Attack Flank</button>
+          <button className={className("Disrupted w-1/5", MODIFIER_CLASSES, disrupted ? "bg-red-400" : "bg-white")} onClick={toggleDisrupted}>Disrupted</button>
+          <button className={className("Frightened w-1/5", MODIFIER_CLASSES, frightened ? "bg-red-400" : "bg-white")} onClick={toggleFrightened}>Frightened</button>
+          <button className={className("InTheYellow w-1/5", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={toggleInTheYellow}>In Yellow</button>
+          <button className={className("InTheRed w-1/5", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={toggleInTheRed}>In Red</button>
+          <button className={className("AttackingToFlank w-1/5", MODIFIER_CLASSES, attackingToFlank ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToFlank}>Attack Flank</button>
         </div>
         <div className="flex flex-1 gap-4 min-h-20">
           <button className={className("AttackingToRear", MODIFIER_CLASSES, attackingToRear ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToRear}>Attack Rear</button>
@@ -198,7 +198,7 @@ const App = () => {
           <button className={className("ClearAll bg-yellow-400", MODIFIER_CLASSES)} onClick={handleClearAll}>Clear All</button>
         </div>
       </div>
-      <div className="text-lg flex text-white items-center justify-center m-4 mt-2 min-h-20">
+      <div className="text-lg flex text-white items-center justify-center mx-4 mt-2 min-h-20">
         <div className="mx-4 text-3xl">BattleDeck</div>
       </div>
     </div>
