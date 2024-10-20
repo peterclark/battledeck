@@ -169,12 +169,12 @@ const App = () => {
       </div>
       <div className="text-white font-bold flex justify-center">Situational Modifiers</div>
       <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-4">
-        <div className="flex flex-1 gap-4">
-          <button className={className("Disrupted", MODIFIER_CLASSES, disrupted ? "bg-red-400" : "bg-white")} onClick={toggleDisrupted}>Disrupted</button>
-          <button className={className("Frightened", MODIFIER_CLASSES, frightened ? "bg-red-400" : "bg-white")} onClick={toggleFrightened}>Frightened</button>
-          <button className={className("InTheYellow", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={toggleInTheYellow}>In Yellow</button>
-          <button className={className("InTheRed", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={toggleInTheRed}>In Red</button>
-          <button className={className("AttackingToFlank", MODIFIER_CLASSES, attackingToFlank ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToFlank}>Attack Flank</button>
+        <div className="flex flex-1 gap-4 min-h-20">
+          <button className={className("Disrupted flex-1", MODIFIER_CLASSES, disrupted ? "bg-red-400" : "bg-white")} onClick={toggleDisrupted}>Disrupted</button>
+          <button className={className("Frightened flex-1", MODIFIER_CLASSES, frightened ? "bg-red-400" : "bg-white")} onClick={toggleFrightened}>Frightened</button>
+          <button className={className("InTheYellow flex-1", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={toggleInTheYellow}>In Yellow</button>
+          <button className={className("InTheRed flex-1", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={toggleInTheRed}>In Red</button>
+          <button className={className("AttackingToFlank flex-1", MODIFIER_CLASSES, attackingToFlank ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToFlank}>Attack Flank</button>
         </div>
         <div className="flex flex-1 gap-4">
           <button className={className("AttackingToRear", MODIFIER_CLASSES, attackingToRear ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToRear}>Attack Rear</button>
