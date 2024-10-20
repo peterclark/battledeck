@@ -1,9 +1,9 @@
 // import { GiInvertedDice3 } from "react-icons";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useState } from "react"
 import { max, min } from "lodash";
-import { useToggle } from "react-use";
+import { useToggle, useUpdateEffect } from "react-use";
 import className from "classnames";
 
 const MAX_DICE = 20;
@@ -86,25 +86,25 @@ const App = () => {
     handleIncOffensivePower(op);
   };
 
-  useMemo(() => handleIncAttack(disrupted ? [-1, -1, -1] : [1,1,1]) , [disrupted]);
+  useUpdateEffect(() => handleIncAttack(disrupted ? [-1, -1, -1] : [1,1,1]) , [disrupted]);
   // useMemo(() => handleIncAttack(frightened ? [-1, -1, -1] : [1,1,1]) , [frightened]);
-  useMemo(() => handleIncAttack(inTheYellow ? [-1, 0, 0] : [1,0,0]) , [inTheYellow]);
-  useMemo(() => handleIncAttack(inTheRed ? [-2,0,0] : [2,0,0]) , [inTheRed]);
-  useMemo(() => handleIncAttack(attackingToFlank ? [1,0,0,] : [-1,0,0]) , [attackingToFlank]);
-  useMemo(() => handleIncAttack(attackingToRear ? [0,-1,-1] : [0,1,1]) , [attackingToRear]);
-  useMemo(() => handleIncAttack(chargingFourOrMoreDice ? [+2,0,0] : [-2,0,0]) , [chargingFourOrMoreDice]);
-  useMemo(() => handleIncAttack(chargingThreeOrLessDice ? [1,0,0] : [-1,0,0]) , [chargingThreeOrLessDice]);
-  useMemo(() => handleIncAttack(flanking ? [0,1,0] : [0,-1,0]) , [flanking]);
-  useMemo(() => handleIncAttack(pinching ? [0,1,1] : [0,-1,-1]) , [pinching]);
-  useMemo(() => handleIncAttack(rearAttacking ? [0,1,1] : [0,-1,-1]) , [rearAttacking]);
-  useMemo(() => handleIncAttack(calvaryTarget ? [0,-1,0] : [0,1,0]) , [calvaryTarget]);
-  useMemo(() => handleIncAttack(collosalTarget ? [0,2,0] : [0,-2,0]) , [collosalTarget]);
-  useMemo(() => handleIncAttack(extremeRange ? [0,-2,0] : [0,2,0]) , [extremeRange]);
-  useMemo(() => handleIncAttack(fastMovingTarget ? [0,-1,0] : [0,1,0]) , [fastMovingTarget]);
-  useMemo(() => handleIncAttack(largeTarget ? [0,1,0] : [0,-1,0]) , [largeTarget]);
-  useMemo(() => handleIncAttack(longRange ? [0,-1,0] : [0,1,0]) , [longRange]);
-  useMemo(() => handleIncAttack(moveAndShoot ? [0,-1,0] : [0,1,0]) , [moveAndShoot]);
-  useMemo(() => handleIncAttack(notClosestTarget ? [0,-1,0] : [0,1,0]) , [notClosestTarget]);
+  useUpdateEffect(() => handleIncAttack(inTheYellow ? [-1, 0, 0] : [1,0,0]) , [inTheYellow]);
+  useUpdateEffect(() => handleIncAttack(inTheRed ? [-2,0,0] : [2,0,0]) , [inTheRed]);
+  useUpdateEffect(() => handleIncAttack(attackingToFlank ? [1,0,0,] : [-1,0,0]) , [attackingToFlank]);
+  useUpdateEffect(() => handleIncAttack(attackingToRear ? [0,-1,-1] : [0,1,1]) , [attackingToRear]);
+  useUpdateEffect(() => handleIncAttack(chargingFourOrMoreDice ? [+2,0,0] : [-2,0,0]) , [chargingFourOrMoreDice]);
+  useUpdateEffect(() => handleIncAttack(chargingThreeOrLessDice ? [1,0,0] : [-1,0,0]) , [chargingThreeOrLessDice]);
+  useUpdateEffect(() => handleIncAttack(flanking ? [0,1,0] : [0,-1,0]) , [flanking]);
+  useUpdateEffect(() => handleIncAttack(pinching ? [0,1,1] : [0,-1,-1]) , [pinching]);
+  useUpdateEffect(() => handleIncAttack(rearAttacking ? [0,1,1] : [0,-1,-1]) , [rearAttacking]);
+  useUpdateEffect(() => handleIncAttack(calvaryTarget ? [0,-1,0] : [0,1,0]) , [calvaryTarget]);
+  useUpdateEffect(() => handleIncAttack(collosalTarget ? [0,2,0] : [0,-2,0]) , [collosalTarget]);
+  useUpdateEffect(() => handleIncAttack(extremeRange ? [0,-2,0] : [0,2,0]) , [extremeRange]);
+  useUpdateEffect(() => handleIncAttack(fastMovingTarget ? [0,-1,0] : [0,1,0]) , [fastMovingTarget]);
+  useUpdateEffect(() => handleIncAttack(largeTarget ? [0,1,0] : [0,-1,0]) , [largeTarget]);
+  useUpdateEffect(() => handleIncAttack(longRange ? [0,-1,0] : [0,1,0]) , [longRange]);
+  useUpdateEffect(() => handleIncAttack(moveAndShoot ? [0,-1,0] : [0,1,0]) , [moveAndShoot]);
+  useUpdateEffect(() => handleIncAttack(notClosestTarget ? [0,-1,0] : [0,1,0]) , [notClosestTarget]);
 
   const handleClearAll = () => {
     setDice(6);
@@ -133,35 +133,41 @@ const App = () => {
     toggleNotClosestTarget(false);
   };
 
+  useEffect(() => handleClearAll(), []);
+
   return (
     <div className="BattleDeck flex flex-col h-screen bg-black gap-4">
-      <div className="Roll flex flex-1 text-9xl mx-4 mt-4 my-2 mb-0 gap-4">
-        <button className="Dice flex-1 flex items-center justify-center bg-white rounded" onClick={() => handleIncDice(1)}>
+      <div className="Roll flex h-1/5 text-9xl mx-4 mt-4 my-2 mb-0 gap-4">
+        <div className="Dice flex-1 flex flex-col items-center justify-between bg-white rounded">
           {dice}
-        </button>
-        <div className="RollToHit flex-1 flex items-center justify-center bg-white rounded">
+          <div className="text-7xl flex w-full h-1/2 gap-2 pb-2">
+            <button className="flex-1 ml-2 border-white rounded bg-green-400 text-green-900" onClick={() => handleIncDice(1)}>+</button>
+            <button className="flex-1 mr-2 border-white rounded bg-red-400 text-red-900" onClick={() => handleIncDice(-1)}>-</button>
+          </div>
+        </div>
+        <div className="RollToHit flex-1 flex flex-col items-center justify-between bg-white rounded">
           {rollToHit}
+          <div className="text-5xl flex w-full h-1/2 gap-2 pb-2">
+            <button className="OffensiveSkillRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"  onClick={() => handleIncOffensiveSkill(1)}>{offensiveSkill}</button>
+            <button className="DefensiveSkillRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100" onClick={() => handleIncDefensiveSkill(1)}>{defensiveSkill}</button>
+          </div>
         </div>
-        <div className="RollToWound flex-1 flex items-center justify-center bg-white rounded">
+        <div className="RollToWound flex-1 flex flex-col items-center justify-between bg-white rounded">
           {rollToWound}
+          <div className="text-5xl flex w-full h-1/2 gap-2 pb-2">
+            <button className="OffensivePowerRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"  onClick={() => handleIncOffensivePower(1)}>{offensivePower}</button>
+            <button className="DefensivePowerRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100" onClick={() => handleIncDefensivePower(1)}>{defensivePower}</button>
+          </div>
         </div>
       </div>
-      <div className="Offense flex flex-1 text-9xl gap-4 mx-4">
-        <div className="OffensiveSkill flex flex-1">
-          <button className="OffensiveSkillRank flex-1 bg-rose-900 text-rose-50 rounded" onClick={() => handleIncOffensiveSkill(1)}>{offensiveSkill}</button>
-        </div>
-        <div className="OffensivePower flex flex-1">
-          <button className="OffensivePowerRank flex-1 bg-rose-700 text-rose-50 rounded" onClick={() => handleIncOffensivePower(1)}>{offensivePower}</button>
-        </div>
+      <div className="text-white font-bold flex justify-center">Command Action Modifiers</div>
+      <div className="CommandActionModifiers flex h-20 gap-4 mx-4">
+        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => handleIncOffensiveSkill(-1)}>-1 OS</button>
+        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => handleIncOffensiveSkill(1)}>+1 OS</button>
+        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => handleIncOffensivePower(-1)}>-1 OP</button>
+        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => handleIncOffensivePower(1)}>+1 OP</button>
       </div>
-      <div className="Defense flex flex-1 text-9xl gap-4 mx-4">
-        <div className="DefensiveSkill flex flex-1">
-          <button className="DefensiveSkillRank flex-1 bg-blue-900 text-blue-50 rounded" onClick={() => handleIncDefensiveSkill(1)}>{defensiveSkill}</button>
-        </div>
-        <div className="DefensivePower flex flex-1">
-          <button className="DefensivePowerRank flex-1 bg-blue-700 text-blue-50 rounded" onClick={() => handleIncDefensivePower(1)}>{defensivePower}</button>
-        </div>
-      </div>
+      <div className="text-white font-bold flex justify-center">Situational Modifiers</div>
       <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-4">
         <div className="flex flex-1 gap-4">
           <button className={className("Disrupted", MODIFIER_CLASSES, disrupted ? "bg-red-400" : "bg-white")} onClick={toggleDisrupted}>Disrupted</button>
@@ -169,6 +175,8 @@ const App = () => {
           <button className={className("InTheYellow", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={toggleInTheYellow}>In Yellow</button>
           <button className={className("InTheRed", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={toggleInTheRed}>In Red</button>
           <button className={className("AttackingToFlank", MODIFIER_CLASSES, attackingToFlank ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToFlank}>Attack Flank</button>
+        </div>
+        <div className="flex flex-1 gap-4">
           <button className={className("AttackingToRear", MODIFIER_CLASSES, attackingToRear ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToRear}>Attack Rear</button>
           <button className={className("ChargingFourOrMoreDice", MODIFIER_CLASSES, chargingFourOrMoreDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingFourOrMoreDice}>Charge +4</button>
           <button className={className("ChargingThreeOrLessDice", MODIFIER_CLASSES, chargingThreeOrLessDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingThreeOrLessDice}>Charge 3-</button>
@@ -181,6 +189,8 @@ const App = () => {
           <button className={className("ColossalTarget", MODIFIER_CLASSES, collosalTarget ? "bg-green-400" : "bg-white")} onClick={toggleColossalTarget}>Collosal Target</button>
           <button className={className("LargeTarget", MODIFIER_CLASSES, largeTarget ? "bg-green-400" : "bg-white")} onClick={toggleLargeTarget}>Large Target</button>
           <button className={className("ExtremeRange", MODIFIER_CLASSES, extremeRange ? "bg-red-400" : "bg-white")} onClick={toggleExtremeRange}>Extreme Range 15+</button>
+        </div>
+        <div className="flex flex-1 gap-4">
           <button className={className("FastMovingTarget", MODIFIER_CLASSES, fastMovingTarget ? "bg-red-400" : "bg-white")} onClick={toggleFastMovingTarget}>Fast Target</button>
           <button className={className("LongRange", MODIFIER_CLASSES, longRange ? "bg-green-400" : "bg-white")} onClick={toggleLongRange}>Long Range 7-14</button>
           <button className={className("MoveAndShoot", MODIFIER_CLASSES, moveAndShoot ? "bg-red-400" : "bg-white")} onClick={toggleMoveAndShoot}>Move & Shoot</button>
@@ -188,11 +198,8 @@ const App = () => {
           <button className={className("ClearAll bg-yellow-400", MODIFIER_CLASSES)} onClick={handleClearAll}>Clear All</button>
         </div>
       </div>
-      <div className="CommandActionModifiers flex h-20 gap-4 mx-4 mb-4">
-        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => handleIncOffensiveSkill(-1)}>-1 Offensive Skill</button>
-        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => handleIncOffensiveSkill(1)}>+1 Offensive Skill</button>
-        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => handleIncOffensivePower(-1)}>-1 Offensive Power</button>
-        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => handleIncOffensivePower(1)}>+1 Offensive Power</button>
+      <div className="text-lg flex text-white items-center justify-center m-4 mt-2">
+        <div className="mx-4 text-3xl">BattleDeck</div>
       </div>
     </div>
   )
