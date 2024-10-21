@@ -198,12 +198,12 @@ const App = () => {
       </div>
       <div className="text-white font-bold flex justify-center">Command Action Modifiers</div>
       <div className="CommandActionModifiers flex h-20 gap-1 mx-4 min-h-20">
-        <button className={className("Plus1 flex-1 bg-red-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d - 1, ...rest]))} disabled={frightened}>-1 Dice</button>
-        <button className={className("Plus1 flex-1 bg-green-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d + 1, ...rest]))} disabled={frightened}>+1 Dice</button>
-        <button className={className("Plus1 flex-1 bg-red-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os - 1, ...rest]))} disabled={frightened}>-1 OS</button>
-        <button className={className("Plus1 flex-1 bg-green-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os + 1, ...rest]))} disabled={frightened}>+1 OS</button>
-        <button className={className("Plus1 flex-1 bg-red-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op - 1, ...rest]))} disabled={frightened}>-1 OP</button>
-        <button className={className("Plus1 flex-1 bg-green-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op + 1, ...rest]))} disabled={frightened}>+1 OP</button>
+        <button className={className("Plus1 flex-1 bg-red-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d - 1, ...rest]))} disabled={frightened}>-1<br />Dice</button>
+        <button className={className("Plus1 flex-1 bg-green-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d + 1, ...rest]))} disabled={frightened}>+1<br />Dice</button>
+        <button className={className("Plus1 flex-1 bg-red-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os - 1, ...rest]))} disabled={frightened}>-1<br />OS</button>
+        <button className={className("Plus1 flex-1 bg-green-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os + 1, ...rest]))} disabled={frightened}>+1<br />OS</button>
+        <button className={className("Plus1 flex-1 bg-red-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op - 1, ...rest]))} disabled={frightened}>-1<br />OP</button>
+        <button className={className("Plus1 flex-1 bg-green-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op + 1, ...rest]))} disabled={frightened}>+1<br />OP</button>
       </div>
       <div className="text-white font-bold flex justify-center">Situational Modifiers</div>
       <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-1">
