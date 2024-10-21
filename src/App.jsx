@@ -40,15 +40,6 @@ const App = () => {
   const [longRange, toggleLongRange] = useToggle(false);
   const [moveAndShoot, toggleMoveAndShoot] = useToggle(false);
   const [notClosestTarget, toggleNotClosestTarget] = useToggle(false);
-  
-  // 6 is always a miss, 1 is always a hit
-  const rollToHit = useMemo(() => {
-    return max([min([offensiveSkill - defensiveSkill, 5]), 1]);
-  }, [offensiveSkill, defensiveSkill]);
-  
-  const rollToWound = useMemo(() => {
-    return max([min([offensivePower - defensivePower, 5]), 1]);
-  }, [offensivePower, defensivePower]);
 
   const handleIncDice = (mod) => {
     setBaseDice(max([baseDice + mod, 0]));
@@ -145,12 +136,23 @@ const App = () => {
   const diceToRoll = useMemo(() => {
     return max([(baseDice + caDice + diceModifier), 0]);
   }, [baseDice, caDice, diceModifier]);
+  
+  // 6 is always a miss, 1 is always a hit
+  const rollToHit = useMemo(() => {
+    const hitTotal = (offensiveSkill - defensiveSkill) + caOffensiveSkill + offensiveSkillModifier;
+    return max([min([hitTotal, 5]), 1]);
+  }, [offensiveSkill, defensiveSkill, caOffensiveSkill, offensiveSkillModifier]);
+  
+  const rollToWound = useMemo(() => {
+    const woundTotal = (offensivePower - defensivePower) + caOffensivePower + offensivePowerModifier;
+    return max([min([woundTotal, 5]), 1]);
+  }, [offensivePower, defensivePower, caOffensivePower, offensivePowerModifier]);
 
   return (
     <div className="BattleDeck flex flex-col h-screen bg-black gap-2">
-      <div className="Roll flex flex-1 text-9xl mx-4 mt-4 my-2 mb-0 gap-2">
+      <div className="Roll flex flex-1 text-9xl mx-4 mt-4 my-2 mb-0 gap-1">
         <div className="Dice flex-1 flex flex-col items-center justify-between bg-white rounded">
-          <span className="text-green-900 flex gap-2">
+          <span className="text-green-900 flex gap-1">
             {diceToRoll}
             <div className="flex flex-col text-base justify-center">
               <span>{baseDice} base</span>
@@ -165,7 +167,7 @@ const App = () => {
         </div>
         <div className="RollToHit flex-1 flex flex-col items-center justify-between bg-white rounded">
           <span className="text-red-900 flex gap-1">
-            {rollToHit + caOffensiveSkill + offensiveSkillModifier}
+            {rollToHit}
             <div className="flex flex-col text-base justify-center">
               <span>{rollToHit} base ({offensiveSkill} - {defensiveSkill})</span>
               <span>{caOffensiveSkill > 0 ? "+" : ""}{caOffensiveSkill} CA</span>
@@ -179,7 +181,7 @@ const App = () => {
         </div>
         <div className="RollToWound flex-1 flex flex-col items-center justify-between bg-white rounded">
           <div className="text-blue-900 flex gap-1">
-            {rollToWound + caOffensivePower + offensivePowerModifier}
+            {rollToWound}
             <div className="flex flex-col text-base justify-center">
               <span>{rollToWound} base ({offensivePower} - {defensivePower})</span>
               <span>{caOffensivePower > 0 ? "+" : ""}{caOffensivePower} CA</span>
