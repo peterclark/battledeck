@@ -147,10 +147,10 @@ const App = () => {
   }, [baseDice, caDice, diceModifier]);
 
   return (
-    <div className="BattleDeck flex flex-col h-screen bg-black gap-4">
-      <div className="Roll flex flex-1 text-9xl mx-4 mt-4 my-2 mb-0 gap-4">
+    <div className="BattleDeck flex flex-col h-screen bg-black gap-2">
+      <div className="Roll flex flex-1 text-9xl mx-4 mt-4 my-2 mb-0 gap-2">
         <div className="Dice flex-1 flex flex-col items-center justify-between bg-white rounded">
-          <span className="text-green-900 flex gap-4">
+          <span className="text-green-900 flex gap-2">
             {diceToRoll}
             <div className="flex flex-col text-base justify-center">
               <span>{baseDice} base</span>
@@ -158,13 +158,13 @@ const App = () => {
               {disrupted ? <span>-1 Disrupted</span> : null}
             </div>
           </span>
-          <div className="text-7xl flex w-full max-h-20 gap-2 pb-2">
+          <div className="text-7xl flex w-full max-h-20 gap-1 pb-2">
             <button className="flex-1 ml-2 border-white rounded bg-red-400 text-red-900" onClick={() => handleIncDice(-1)}>-</button>
             <button className="flex-1 mr-2 border-white rounded bg-green-400 text-green-900" onClick={() => handleIncDice(1)}>+</button>
           </div>
         </div>
         <div className="RollToHit flex-1 flex flex-col items-center justify-between bg-white rounded">
-          <span className="text-red-900 flex gap-4">
+          <span className="text-red-900 flex gap-1">
             {rollToHit + caOffensiveSkill + offensiveSkillModifier}
             <div className="flex flex-col text-base justify-center">
               <span>{rollToHit} base ({offensiveSkill} - {defensiveSkill})</span>
@@ -172,13 +172,13 @@ const App = () => {
               {disrupted ? <span>-1 Disrupted</span> : null}
             </div>
           </span>
-          <div className="text-5xl flex w-full h-1/2 max-h-20 gap-2 pb-2">
+          <div className="text-5xl flex w-full h-1/2 max-h-20 gap-1 pb-2">
             <button className="OffensiveSkillRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"  onClick={() => handleIncOffensiveSkill(1)}>{offensiveSkill}</button>
             <button className="DefensiveSkillRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100" onClick={() => handleIncDefensiveSkill(1)}>{defensiveSkill}</button>
           </div>
         </div>
         <div className="RollToWound flex-1 flex flex-col items-center justify-between bg-white rounded">
-          <div className="text-blue-900 flex gap-4">
+          <div className="text-blue-900 flex gap-1">
             {rollToWound + caOffensivePower + offensivePowerModifier}
             <div className="flex flex-col text-base justify-center">
               <span>{rollToWound} base ({offensivePower} - {defensivePower})</span>
@@ -186,14 +186,14 @@ const App = () => {
               {disrupted ? <span>-1 Disrupted</span> : null}
             </div>
           </div>
-          <div className="text-5xl flex w-full h-1/2 max-h-20 gap-2 pb-2">
+          <div className="text-5xl flex w-full h-1/2 max-h-20 gap-1 pb-2">
             <button className="OffensivePowerRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"  onClick={() => handleIncOffensivePower(1)}>{offensivePower}</button>
             <button className="DefensivePowerRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100" onClick={() => handleIncDefensivePower(1)}>{defensivePower}</button>
           </div>
         </div>
       </div>
       <div className="text-white font-bold flex justify-center">Command Action Modifiers</div>
-      <div className="CommandActionModifiers flex h-20 gap-4 mx-4 min-h-20">
+      <div className="CommandActionModifiers flex h-20 gap-1 mx-4 min-h-20">
         <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d - 1, ...rest]))}>-1 Dice</button>
         <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d + 1, ...rest]))}>+1 Dice</button>
         <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os - 1, ...rest]))}>-1 OS</button>
@@ -202,29 +202,29 @@ const App = () => {
         <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op + 1, ...rest]))}>+1 OP</button>
       </div>
       <div className="text-white font-bold flex justify-center">Situational Modifiers</div>
-      <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-4">
-        <div className="flex flex-1 gap-4 min-h-20">
+      <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-1">
+        <div className="flex flex-1 gap-1 min-h-20">
           <button className={className("Disrupted w-1/5", MODIFIER_CLASSES, disrupted ? "bg-red-400" : "bg-white")} onClick={toggleDisrupted}>Disrupted</button>
           <button className={className("Frightened w-1/5", MODIFIER_CLASSES, frightened ? "bg-red-400" : "bg-white")} onClick={toggleFrightened}>Frightened</button>
           <button className={className("InTheYellow w-1/5", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={toggleInTheYellow}>In Yellow</button>
           <button className={className("InTheRed w-1/5", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={toggleInTheRed}>In Red</button>
           <button className={className("AttackingToFlank w-1/5", MODIFIER_CLASSES, attackingToFlank ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToFlank}>Attack Flank</button>
         </div>
-        <div className="flex flex-1 gap-4 min-h-20">
+        <div className="flex flex-1 gap-1 min-h-20">
           <button className={className("AttackingToRear", MODIFIER_CLASSES, attackingToRear ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToRear}>Attack Rear</button>
           <button className={className("ChargingFourOrMoreDice", MODIFIER_CLASSES, chargingFourOrMoreDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingFourOrMoreDice}>Charge +4</button>
           <button className={className("ChargingThreeOrLessDice", MODIFIER_CLASSES, chargingThreeOrLessDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingThreeOrLessDice}>Charge 3-</button>
           <button className={className("Flanking", MODIFIER_CLASSES, flanking ? "bg-green-400" : "bg-white")} onClick={toggleFlanking}>Flanking</button>
           <button className={className("Pinching", MODIFIER_CLASSES, pinching ? "bg-green-400" : "bg-white")} onClick={togglePinching}>Pinching</button>
         </div>
-        <div className="flex flex-1 gap-4 min-h-20">
+        <div className="flex flex-1 gap-1 min-h-20">
           <button className={className("RearAttacking", MODIFIER_CLASSES, rearAttacking ? "bg-green-400" : "bg-white")} onClick={toggleRearAttacking}>Rear Attack</button>
           <button className={className("CalvaryTarget", MODIFIER_CLASSES, calvaryTarget ? "bg-red-400" : "bg-white")} onClick={toggleCalvaryTarget}>Calvary Target</button>
           <button className={className("ColossalTarget", MODIFIER_CLASSES, collosalTarget ? "bg-green-400" : "bg-white")} onClick={toggleColossalTarget}>Collosal Target</button>
           <button className={className("LargeTarget", MODIFIER_CLASSES, largeTarget ? "bg-green-400" : "bg-white")} onClick={toggleLargeTarget}>Large Target</button>
           <button className={className("ExtremeRange", MODIFIER_CLASSES, extremeRange ? "bg-red-400" : "bg-white")} onClick={toggleExtremeRange}>Extreme Range 15+</button>
         </div>
-        <div className="flex flex-1 gap-4 min-h-20">
+        <div className="flex flex-1 gap-1 min-h-20">
           <button className={className("FastMovingTarget", MODIFIER_CLASSES, fastMovingTarget ? "bg-red-400" : "bg-white")} onClick={toggleFastMovingTarget}>Fast Target</button>
           <button className={className("LongRange", MODIFIER_CLASSES, longRange ? "bg-green-400" : "bg-white")} onClick={toggleLongRange}>Long Range 7-14</button>
           <button className={className("MoveAndShoot", MODIFIER_CLASSES, moveAndShoot ? "bg-red-400" : "bg-white")} onClick={toggleMoveAndShoot}>Move & Shoot</button>
