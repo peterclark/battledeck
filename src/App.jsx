@@ -6,16 +6,21 @@ import { max, min } from "lodash";
 import { useToggle, useUpdateEffect } from "react-use";
 import className from "classnames";
 
-const MAX_DICE = 20;
 const MAX_ROLL = 10;
 const MODIFIER_CLASSES = "flex-1 rounded";
 
 const App = () => {
   const [dice, setDice] = useState(6);
+  const [diceModifier, setDiceModifier] = useState(0);
   const [offensiveSkill, setOffensiveSkill] = useState(0);
   const [offensivePower, setOffensivePower] = useState(0);
   const [defensiveSkill, setDefensiveSkill] = useState(0);
   const [defensivePower, setDefensivePower] = useState(0);
+
+  const [commandActionModifiers, setCommandActionModifiers] = useState([0,0,0,0,0]);
+  const [offensiveSkillModifier, setOffensiveSkillModifier] = useState(0);
+  const [offensivePowerModifier, setOffensivePowerModifier] = useState(0);
+
   const [disrupted, toggleDisrupted] = useToggle(false);
   const [frightened, toggleFrightened] = useToggle(false);
   const [inTheYellow, toggleInTheYellow] = useToggle(false); 
@@ -35,20 +40,6 @@ const App = () => {
   const [longRange, toggleLongRange] = useToggle(false);
   const [moveAndShoot, toggleMoveAndShoot] = useToggle(false);
   const [notClosestTarget, toggleNotClosestTarget] = useToggle(false);
-
-  const modifiers = {
-    disrupted,
-    frightened,
-    inTheYellow,
-    inTheRed,
-    attackingToFlank,
-    attackingToRear,
-    chargingFourOrMoreDice,
-    chargingThreeOrLessDice,
-    flanking,
-    pinching,
-    rearAttacking,
-  };
   
   // 6 is always a miss, 1 is always a hit
   const rollToHit = useMemo(() => {
@@ -60,11 +51,23 @@ const App = () => {
   }, [offensivePower, defensivePower]);
 
   const handleIncDice = (mod) => {
-    setDice((dice + mod) % MAX_DICE);
+    setDice(max([dice + mod, 0]));
   };
+
+  const handleIncDiceModifier = (mod) => {
+    setDiceModifier(diceModifier + mod);
+  }
 
   const handleIncOffensiveSkill = (mod) => {
     setOffensiveSkill((os) => (os + mod) % MAX_ROLL);
+  };
+
+  const handleIncOffensiveSkillModifier = (mod) => {
+    setOffensiveSkillModifier((osm) => osm + mod);
+  };
+
+  const handleIncOffensivePowerModifier = (mod) => {
+    setOffensivePowerModifier((opm) => opm + mod);
   };
 
   const handleIncOffensivePower = (mod) => {
@@ -79,32 +82,32 @@ const App = () => {
     setDefensivePower((dp) => (dp + mod) % MAX_ROLL);
   };
 
-  const handleIncAttack = (mod) => {
+  const handleAddModifiers = (mod) => {
     const [d, os, op] = mod || [];
-    handleIncDice(d);
-    handleIncOffensiveSkill(os);
-    handleIncOffensivePower(op);
+    handleIncDiceModifier(d);
+    handleIncOffensiveSkillModifier(os);
+    handleIncOffensivePowerModifier(op);
   };
 
-  useUpdateEffect(() => handleIncAttack(disrupted ? [-1, -1, -1] : [1,1,1]) , [disrupted]);
-  // useMemo(() => handleIncAttack(frightened ? [-1, -1, -1] : [1,1,1]) , [frightened]);
-  useUpdateEffect(() => handleIncAttack(inTheYellow ? [-1, 0, 0] : [1,0,0]) , [inTheYellow]);
-  useUpdateEffect(() => handleIncAttack(inTheRed ? [-2,0,0] : [2,0,0]) , [inTheRed]);
-  useUpdateEffect(() => handleIncAttack(attackingToFlank ? [1,0,0,] : [-1,0,0]) , [attackingToFlank]);
-  useUpdateEffect(() => handleIncAttack(attackingToRear ? [0,-1,-1] : [0,1,1]) , [attackingToRear]);
-  useUpdateEffect(() => handleIncAttack(chargingFourOrMoreDice ? [+2,0,0] : [-2,0,0]) , [chargingFourOrMoreDice]);
-  useUpdateEffect(() => handleIncAttack(chargingThreeOrLessDice ? [1,0,0] : [-1,0,0]) , [chargingThreeOrLessDice]);
-  useUpdateEffect(() => handleIncAttack(flanking ? [0,1,0] : [0,-1,0]) , [flanking]);
-  useUpdateEffect(() => handleIncAttack(pinching ? [0,1,1] : [0,-1,-1]) , [pinching]);
-  useUpdateEffect(() => handleIncAttack(rearAttacking ? [0,1,1] : [0,-1,-1]) , [rearAttacking]);
-  useUpdateEffect(() => handleIncAttack(calvaryTarget ? [0,-1,0] : [0,1,0]) , [calvaryTarget]);
-  useUpdateEffect(() => handleIncAttack(collosalTarget ? [0,2,0] : [0,-2,0]) , [collosalTarget]);
-  useUpdateEffect(() => handleIncAttack(extremeRange ? [0,-2,0] : [0,2,0]) , [extremeRange]);
-  useUpdateEffect(() => handleIncAttack(fastMovingTarget ? [0,-1,0] : [0,1,0]) , [fastMovingTarget]);
-  useUpdateEffect(() => handleIncAttack(largeTarget ? [0,1,0] : [0,-1,0]) , [largeTarget]);
-  useUpdateEffect(() => handleIncAttack(longRange ? [0,-1,0] : [0,1,0]) , [longRange]);
-  useUpdateEffect(() => handleIncAttack(moveAndShoot ? [0,-1,0] : [0,1,0]) , [moveAndShoot]);
-  useUpdateEffect(() => handleIncAttack(notClosestTarget ? [0,-1,0] : [0,1,0]) , [notClosestTarget]);
+  useUpdateEffect(() => handleAddModifiers(disrupted ? [-1, -1, -1] : [1,1,1]) , [disrupted]);
+  // useMemo(() => handleAddModifiers(frightened ? [-1, -1, -1] : [1,1,1]) , [frightened]);
+  useUpdateEffect(() => handleAddModifiers(inTheYellow ? [-1, 0, 0] : [1,0,0]) , [inTheYellow]);
+  useUpdateEffect(() => handleAddModifiers(inTheRed ? [-2,0,0] : [2,0,0]) , [inTheRed]);
+  useUpdateEffect(() => handleAddModifiers(attackingToFlank ? [1,0,0,] : [-1,0,0]) , [attackingToFlank]);
+  useUpdateEffect(() => handleAddModifiers(attackingToRear ? [0,-1,-1] : [0,1,1]) , [attackingToRear]);
+  useUpdateEffect(() => handleAddModifiers(chargingFourOrMoreDice ? [+2,0,0] : [-2,0,0]) , [chargingFourOrMoreDice]);
+  useUpdateEffect(() => handleAddModifiers(chargingThreeOrLessDice ? [1,0,0] : [-1,0,0]) , [chargingThreeOrLessDice]);
+  useUpdateEffect(() => handleAddModifiers(flanking ? [0,1,0] : [0,-1,0]) , [flanking]);
+  useUpdateEffect(() => handleAddModifiers(pinching ? [0,1,1] : [0,-1,-1]) , [pinching]);
+  useUpdateEffect(() => handleAddModifiers(rearAttacking ? [0,1,1] : [0,-1,-1]) , [rearAttacking]);
+  useUpdateEffect(() => handleAddModifiers(calvaryTarget ? [0,-1,0] : [0,1,0]) , [calvaryTarget]);
+  useUpdateEffect(() => handleAddModifiers(collosalTarget ? [0,2,0] : [0,-2,0]) , [collosalTarget]);
+  useUpdateEffect(() => handleAddModifiers(extremeRange ? [0,-2,0] : [0,2,0]) , [extremeRange]);
+  useUpdateEffect(() => handleAddModifiers(fastMovingTarget ? [0,-1,0] : [0,1,0]) , [fastMovingTarget]);
+  useUpdateEffect(() => handleAddModifiers(largeTarget ? [0,1,0] : [0,-1,0]) , [largeTarget]);
+  useUpdateEffect(() => handleAddModifiers(longRange ? [0,-1,0] : [0,1,0]) , [longRange]);
+  useUpdateEffect(() => handleAddModifiers(moveAndShoot ? [0,-1,0] : [0,1,0]) , [moveAndShoot]);
+  useUpdateEffect(() => handleAddModifiers(notClosestTarget ? [0,-1,0] : [0,1,0]) , [notClosestTarget]);
 
   const handleClearAll = () => {
     setDice(6);
@@ -112,6 +115,8 @@ const App = () => {
     setOffensivePower(0);
     setDefensiveSkill(0);
     setDefensivePower(0);
+    setCommandActionModifiers([0,0,0,0,0])
+    setOffensiveSkillModifier(0);
     toggleDisrupted(false);
     toggleFrightened(false);
     toggleInTheYellow(false);
@@ -135,25 +140,48 @@ const App = () => {
 
   useEffect(() => handleClearAll(), []);
 
+  const [caDice, caOffensiveSkill, caOffensivePower, caDefensiveSkill, caDefensivePower] = commandActionModifiers;
+
   return (
     <div className="BattleDeck flex flex-col h-screen bg-black gap-4">
       <div className="Roll flex h-1/5 text-9xl mx-4 mt-4 my-2 mb-0 gap-4">
         <div className="Dice flex-1 flex flex-col items-center justify-between bg-white rounded">
-          <span className="text-green-900">{dice}</span>
+          <span className="text-green-900 flex gap-4">
+            {dice + caDice + diceModifier}
+            <div className="flex flex-col text-base justify-center">
+              <span>{dice} base</span>
+              <span>{caDice > 0 ? "+" : ""}{caDice} CA</span>
+              {disrupted ? <span>-1 Disrupted</span> : null}
+            </div>
+          </span>
           <div className="text-7xl flex w-full h-1/2 gap-2 pb-2">
-            <button className="flex-1 ml-2 border-white rounded bg-green-400 text-green-900" onClick={() => handleIncDice(1)}>+</button>
-            <button className="flex-1 mr-2 border-white rounded bg-red-400 text-red-900" onClick={() => handleIncDice(-1)}>-</button>
+            <button className="flex-1 ml-2 border-white rounded bg-red-400 text-red-900" onClick={() => handleIncDice(-1)}>-</button>
+            <button className="flex-1 mr-2 border-white rounded bg-green-400 text-green-900" onClick={() => handleIncDice(1)}>+</button>
           </div>
         </div>
         <div className="RollToHit flex-1 flex flex-col items-center justify-between bg-white rounded">
-          <span className="text-red-900">{rollToHit}</span>
+          <span className="text-red-900 flex gap-4">
+            {rollToHit + caOffensiveSkill + offensiveSkillModifier}
+            <div className="flex flex-col text-base justify-center">
+              <span>{rollToHit} base ({offensiveSkill} - {defensiveSkill})</span>
+              <span>{caOffensiveSkill > 0 ? "+" : ""}{caOffensiveSkill} CA</span>
+              {disrupted ? <span>-1 Disrupted</span> : null}
+            </div>
+          </span>
           <div className="text-5xl flex w-full h-1/2 gap-2 pb-2">
             <button className="OffensiveSkillRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"  onClick={() => handleIncOffensiveSkill(1)}>{offensiveSkill}</button>
             <button className="DefensiveSkillRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100" onClick={() => handleIncDefensiveSkill(1)}>{defensiveSkill}</button>
           </div>
         </div>
         <div className="RollToWound flex-1 flex flex-col items-center justify-between bg-white rounded">
-          <div className="text-blue-900">{rollToWound}</div>
+          <div className="text-blue-900 flex gap-4">
+            {rollToWound + caOffensivePower + offensivePowerModifier}
+            <div className="flex flex-col text-base justify-center">
+              <span>{rollToWound} base ({offensivePower} - {defensivePower})</span>
+              <span>{caOffensivePower > 0 ? "+" : ""}{caOffensivePower} CA</span>
+              {disrupted ? <span>-1 Disrupted</span> : null}
+            </div>
+          </div>
           <div className="text-5xl flex w-full h-1/2 gap-2 pb-2">
             <button className="OffensivePowerRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"  onClick={() => handleIncOffensivePower(1)}>{offensivePower}</button>
             <button className="DefensivePowerRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100" onClick={() => handleIncDefensivePower(1)}>{defensivePower}</button>
@@ -162,10 +190,12 @@ const App = () => {
       </div>
       <div className="text-white font-bold flex justify-center">Command Action Modifiers</div>
       <div className="CommandActionModifiers flex h-20 gap-4 mx-4 min-h-20">
-        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => handleIncOffensiveSkill(-1)}>-1 OS</button>
-        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => handleIncOffensiveSkill(1)}>+1 OS</button>
-        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => handleIncOffensivePower(-1)}>-1 OP</button>
-        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => handleIncOffensivePower(1)}>+1 OP</button>
+        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d - 1, ...rest]))}>-1 Dice</button>
+        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d + 1, ...rest]))}>+1 Dice</button>
+        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os - 1, ...rest]))}>-1 OS</button>
+        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os + 1, ...rest]))}>+1 OS</button>
+        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op - 1, ...rest]))}>-1 OP</button>
+        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op + 1, ...rest]))}>+1 OP</button>
       </div>
       <div className="text-white font-bold flex justify-center">Situational Modifiers</div>
       <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-4">
