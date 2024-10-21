@@ -81,7 +81,9 @@ const App = () => {
   };
 
   useUpdateEffect(() => handleAddModifiers(disrupted ? [-1, -1, -1] : [1,1,1]) , [disrupted]);
-  // useMemo(() => handleAddModifiers(frightened ? [-1, -1, -1] : [1,1,1]) , [frightened]);
+  useUpdateEffect(() => {
+    setCommandActionModifiers([0,0,0]);
+  }, [frightened]);
   useUpdateEffect(() => handleAddModifiers(inTheYellow ? [-1, 0, 0] : [1,0,0]) , [inTheYellow]);
   useUpdateEffect(() => handleAddModifiers(inTheRed ? [-2,0,0] : [2,0,0]) , [inTheRed]);
   useUpdateEffect(() => handleAddModifiers(attackingToFlank ? [1,0,0,] : [-1,0,0]) , [attackingToFlank]);
@@ -154,7 +156,7 @@ const App = () => {
         <div className="Dice flex-1 flex flex-col items-center justify-between bg-white rounded">
           <span className="text-green-900 flex gap-1">
             {diceToRoll}
-            <div className="flex flex-col text-base justify-center">
+            <div className="flex flex-col text-xs justify-center">
               <span>{baseDice} base</span>
               <span>{caDice > 0 ? "+" : ""}{caDice} CA</span>
               {disrupted ? <span>-1 Disrupted</span> : null}
@@ -168,7 +170,7 @@ const App = () => {
         <div className="RollToHit flex-1 flex flex-col items-center justify-between bg-white rounded">
           <span className="text-red-900 flex gap-1">
             {rollToHit}
-            <div className="flex flex-col text-base justify-center">
+            <div className="flex flex-col text-xs justify-center">
               <span>{rollToHit} base ({offensiveSkill} - {defensiveSkill})</span>
               <span>{caOffensiveSkill > 0 ? "+" : ""}{caOffensiveSkill} CA</span>
               {disrupted ? <span>-1 Disrupted</span> : null}
@@ -182,7 +184,7 @@ const App = () => {
         <div className="RollToWound flex-1 flex flex-col items-center justify-between bg-white rounded">
           <div className="text-blue-900 flex gap-1">
             {rollToWound}
-            <div className="flex flex-col text-base justify-center">
+            <div className="flex flex-col text-xs justify-center">
               <span>{rollToWound} base ({offensivePower} - {defensivePower})</span>
               <span>{caOffensivePower > 0 ? "+" : ""}{caOffensivePower} CA</span>
               {disrupted ? <span>-1 Disrupted</span> : null}
@@ -196,12 +198,12 @@ const App = () => {
       </div>
       <div className="text-white font-bold flex justify-center">Command Action Modifiers</div>
       <div className="CommandActionModifiers flex h-20 gap-1 mx-4 min-h-20">
-        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d - 1, ...rest]))}>-1 Dice</button>
-        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d + 1, ...rest]))}>+1 Dice</button>
-        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os - 1, ...rest]))}>-1 OS</button>
-        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os + 1, ...rest]))}>+1 OS</button>
-        <button className="Plus1 flex-1 bg-red-400 rounded" onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op - 1, ...rest]))}>-1 OP</button>
-        <button className="Plus1 flex-1 bg-green-400 rounded" onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op + 1, ...rest]))}>+1 OP</button>
+        <button className={className("Plus1 flex-1 bg-red-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d - 1, ...rest]))} disabled={frightened}>-1 Dice</button>
+        <button className={className("Plus1 flex-1 bg-green-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d + 1, ...rest]))} disabled={frightened}>+1 Dice</button>
+        <button className={className("Plus1 flex-1 bg-red-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os - 1, ...rest]))} disabled={frightened}>-1 OS</button>
+        <button className={className("Plus1 flex-1 bg-green-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os + 1, ...rest]))} disabled={frightened}>+1 OS</button>
+        <button className={className("Plus1 flex-1 bg-red-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op - 1, ...rest]))} disabled={frightened}>-1 OP</button>
+        <button className={className("Plus1 flex-1 bg-green-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op + 1, ...rest]))} disabled={frightened}>+1 OP</button>
       </div>
       <div className="text-white font-bold flex justify-center">Situational Modifiers</div>
       <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-1">
