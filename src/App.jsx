@@ -1,9 +1,9 @@
-// import { GiInvertedDice3 } from "react-icons";
-
 import { useEffect, useMemo } from "react";
 import { useState } from "react"
 import { max, min } from "lodash";
 import { useToggle, useUpdateEffect } from "react-use";
+import { GiPerspectiveDiceOne, GiPerspectiveDiceSix } from "react-icons/gi";
+import { FaMinus, FaPlus } from "react-icons/fa";
 import className from "classnames";
 
 const MAX_ROLL = 10;
@@ -157,6 +157,7 @@ const App = () => {
           <span className="text-green-900 flex gap-1">
             {diceToRoll}
             <div className="flex flex-col text-xs justify-center">
+              <span className="font-bold text-sm">Dice</span>
               <span>{baseDice} base</span>
               {caDice > 0 && <span>+{caDice} CA</span>}
               {disrupted && <span>-1 Disrupted</span>}
@@ -168,15 +169,16 @@ const App = () => {
               {frightened && <span>No CA</span>}
             </div>
           </span>
-          <div className="text-7xl flex w-full max-h-20 gap-1 pb-2">
-            <button className="flex-1 ml-2 border-white rounded bg-red-400 text-red-900" onClick={() => handleIncDice(-1)}>-</button>
-            <button className="flex-1 mr-2 border-white rounded bg-green-400 text-green-900" onClick={() => handleIncDice(1)}>+</button>
+          <div className="text-5xl flex w-full h-1/2 max-h-20 gap-1 pb-2">
+            <button className="flex-1 ml-2 border-white rounded bg-red-400 text-red-900 flex items-center justify-center" onClick={() => handleIncDice(-1)}><FaMinus /></button>
+            <button className="flex-1 mr-2 border-white rounded bg-green-400 text-green-900 flex items-center justify-center" onClick={() => handleIncDice(1)}><FaPlus /></button>
           </div>
         </div>
         <div className="RollToHit flex-1 flex flex-col items-center justify-between bg-white rounded">
           <span className="text-red-900 flex gap-1">
             {rollToHit}
             <div className="flex flex-col text-xs justify-center">
+              <span className="font-bold text-sm">To Hit</span>
               <span>{offensiveSkill - defensiveSkill} base</span>
               {caOffensiveSkill > 0 && <span>+{caOffensiveSkill} CA</span>}
               {disrupted ? <span>-1 Disrupted</span> : null}
@@ -260,7 +262,11 @@ const App = () => {
         </div>
       </div>
       <div className="text-lg flex text-white items-center justify-center mx-4 mt-2 min-h-20">
-        <div className="mx-4 text-3xl">BattleDeck</div>
+        <div className="mx-4 text-3xl flex items-center gap-4">
+          <GiPerspectiveDiceOne className="text-4xl" />
+          BattleDeck
+          <GiPerspectiveDiceSix className="text-4xl" />
+        </div>
       </div>
     </div>
   )
