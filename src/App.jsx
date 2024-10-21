@@ -156,16 +156,16 @@ const App = () => {
         <div className="Dice flex-1 flex flex-col items-center justify-between bg-white rounded">
           <span className="text-green-900 flex gap-1">
             {diceToRoll}
-            <div className="flex flex-col text-xs justify-center">
+            <div className="flex flex-col text-xs justify-center font-mono">
               <span className="font-bold text-sm">Dice</span>
               <span>{baseDice} base</span>
               {caDice > 0 && <span>+{caDice} CA</span>}
-              {disrupted && <span>-1 Disrupted</span>}
-              {inTheYellow && <span>-1 In Yellow</span>}
-              {inTheRed && <span>-2 In Red</span>}
-              {attackingToMyFlank && <span>-1 Attack my Flank</span>}
-              {chargingFourOrMoreDice && <span>+2 Charging</span>}
-              {chargingThreeOrLessDice && <span>+1 Charging</span>}
+              {disrupted && <span>-1 DI</span>}
+              {inTheYellow && <span>-1 IY</span>}
+              {inTheRed && <span>-2 IR</span>}
+              {attackingToMyFlank && <span>-1 AMF</span>}
+              {chargingFourOrMoreDice && <span>+2 CH</span>}
+              {chargingThreeOrLessDice && <span>+1 CH</span>}
               {frightened && <span>No CA</span>}
             </div>
           </span>
@@ -177,23 +177,23 @@ const App = () => {
         <div className="RollToHit flex-1 flex flex-col items-center justify-between bg-white rounded">
           <span className="text-red-900 flex gap-1">
             {rollToHit}
-            <div className="flex flex-col text-xs justify-center">
+            <div className="flex flex-col text-xs justify-center font-mono">
               <span className="font-bold text-sm">To Hit</span>
               <span>{offensiveSkill - defensiveSkill} base</span>
               {caOffensiveSkill > 0 && <span>+{caOffensiveSkill} CA</span>}
-              {disrupted ? <span>-1 Disrupted</span> : null}
-              {attackingToMyRear && <span>-1 Attack my Rear</span>}
-              {flanking && <span>+1 Flanking</span>}
-              {pinching && <span>+1 Pinching</span>}
-              {rearAttacking && <span>+1 Rear Attack</span>}
-              {calvaryTarget && <span>-1 Calvary</span>}
-              {collosalTarget && <span>+2 Collossal</span>}
-              {extremeRange && <span>-2 Ext Range</span>}
-              {fastMovingTarget && <span>-1 Fast</span>}
-              {largeTarget && <span>+1 Large</span>}
-              {longRange && <span>-1 Long Range</span>}
+              {disrupted ? <span>-1 DI</span> : null}
+              {attackingToMyRear && <span>-1 AMR</span>}
+              {flanking && <span>+1 FL</span>}
+              {pinching && <span>+1 PI</span>}
+              {rearAttacking && <span>+1 RA</span>}
+              {calvaryTarget && <span>-1 CA</span>}
+              {collosalTarget && <span>+2 CO</span>}
+              {extremeRange && <span>-2 ER</span>}
+              {fastMovingTarget && <span>-1 FAST</span>}
+              {largeTarget && <span>+1 LG</span>}
+              {longRange && <span>-1 LR</span>}
               {moveAndShoot && <span>-1 M&S</span>}
-              {notClosestTarget && <span>-1 Not Close</span>}
+              {notClosestTarget && <span>-1 NC</span>}
               {frightened && <span>No CA</span>}
             </div>
           </span>
@@ -205,13 +205,13 @@ const App = () => {
         <div className="RollToWound flex-1 flex flex-col items-center justify-between bg-white rounded">
           <div className="text-blue-900 flex gap-1">
             {rollToWound}
-            <div className="flex flex-col text-xs justify-center">
+            <div className="flex flex-col text-xs justify-center font-mono">
               <span>{offensivePower - defensivePower} base</span>
               {caOffensivePower > 0 && <span>+{caOffensivePower} CA</span>}
-              {disrupted ? <span>-1 Disrupted</span> : null}
-              {attackingToMyRear && <span>-1 Attack my Rear</span>}
-              {pinching && <span>+1 Pinching</span>}
-              {rearAttacking && <span>+1 Rear Attack</span>}
+              {disrupted ? <span>-1 DI</span> : null}
+              {attackingToMyRear && <span>-1 AMR</span>}
+              {pinching && <span>+1 PI</span>}
+              {rearAttacking && <span>+1 RA</span>}
               {frightened && <span>No CA</span>}
             </div>
           </div>
