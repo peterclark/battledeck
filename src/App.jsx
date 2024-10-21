@@ -25,8 +25,8 @@ const App = () => {
   const [frightened, toggleFrightened] = useToggle(false);
   const [inTheYellow, toggleInTheYellow] = useToggle(false); 
   const [inTheRed, toggleInTheRed] = useToggle(false); 
-  const [attackingToFlank, toggleAttackingToFlank] = useToggle(false); 
-  const [attackingToRear, toggleAttackingToRear] = useToggle(false); 
+  const [attackingToMyFlank, toggleAttackingToMyFlank] = useToggle(false); 
+  const [attackingToMyRear, toggleAttackingToMyRear] = useToggle(false); 
   const [chargingFourOrMoreDice, toggleChargingFourOrMoreDice] = useToggle(false); 
   const [chargingThreeOrLessDice, toggleChargingThreeOrLessDice] = useToggle(false); 
   const [flanking, toggleFlanking] = useToggle(false); 
@@ -86,8 +86,8 @@ const App = () => {
   }, [frightened]);
   useUpdateEffect(() => handleAddModifiers(inTheYellow ? [-1, 0, 0] : [1,0,0]) , [inTheYellow]);
   useUpdateEffect(() => handleAddModifiers(inTheRed ? [-2,0,0] : [2,0,0]) , [inTheRed]);
-  useUpdateEffect(() => handleAddModifiers(attackingToFlank ? [1,0,0,] : [-1,0,0]) , [attackingToFlank]);
-  useUpdateEffect(() => handleAddModifiers(attackingToRear ? [0,-1,-1] : [0,1,1]) , [attackingToRear]);
+  useUpdateEffect(() => handleAddModifiers(attackingToMyFlank ? [-1,0,0,] : [1,0,0]) , [attackingToMyFlank]);
+  useUpdateEffect(() => handleAddModifiers(attackingToMyRear ? [0,-1,-1] : [0,1,1]) , [attackingToMyRear]);
   useUpdateEffect(() => handleAddModifiers(chargingFourOrMoreDice ? [+2,0,0] : [-2,0,0]) , [chargingFourOrMoreDice]);
   useUpdateEffect(() => handleAddModifiers(chargingThreeOrLessDice ? [1,0,0] : [-1,0,0]) , [chargingThreeOrLessDice]);
   useUpdateEffect(() => handleAddModifiers(flanking ? [0,1,0] : [0,-1,0]) , [flanking]);
@@ -114,8 +114,8 @@ const App = () => {
     toggleFrightened(false);
     toggleInTheYellow(false);
     toggleInTheRed(false);
-    toggleAttackingToFlank(false);
-    toggleAttackingToRear(false);
+    toggleAttackingToMyFlank(false);
+    toggleAttackingToMyRear(false);
     toggleChargingFourOrMoreDice(false);
     toggleChargingThreeOrLessDice(false);
     toggleFlanking(false);
@@ -160,6 +160,11 @@ const App = () => {
               <span>{baseDice} base</span>
               {caDice > 0 && <span>+{caDice} CA</span>}
               {disrupted && <span>-1 Disrupted</span>}
+              {inTheYellow && <span>-1 In Yellow</span>}
+              {inTheRed && <span>-2 In Red</span>}
+              {attackingToMyFlank && <span>-1 Attack my Flank</span>}
+              {chargingFourOrMoreDice && <span>+2 Charging</span>}
+              {chargingThreeOrLessDice && <span>+1 Charging</span>}
               {frightened && <span>No CA</span>}
             </div>
           </span>
@@ -172,9 +177,21 @@ const App = () => {
           <span className="text-red-900 flex gap-1">
             {rollToHit}
             <div className="flex flex-col text-xs justify-center">
-              <span>{rollToHit} base ({offensiveSkill} - {defensiveSkill})</span>
+              <span>{offensiveSkill - defensiveSkill} base</span>
               {caOffensiveSkill > 0 && <span>+{caOffensiveSkill} CA</span>}
               {disrupted ? <span>-1 Disrupted</span> : null}
+              {attackingToMyRear && <span>-1 Attack my Rear</span>}
+              {flanking && <span>+1 Flanking</span>}
+              {pinching && <span>+1 Pinching</span>}
+              {rearAttacking && <span>+1 Rear Attack</span>}
+              {calvaryTarget && <span>-1 Calvary</span>}
+              {collosalTarget && <span>+2 Collossal</span>}
+              {extremeRange && <span>-2 Ext Range</span>}
+              {fastMovingTarget && <span>-1 Fast</span>}
+              {largeTarget && <span>+1 Large</span>}
+              {longRange && <span>-1 Long Range</span>}
+              {moveAndShoot && <span>-1 M&S</span>}
+              {notClosestTarget && <span>-1 Not Close</span>}
               {frightened && <span>No CA</span>}
             </div>
           </span>
@@ -187,9 +204,12 @@ const App = () => {
           <div className="text-blue-900 flex gap-1">
             {rollToWound}
             <div className="flex flex-col text-xs justify-center">
-              <span>{rollToWound} base ({offensivePower} - {defensivePower})</span>
+              <span>{offensivePower - defensivePower} base</span>
               {caOffensivePower > 0 && <span>+{caOffensivePower} CA</span>}
               {disrupted ? <span>-1 Disrupted</span> : null}
+              {attackingToMyRear && <span>-1 Attack my Rear</span>}
+              {pinching && <span>+1 Pinching</span>}
+              {rearAttacking && <span>+1 Rear Attack</span>}
               {frightened && <span>No CA</span>}
             </div>
           </div>
@@ -211,18 +231,18 @@ const App = () => {
       <div className="text-white font-bold flex justify-center">Situational Modifiers</div>
       <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-1 text-sm">
         <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("Disrupted w-1/5", MODIFIER_CLASSES, disrupted ? "bg-red-400" : "bg-white")} onClick={toggleDisrupted}>Disrupt-ed</button>
-          <button className={className("Frightened w-1/5", MODIFIER_CLASSES, frightened ? "bg-red-400" : "bg-white")} onClick={toggleFrightened}>Frighten-ed</button>
-          <button className={className("InTheYellow w-1/5", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={toggleInTheYellow}>In<br />Yellow</button>
-          <button className={className("InTheRed w-1/5", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={toggleInTheRed}>In<br />Red</button>
-          <button className={className("AttackingToFlank w-1/5", MODIFIER_CLASSES, attackingToFlank ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToFlank}>Attack Flank</button>
+          <button className={className("Disrupted w-1/5", MODIFIER_CLASSES, disrupted ? "bg-red-400" : "bg-white")} onClick={toggleDisrupted}>Disrupt<br />-ed</button>
+          <button className={className("Frightened w-1/5", MODIFIER_CLASSES, frightened ? "bg-red-400" : "bg-white")} onClick={toggleFrightened}>Frighten<br />-ed</button>
+          <button className={className("InTheYellow w-1/5", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={toggleInTheYellow}>In the<br />Yellow</button>
+          <button className={className("InTheRed w-1/5", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={toggleInTheRed}>In the<br />Red</button>
+          <button className={className("AttackingToFlank w-1/5", MODIFIER_CLASSES, attackingToMyFlank ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToMyFlank}>Attack<br />my Flank</button>
         </div>
         <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("AttackingToRear", MODIFIER_CLASSES, attackingToRear ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToRear}>Attack<br />Rear</button>
-          <button className={className("ChargingFourOrMoreDice", MODIFIER_CLASSES, chargingFourOrMoreDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingFourOrMoreDice}>Charge<br />+4</button>
-          <button className={className("ChargingThreeOrLessDice", MODIFIER_CLASSES, chargingThreeOrLessDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingThreeOrLessDice}>Charge<br />3-</button>
-          <button className={className("Flanking", MODIFIER_CLASSES, flanking ? "bg-green-400" : "bg-white")} onClick={toggleFlanking}>Flanking</button>
-          <button className={className("Pinching", MODIFIER_CLASSES, pinching ? "bg-green-400" : "bg-white")} onClick={togglePinching}>Pinching</button>
+          <button className={className("AttackingToRear", MODIFIER_CLASSES, attackingToMyRear ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToMyRear}>Attack<br />my Rear</button>
+          <button className={className("ChargingFourOrMoreDice", MODIFIER_CLASSES, chargingFourOrMoreDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingFourOrMoreDice}>Charge<br />4+ dice</button>
+          <button className={className("ChargingThreeOrLessDice", MODIFIER_CLASSES, chargingThreeOrLessDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingThreeOrLessDice}>Charge<br />3- dice</button>
+          <button className={className("Flanking", MODIFIER_CLASSES, flanking ? "bg-green-400" : "bg-white")} onClick={toggleFlanking}>Flanking<br />Enemy</button>
+          <button className={className("Pinching", MODIFIER_CLASSES, pinching ? "bg-green-400" : "bg-white")} onClick={togglePinching}>Pinching<br />Enemy</button>
         </div>
         <div className="flex flex-1 gap-1 min-h-20">
           <button className={className("RearAttacking", MODIFIER_CLASSES, rearAttacking ? "bg-green-400" : "bg-white")} onClick={toggleRearAttacking}>Rear<br />Attack</button>
