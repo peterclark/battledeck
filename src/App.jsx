@@ -10,14 +10,14 @@ const MAX_ROLL = 10;
 const MODIFIER_CLASSES = "flex-1 rounded";
 
 const App = () => {
-  const [dice, setDice] = useState(6);
+  const [baseDice, setBaseDice] = useState(6);
   const [diceModifier, setDiceModifier] = useState(0);
   const [offensiveSkill, setOffensiveSkill] = useState(0);
   const [offensivePower, setOffensivePower] = useState(0);
   const [defensiveSkill, setDefensiveSkill] = useState(0);
   const [defensivePower, setDefensivePower] = useState(0);
 
-  const [commandActionModifiers, setCommandActionModifiers] = useState([0,0,0,0,0]);
+  const [commandActionModifiers, setCommandActionModifiers] = useState([0,0,0]);
   const [offensiveSkillModifier, setOffensiveSkillModifier] = useState(0);
   const [offensivePowerModifier, setOffensivePowerModifier] = useState(0);
 
@@ -51,7 +51,7 @@ const App = () => {
   }, [offensivePower, defensivePower]);
 
   const handleIncDice = (mod) => {
-    setDice(max([dice + mod, 0]));
+    setBaseDice(max([baseDice + mod, 0]));
   };
 
   const handleIncDiceModifier = (mod) => {
@@ -110,12 +110,12 @@ const App = () => {
   useUpdateEffect(() => handleAddModifiers(notClosestTarget ? [0,-1,0] : [0,1,0]) , [notClosestTarget]);
 
   const handleClearAll = () => {
-    setDice(6);
+    setBaseDice(6);
     setOffensiveSkill(0);
     setOffensivePower(0);
     setDefensiveSkill(0);
     setDefensivePower(0);
-    setCommandActionModifiers([0,0,0,0,0])
+    setCommandActionModifiers([0,0,0])
     setOffensiveSkillModifier(0);
     toggleDisrupted(false);
     toggleFrightened(false);
@@ -140,21 +140,25 @@ const App = () => {
 
   useEffect(() => handleClearAll(), []);
 
-  const [caDice, caOffensiveSkill, caOffensivePower, caDefensiveSkill, caDefensivePower] = commandActionModifiers;
+  const [caDice, caOffensiveSkill, caOffensivePower] = commandActionModifiers;
+
+  const diceToRoll = useMemo(() => {
+    return max([(baseDice + caDice + diceModifier), 0]);
+  }, [baseDice, caDice, diceModifier]);
 
   return (
     <div className="BattleDeck flex flex-col h-screen bg-black gap-4">
-      <div className="Roll flex h-1/5 text-9xl mx-4 mt-4 my-2 mb-0 gap-4">
+      <div className="Roll flex flex-1 text-9xl mx-4 mt-4 my-2 mb-0 gap-4">
         <div className="Dice flex-1 flex flex-col items-center justify-between bg-white rounded">
           <span className="text-green-900 flex gap-4">
-            {dice + caDice + diceModifier}
+            {diceToRoll}
             <div className="flex flex-col text-base justify-center">
-              <span>{dice} base</span>
+              <span>{baseDice} base</span>
               <span>{caDice > 0 ? "+" : ""}{caDice} CA</span>
               {disrupted ? <span>-1 Disrupted</span> : null}
             </div>
           </span>
-          <div className="text-7xl flex w-full h-1/2 gap-2 pb-2">
+          <div className="text-7xl flex w-full max-h-20 gap-2 pb-2">
             <button className="flex-1 ml-2 border-white rounded bg-red-400 text-red-900" onClick={() => handleIncDice(-1)}>-</button>
             <button className="flex-1 mr-2 border-white rounded bg-green-400 text-green-900" onClick={() => handleIncDice(1)}>+</button>
           </div>
@@ -168,7 +172,7 @@ const App = () => {
               {disrupted ? <span>-1 Disrupted</span> : null}
             </div>
           </span>
-          <div className="text-5xl flex w-full h-1/2 gap-2 pb-2">
+          <div className="text-5xl flex w-full h-1/2 max-h-20 gap-2 pb-2">
             <button className="OffensiveSkillRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"  onClick={() => handleIncOffensiveSkill(1)}>{offensiveSkill}</button>
             <button className="DefensiveSkillRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100" onClick={() => handleIncDefensiveSkill(1)}>{defensiveSkill}</button>
           </div>
@@ -182,7 +186,7 @@ const App = () => {
               {disrupted ? <span>-1 Disrupted</span> : null}
             </div>
           </div>
-          <div className="text-5xl flex w-full h-1/2 gap-2 pb-2">
+          <div className="text-5xl flex w-full h-1/2 max-h-20 gap-2 pb-2">
             <button className="OffensivePowerRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"  onClick={() => handleIncOffensivePower(1)}>{offensivePower}</button>
             <button className="DefensivePowerRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100" onClick={() => handleIncDefensivePower(1)}>{defensivePower}</button>
           </div>
