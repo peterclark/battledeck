@@ -178,7 +178,7 @@ const App = () => {
           <span className="text-red-900 flex gap-1">
             {rollToHit}
             <div className="flex flex-col text-xs justify-center font-mono">
-              <span className="font-bold text-sm">To Hit</span>
+              <span className="font-bold text-sm">Hit</span>
               <span>{offensiveSkill - defensiveSkill} base</span>
               {caOffensiveSkill > 0 && <span>+{caOffensiveSkill} CA</span>}
               {disrupted ? <span>-1 DI</span> : null}
@@ -206,7 +206,7 @@ const App = () => {
           <div className="text-blue-900 flex gap-1">
             {rollToWound}
             <div className="flex flex-col text-xs justify-center font-mono">
-              <span className="font-bold text-sm">To Wound</span>
+              <span className="font-bold text-sm">Wound</span>
               <span>{offensivePower - defensivePower} base</span>
               {caOffensivePower > 0 && <span>+{caOffensivePower} CA</span>}
               {disrupted ? <span>-1 DI</span> : null}
