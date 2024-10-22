@@ -6,6 +6,7 @@ import { GiPerspectiveDiceOne, GiPerspectiveDiceSix } from "react-icons/gi";
 import { FaMinus, FaPlus } from "react-icons/fa";
 import className from "classnames";
 
+const MAX_DICE = 20;
 const MAX_ROLL = 10;
 const MODIFIER_CLASSES = "flex-1 rounded";
 
@@ -42,7 +43,7 @@ const App = () => {
   const [notClosestTarget, toggleNotClosestTarget] = useToggle(false);
 
   const handleIncDice = (mod) => {
-    setBaseDice(max([baseDice + mod, 0]));
+    setBaseDice(min([max([baseDice + mod, 0]), MAX_DICE]));
   };
 
   const handleIncDiceModifier = (mod) => {
@@ -224,41 +225,41 @@ const App = () => {
       </div>
       <div className="text-white font-bold flex justify-center">Command Action Modifiers</div>
       <div className="CommandActionModifiers flex h-20 gap-1 mx-4 min-h-20">
-        <button className={className("Plus1 flex-1 bg-red-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d - 1, ...rest]))} disabled={frightened}>-1<br />Dice</button>
-        <button className={className("Plus1 flex-1 bg-green-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d + 1, ...rest]))} disabled={frightened}>+1<br />Dice</button>
-        <button className={className("Plus1 flex-1 bg-red-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os - 1, ...rest]))} disabled={frightened}>-1<br />OS</button>
-        <button className={className("Plus1 flex-1 bg-green-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os + 1, ...rest]))} disabled={frightened}>+1<br />OS</button>
-        <button className={className("Plus1 flex-1 bg-red-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op - 1, ...rest]))} disabled={frightened}>-1<br />OP</button>
-        <button className={className("Plus1 flex-1 bg-green-400 rounded", { "opacity-50": frightened })} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op + 1, ...rest]))} disabled={frightened}>+1<br />OP</button>
+        <button className={className("Plus1 flex-1 bg-red-400 rounded")} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d - 1, ...rest]))} disabled={frightened}>-1<br />Dice</button>
+        <button className={className("Plus1 flex-1 bg-green-400 rounded")} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d + 1, ...rest]))} disabled={frightened}>+1<br />Dice</button>
+        <button className={className("Plus1 flex-1 bg-red-400 rounded")} onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os - 1, ...rest]))} disabled={frightened}>-1<br />OS</button>
+        <button className={className("Plus1 flex-1 bg-green-400 rounded")} onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os + 1, ...rest]))} disabled={frightened}>+1<br />OS</button>
+        <button className={className("Plus1 flex-1 bg-red-400 rounded")} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op - 1, ...rest]))} disabled={frightened}>-1<br />OP</button>
+        <button className={className("Plus1 flex-1 bg-green-400 rounded")} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op + 1, ...rest]))} disabled={frightened}>+1<br />OP</button>
       </div>
       <div className="text-white font-bold flex justify-center">Situational Modifiers</div>
       <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-1 text-sm">
         <div className="flex flex-1 gap-1 min-h-20">
           <button className={className("Disrupted w-1/5", MODIFIER_CLASSES, disrupted ? "bg-red-400" : "bg-white")} onClick={toggleDisrupted}>Disrupt<br />-ed</button>
           <button className={className("Frightened w-1/5", MODIFIER_CLASSES, frightened ? "bg-red-400" : "bg-white")} onClick={toggleFrightened}>Frighten<br />-ed</button>
-          <button className={className("InTheYellow w-1/5", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={toggleInTheYellow}>In the<br />Yellow</button>
-          <button className={className("InTheRed w-1/5", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={toggleInTheRed}>In the<br />Red</button>
-          <button className={className("AttackingToFlank w-1/5", MODIFIER_CLASSES, attackingToMyFlank ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToMyFlank}>Attack<br />my Flank</button>
+          <button className={className("InTheYellow w-1/5", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={toggleInTheYellow} disabled={inTheRed}>In the<br />Yellow</button>
+          <button className={className("InTheRed w-1/5", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={toggleInTheRed} disabled={inTheYellow}>In the<br />Red</button>
+          <button className={className("AttackingToFlank w-1/5", MODIFIER_CLASSES, attackingToMyFlank ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToMyFlank} disabled={attackingToMyRear || flanking || pinching || rearAttacking || extremeRange || longRange || notClosestTarget || fastMovingTarget || moveAndShoot || notClosestTarget}>Attack<br />my Flank</button>
         </div>
         <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("AttackingToRear", MODIFIER_CLASSES, attackingToMyRear ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToMyRear}>Attack<br />my Rear</button>
-          <button className={className("ChargingFourOrMoreDice", MODIFIER_CLASSES, chargingFourOrMoreDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingFourOrMoreDice}>Charge<br />4+ dice</button>
-          <button className={className("ChargingThreeOrLessDice", MODIFIER_CLASSES, chargingThreeOrLessDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingThreeOrLessDice}>Charge<br />3- dice</button>
-          <button className={className("Flanking", MODIFIER_CLASSES, flanking ? "bg-green-400" : "bg-white")} onClick={toggleFlanking}>Flanking<br />Enemy</button>
-          <button className={className("Pinching", MODIFIER_CLASSES, pinching ? "bg-green-400" : "bg-white")} onClick={togglePinching}>Pinching<br />Enemy</button>
+          <button className={className("AttackingToRear", MODIFIER_CLASSES, attackingToMyRear ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToMyRear} disabled={attackingToMyFlank || flanking || pinching || rearAttacking || extremeRange || longRange || notClosestTarget || fastMovingTarget || moveAndShoot || notClosestTarget}>Attack<br />my Rear</button>
+          <button className={className("ChargingFourOrMoreDice", MODIFIER_CLASSES, chargingFourOrMoreDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingFourOrMoreDice} disabled={chargingThreeOrLessDice || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Charge<br />4+ dice</button>
+          <button className={className("ChargingThreeOrLessDice", MODIFIER_CLASSES, chargingThreeOrLessDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingThreeOrLessDice} disabled={chargingFourOrMoreDice || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Charge<br />3- dice</button>
+          <button className={className("Flanking", MODIFIER_CLASSES, flanking ? "bg-green-400" : "bg-white")} onClick={toggleFlanking} disabled={attackingToMyFlank || attackingToMyRear || rearAttacking || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Flanking<br />Enemy</button>
+          <button className={className("Pinching", MODIFIER_CLASSES, pinching ? "bg-green-400" : "bg-white")} onClick={togglePinching} disabled={attackingToMyFlank || attackingToMyRear || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Pinching<br />Enemy</button>
         </div>
         <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("RearAttacking", MODIFIER_CLASSES, rearAttacking ? "bg-green-400" : "bg-white")} onClick={toggleRearAttacking}>Rear<br />Attack</button>
+          <button className={className("RearAttacking", MODIFIER_CLASSES, rearAttacking ? "bg-green-400" : "bg-white")} onClick={toggleRearAttacking} disabled={attackingToMyFlank || attackingToMyRear || flanking || extremeRange || longRange || fastMovingTarget || fastMovingTarget || extremeRange || longRange || moveAndShoot || notClosestTarget}>Rear<br />Attack</button>
           <button className={className("CalvaryTarget", MODIFIER_CLASSES, calvaryTarget ? "bg-red-400" : "bg-white")} onClick={toggleCalvaryTarget}>Calvary<br />Target</button>
-          <button className={className("ColossalTarget", MODIFIER_CLASSES, collosalTarget ? "bg-green-400" : "bg-white")} onClick={toggleColossalTarget}>Collosal<br />Target</button>
-          <button className={className("LargeTarget", MODIFIER_CLASSES, largeTarget ? "bg-green-400" : "bg-white")} onClick={toggleLargeTarget}>Large<br />Target</button>
-          <button className={className("ExtremeRange", MODIFIER_CLASSES, extremeRange ? "bg-red-400" : "bg-white")} onClick={toggleExtremeRange}>Extreme<br />Range<br />15+</button>
+          <button className={className("ColossalTarget", MODIFIER_CLASSES, collosalTarget ? "bg-green-400" : "bg-white")} onClick={toggleColossalTarget} disabled={largeTarget}>Collosal<br />Target</button>
+          <button className={className("LargeTarget", MODIFIER_CLASSES, largeTarget ? "bg-green-400" : "bg-white")} onClick={toggleLargeTarget} disabled={collosalTarget}>Large<br />Target</button>
+          <button className={className("FastMovingTarget", MODIFIER_CLASSES, fastMovingTarget ? "bg-red-400" : "bg-white")} onClick={toggleFastMovingTarget} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Fast<br />Target</button>
         </div>
         <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("FastMovingTarget", MODIFIER_CLASSES, fastMovingTarget ? "bg-red-400" : "bg-white")} onClick={toggleFastMovingTarget}>Fast<br />Target</button>
-          <button className={className("LongRange", MODIFIER_CLASSES, longRange ? "bg-green-400" : "bg-white")} onClick={toggleLongRange}>Long<br />Range<br />7-14</button>
-          <button className={className("MoveAndShoot", MODIFIER_CLASSES, moveAndShoot ? "bg-red-400" : "bg-white")} onClick={toggleMoveAndShoot}>Move &<br />Shoot</button>
-          <button className={className("NotClosestTarget", MODIFIER_CLASSES, notClosestTarget ? "bg-red-400" : "bg-white")} onClick={toggleNotClosestTarget}>Not<br />Closest</button>
+          <button className={className("ExtremeRange", MODIFIER_CLASSES, extremeRange ? "bg-red-400" : "bg-white")} onClick={toggleExtremeRange} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking || longRange}>Extreme<br />Range<br />15+</button>
+          <button className={className("LongRange", MODIFIER_CLASSES, longRange ? "bg-red-400" : "bg-white")} onClick={toggleLongRange} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking || extremeRange}>Long<br />Range<br />7-14</button>
+          <button className={className("MoveAndShoot", MODIFIER_CLASSES, moveAndShoot ? "bg-red-400" : "bg-white")} onClick={toggleMoveAndShoot} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Move &<br />Shoot</button>
+          <button className={className("NotClosestTarget", MODIFIER_CLASSES, notClosestTarget ? "bg-red-400" : "bg-white")} onClick={toggleNotClosestTarget} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Not<br />Closest</button>
           <button className={className("ClearAll bg-yellow-400", MODIFIER_CLASSES)} onClick={handleClearAll}>Clear<br />All</button>
         </div>
       </div>
