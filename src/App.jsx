@@ -11,7 +11,7 @@ const MAX_ROLL = 10;
 const MODIFIER_CLASSES = "flex-1 rounded";
 
 const App = () => {
-  const [baseDice, setBaseDice] = useState(6);
+  const [baseDice, setBaseDice] = useState(4);
   const [diceModifier, setDiceModifier] = useState(0);
   const [offensiveSkill, setOffensiveSkill] = useState(0);
   const [offensivePower, setOffensivePower] = useState(0);
@@ -104,13 +104,6 @@ const App = () => {
   useUpdateEffect(() => handleAddModifiers(notClosestTarget ? [0,-1,0] : [0,1,0]) , [notClosestTarget]);
 
   const handleClearAll = () => {
-    setBaseDice(6);
-    setOffensiveSkill(0);
-    setOffensivePower(0);
-    setDefensiveSkill(0);
-    setDefensivePower(0);
-    setCommandActionModifiers([0,0,0])
-    setOffensiveSkillModifier(0);
     toggleDisrupted(false);
     toggleFrightened(false);
     toggleInTheYellow(false);
@@ -160,7 +153,7 @@ const App = () => {
             <div className="flex flex-col text-xs justify-center font-mono">
               <span className="font-bold text-sm">Dice</span>
               <span>{baseDice} base</span>
-              {caDice > 0 && <span>+{caDice} CA</span>}
+              {caDice !== 0 && <span>{caDice} CA</span>}
               {disrupted && <span>-1 DI</span>}
               {inTheYellow && <span>-1 IY</span>}
               {inTheRed && <span>-2 IR</span>}
@@ -181,7 +174,7 @@ const App = () => {
             <div className="flex flex-col text-xs justify-center font-mono">
               <span className="font-bold text-sm">Hit</span>
               <span>{offensiveSkill - defensiveSkill} base</span>
-              {caOffensiveSkill > 0 && <span>+{caOffensiveSkill} CA</span>}
+              {caOffensiveSkill !== 0 && <span>{caOffensiveSkill} CA</span>}
               {disrupted ? <span>-1 DI</span> : null}
               {attackingToMyRear && <span>-1 AMR</span>}
               {flanking && <span>+1 FL</span>}
@@ -209,7 +202,7 @@ const App = () => {
             <div className="flex flex-col text-xs justify-center font-mono">
               <span className="font-bold text-sm">Wound</span>
               <span>{offensivePower - defensivePower} base</span>
-              {caOffensivePower > 0 && <span>+{caOffensivePower} CA</span>}
+              {caOffensivePower !== 0 && <span>{caOffensivePower} CA</span>}
               {disrupted ? <span>-1 DI</span> : null}
               {attackingToMyRear && <span>-1 AMR</span>}
               {pinching && <span>+1 PI</span>}
@@ -223,6 +216,7 @@ const App = () => {
           </div>
         </div>
       </div>
+
       <div className="text-white font-bold flex justify-center">Command Action Modifiers</div>
       <div className="CommandActionModifiers flex h-20 gap-1 mx-4 min-h-20">
         <button className={className("Plus1 flex-1 bg-red-400 rounded")} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d - 1, ...rest]))} disabled={frightened}>-1<br />Dice</button>
@@ -232,6 +226,8 @@ const App = () => {
         <button className={className("Plus1 flex-1 bg-red-400 rounded")} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op - 1, ...rest]))} disabled={frightened}>-1<br />OP</button>
         <button className={className("Plus1 flex-1 bg-green-400 rounded")} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op + 1, ...rest]))} disabled={frightened}>+1<br />OP</button>
       </div>
+      <button className="ClearCommandActionModifiers bg-yellow-400 mx-4 rounded h-10" onClick={() => setCommandActionModifiers([0,0,0])} disabled={frightened}>Reset</button>
+
       <div className="text-white font-bold flex justify-center">Situational Modifiers</div>
       <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-1 text-sm">
         <div className="flex flex-1 gap-1 min-h-20">
@@ -260,7 +256,7 @@ const App = () => {
           <button className={className("LongRange", MODIFIER_CLASSES, longRange ? "bg-red-400" : "bg-white")} onClick={toggleLongRange} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking || extremeRange}>Long<br />Range<br />7-14</button>
           <button className={className("MoveAndShoot", MODIFIER_CLASSES, moveAndShoot ? "bg-red-400" : "bg-white")} onClick={toggleMoveAndShoot} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Move &<br />Shoot</button>
           <button className={className("NotClosestTarget", MODIFIER_CLASSES, notClosestTarget ? "bg-red-400" : "bg-white")} onClick={toggleNotClosestTarget} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Not<br />Closest</button>
-          <button className={className("ClearAll bg-yellow-400", MODIFIER_CLASSES)} onClick={handleClearAll}>Clear<br />All</button>
+          <button className={className("ClearAll bg-yellow-400", MODIFIER_CLASSES)} onClick={handleClearAll}>Reset</button>
         </div>
       </div>
       <div className="text-lg flex text-white items-center justify-center mx-4 mt-2 min-h-20">
