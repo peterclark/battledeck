@@ -1,6 +1,6 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useState } from "react"
-import { filter, first, keys, map, max, min, pick, pickBy, reduce, values } from "lodash";
+import { keys, max, min, pick, pickBy, reduce, values } from "lodash";
 import { useUpdateEffect } from "react-use";
 import { GiPerspectiveDiceOne, GiPerspectiveDiceSix } from "react-icons/gi";
 import { FaMinus, FaPlus } from "react-icons/fa";
