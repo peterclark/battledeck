@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useState } from "react"
-import { max, min } from "lodash";
-import { useToggle, useUpdateEffect } from "react-use";
+import { filter, first, keys, map, max, min, pick, pickBy, reduce, values } from "lodash";
+import { useUpdateEffect } from "react-use";
 import { GiPerspectiveDiceOne, GiPerspectiveDiceSix } from "react-icons/gi";
 import { FaMinus, FaPlus } from "react-icons/fa";
 import className from "classnames";
@@ -21,26 +21,29 @@ const App = () => {
   const [commandActionModifiers, setCommandActionModifiers] = useState([0,0,0]);
   const [offensiveSkillModifier, setOffensiveSkillModifier] = useState(0);
   const [offensivePowerModifier, setOffensivePowerModifier] = useState(0);
+  const [modifiers, setModifiers] = useState(MODIFIERS);
 
-  const [disrupted, toggleDisrupted] = useToggle(false);
-  const [frightened, toggleFrightened] = useToggle(false);
-  const [inTheYellow, toggleInTheYellow] = useToggle(false); 
-  const [inTheRed, toggleInTheRed] = useToggle(false); 
-  const [attackingToMyFlank, toggleAttackingToMyFlank] = useToggle(false); 
-  const [attackingToMyRear, toggleAttackingToMyRear] = useToggle(false); 
-  const [chargingFourOrMoreDice, toggleChargingFourOrMoreDice] = useToggle(false); 
-  const [chargingThreeOrLessDice, toggleChargingThreeOrLessDice] = useToggle(false); 
-  const [flanking, toggleFlanking] = useToggle(false); 
-  const [pinching, togglePinching] = useToggle(false); 
-  const [rearAttacking, toggleRearAttacking] = useToggle(false);
-  const [calvaryTarget, toggleCalvaryTarget] = useToggle(false);
-  const [collosalTarget, toggleColossalTarget] = useToggle(false);
-  const [largeTarget, toggleLargeTarget] = useToggle(false);
-  const [extremeRange, toggleExtremeRange] = useToggle(false);
-  const [fastMovingTarget, toggleFastMovingTarget] = useToggle(false);
-  const [longRange, toggleLongRange] = useToggle(false);
-  const [moveAndShoot, toggleMoveAndShoot] = useToggle(false);
-  const [notClosestTarget, toggleNotClosestTarget] = useToggle(false);
+  const {
+    disrupted,
+    frightened,
+    inTheYellow,
+    inTheRed,
+    attackingToMyFlank,
+    attackingToMyRear,
+    chargingFourOrMoreDice,
+    chargingThreeOrLessDice,
+    flanking,
+    pinching,
+    rearAttacking,
+    calvaryTarget,
+    collosalTarget,
+    largeTarget,
+    extremeRange,
+    fastMovingTarget,
+    longRange,
+    moveAndShoot,
+    notClosestTarget,
+  } = modifiers || {};
 
   const handleIncDice = (mod) => {
     setBaseDice(min([max([baseDice + mod, 0]), MAX_DICE]));
@@ -81,51 +84,22 @@ const App = () => {
     handleIncOffensivePowerModifier(op);
   };
 
-  useUpdateEffect(() => handleAddModifiers(disrupted ? [-1, -1, -1] : [1,1,1]) , [disrupted]);
+  const toggleModifier = (val) => setModifiers((m) => ({ ...m, [val]: !m[val] }));
+
   useUpdateEffect(() => {
-    setCommandActionModifiers([0,0,0]);
-  }, [frightened]);
-  useUpdateEffect(() => handleAddModifiers(inTheYellow ? [-1, 0, 0] : [1,0,0]) , [inTheYellow]);
-  useUpdateEffect(() => handleAddModifiers(inTheRed ? [-2,0,0] : [2,0,0]) , [inTheRed]);
-  useUpdateEffect(() => handleAddModifiers(attackingToMyFlank ? [-1,0,0,] : [1,0,0]) , [attackingToMyFlank]);
-  useUpdateEffect(() => handleAddModifiers(attackingToMyRear ? [0,-1,-1] : [0,1,1]) , [attackingToMyRear]);
-  useUpdateEffect(() => handleAddModifiers(chargingFourOrMoreDice ? [+2,0,0] : [-2,0,0]) , [chargingFourOrMoreDice]);
-  useUpdateEffect(() => handleAddModifiers(chargingThreeOrLessDice ? [1,0,0] : [-1,0,0]) , [chargingThreeOrLessDice]);
-  useUpdateEffect(() => handleAddModifiers(flanking ? [0,1,0] : [0,-1,0]) , [flanking]);
-  useUpdateEffect(() => handleAddModifiers(pinching ? [0,1,1] : [0,-1,-1]) , [pinching]);
-  useUpdateEffect(() => handleAddModifiers(rearAttacking ? [0,1,1] : [0,-1,-1]) , [rearAttacking]);
-  useUpdateEffect(() => handleAddModifiers(calvaryTarget ? [0,-1,0] : [0,1,0]) , [calvaryTarget]);
-  useUpdateEffect(() => handleAddModifiers(collosalTarget ? [0,2,0] : [0,-2,0]) , [collosalTarget]);
-  useUpdateEffect(() => handleAddModifiers(extremeRange ? [0,-2,0] : [0,2,0]) , [extremeRange]);
-  useUpdateEffect(() => handleAddModifiers(fastMovingTarget ? [0,-1,0] : [0,1,0]) , [fastMovingTarget]);
-  useUpdateEffect(() => handleAddModifiers(largeTarget ? [0,1,0] : [0,-1,0]) , [largeTarget]);
-  useUpdateEffect(() => handleAddModifiers(longRange ? [0,-1,0] : [0,1,0]) , [longRange]);
-  useUpdateEffect(() => handleAddModifiers(moveAndShoot ? [0,-1,0] : [0,1,0]) , [moveAndShoot]);
-  useUpdateEffect(() => handleAddModifiers(notClosestTarget ? [0,-1,0] : [0,1,0]) , [notClosestTarget]);
+    const on = keys(pickBy(modifiers));
+    const arrays = values(pick(SITUATIONAL_MODIFIERS, on));
+    const mods = reduce(arrays, (sums, val) => ([
+      sums[0] + val[0],
+      sums[1] + val[1],
+      sums[2] + val[2],
+    ]), [0,0,0]);
+    handleAddModifiers(mods);
+  }, [modifiers]);
 
   const handleClearAll = () => {
-    toggleDisrupted(false);
-    toggleFrightened(false);
-    toggleInTheYellow(false);
-    toggleInTheRed(false);
-    toggleAttackingToMyFlank(false);
-    toggleAttackingToMyRear(false);
-    toggleChargingFourOrMoreDice(false);
-    toggleChargingThreeOrLessDice(false);
-    toggleFlanking(false);
-    togglePinching(false);
-    toggleRearAttacking(false);
-    toggleCalvaryTarget(false);
-    toggleColossalTarget(false);
-    toggleLargeTarget(false);
-    toggleExtremeRange(false);
-    toggleFastMovingTarget(false);
-    toggleLongRange(false);
-    toggleMoveAndShoot(false);
-    toggleNotClosestTarget(false);
+    setModifiers(MODIFIERS);
   };
-
-  useEffect(() => handleClearAll(), []);
 
   const [caDice, caOffensiveSkill, caOffensivePower] = commandActionModifiers;
 
@@ -180,7 +154,7 @@ const App = () => {
               {flanking && <span>+1 FL</span>}
               {pinching && <span>+1 PI</span>}
               {rearAttacking && <span>+1 RA</span>}
-              {calvaryTarget && <span>-1 CA</span>}
+              {calvaryTarget && <span>-1 CV</span>}
               {collosalTarget && <span>+2 CO</span>}
               {extremeRange && <span>-2 ER</span>}
               {fastMovingTarget && <span>-1 FAST</span>}
@@ -231,31 +205,31 @@ const App = () => {
       <div className="text-white font-bold flex justify-center">Situational Modifiers</div>
       <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-1 text-sm">
         <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("Disrupted w-1/5", MODIFIER_CLASSES, disrupted ? "bg-red-400" : "bg-white")} onClick={toggleDisrupted}>Disrupt<br />-ed</button>
-          <button className={className("Frightened w-1/5", MODIFIER_CLASSES, frightened ? "bg-red-400" : "bg-white")} onClick={toggleFrightened}>Frighten<br />-ed</button>
-          <button className={className("InTheYellow w-1/5", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={toggleInTheYellow} disabled={inTheRed}>In the<br />Yellow</button>
-          <button className={className("InTheRed w-1/5", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={toggleInTheRed} disabled={inTheYellow}>In the<br />Red</button>
-          <button className={className("AttackingToFlank w-1/5", MODIFIER_CLASSES, attackingToMyFlank ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToMyFlank} disabled={attackingToMyRear || flanking || pinching || rearAttacking || extremeRange || longRange || notClosestTarget || fastMovingTarget || moveAndShoot || notClosestTarget}>Attack<br />my Flank</button>
+          <button className={className("Disrupted w-1/5", MODIFIER_CLASSES, disrupted ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('disrupted')}>Disrupt<br />-ed</button>
+          <button className={className("Frightened w-1/5", MODIFIER_CLASSES, frightened ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('frightened')}>Frighten<br />-ed</button>
+          <button className={className("InTheYellow w-1/5", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('inTheYellow')} disabled={inTheRed}>In the<br />Yellow</button>
+          <button className={className("InTheRed w-1/5", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('inTheRed')} disabled={inTheYellow}>In the<br />Red</button>
+          <button className={className("AttackingToFlank w-1/5", MODIFIER_CLASSES, attackingToMyFlank ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('attackingToMyFlank')} disabled={attackingToMyRear || flanking || pinching || rearAttacking || extremeRange || longRange || notClosestTarget || fastMovingTarget || moveAndShoot || notClosestTarget}>Attack<br />my Flank</button>
         </div>
         <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("AttackingToRear", MODIFIER_CLASSES, attackingToMyRear ? "bg-red-400" : "bg-white")} onClick={toggleAttackingToMyRear} disabled={attackingToMyFlank || flanking || pinching || rearAttacking || extremeRange || longRange || notClosestTarget || fastMovingTarget || moveAndShoot || notClosestTarget}>Attack<br />my Rear</button>
-          <button className={className("ChargingFourOrMoreDice", MODIFIER_CLASSES, chargingFourOrMoreDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingFourOrMoreDice} disabled={chargingThreeOrLessDice || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Charge<br />4+ dice</button>
-          <button className={className("ChargingThreeOrLessDice", MODIFIER_CLASSES, chargingThreeOrLessDice ? "bg-green-400" : "bg-white")} onClick={toggleChargingThreeOrLessDice} disabled={chargingFourOrMoreDice || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Charge<br />3- dice</button>
-          <button className={className("Flanking", MODIFIER_CLASSES, flanking ? "bg-green-400" : "bg-white")} onClick={toggleFlanking} disabled={attackingToMyFlank || attackingToMyRear || rearAttacking || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Flanking<br />Enemy</button>
-          <button className={className("Pinching", MODIFIER_CLASSES, pinching ? "bg-green-400" : "bg-white")} onClick={togglePinching} disabled={attackingToMyFlank || attackingToMyRear || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Pinching<br />Enemy</button>
+          <button className={className("AttackingToRear", MODIFIER_CLASSES, attackingToMyRear ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('attackingToMyRear')} disabled={attackingToMyFlank || flanking || pinching || rearAttacking || extremeRange || longRange || notClosestTarget || fastMovingTarget || moveAndShoot || notClosestTarget}>Attack<br />my Rear</button>
+          <button className={className("ChargingFourOrMoreDice", MODIFIER_CLASSES, chargingFourOrMoreDice ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('chargingFourOrMoreDice')} disabled={chargingThreeOrLessDice || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Charge<br />4+ dice</button>
+          <button className={className("ChargingThreeOrLessDice", MODIFIER_CLASSES, chargingThreeOrLessDice ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('chargingThreeOrLessDice')} disabled={chargingFourOrMoreDice || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Charge<br />3- dice</button>
+          <button className={className("Flanking", MODIFIER_CLASSES, flanking ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('flanking')} disabled={attackingToMyFlank || attackingToMyRear || rearAttacking || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Flanking<br />Enemy</button>
+          <button className={className("Pinching", MODIFIER_CLASSES, pinching ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('pinching')} disabled={attackingToMyFlank || attackingToMyRear || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Pinching<br />Enemy</button>
         </div>
         <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("RearAttacking", MODIFIER_CLASSES, rearAttacking ? "bg-green-400" : "bg-white")} onClick={toggleRearAttacking} disabled={attackingToMyFlank || attackingToMyRear || flanking || extremeRange || longRange || fastMovingTarget || fastMovingTarget || extremeRange || longRange || moveAndShoot || notClosestTarget}>Rear<br />Attack</button>
-          <button className={className("CalvaryTarget", MODIFIER_CLASSES, calvaryTarget ? "bg-red-400" : "bg-white")} onClick={toggleCalvaryTarget}>Calvary<br />Target</button>
-          <button className={className("ColossalTarget", MODIFIER_CLASSES, collosalTarget ? "bg-green-400" : "bg-white")} onClick={toggleColossalTarget} disabled={largeTarget}>Collosal<br />Target</button>
-          <button className={className("LargeTarget", MODIFIER_CLASSES, largeTarget ? "bg-green-400" : "bg-white")} onClick={toggleLargeTarget} disabled={collosalTarget}>Large<br />Target</button>
-          <button className={className("FastMovingTarget", MODIFIER_CLASSES, fastMovingTarget ? "bg-red-400" : "bg-white")} onClick={toggleFastMovingTarget} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Fast<br />Target</button>
+          <button className={className("RearAttacking", MODIFIER_CLASSES, rearAttacking ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('rearAttacking')} disabled={attackingToMyFlank || attackingToMyRear || flanking || extremeRange || longRange || fastMovingTarget || fastMovingTarget || extremeRange || longRange || moveAndShoot || notClosestTarget}>Rear<br />Attack</button>
+          <button className={className("CalvaryTarget", MODIFIER_CLASSES, calvaryTarget ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('calvaryTarget')}>Calvary<br />Target</button>
+          <button className={className("ColossalTarget", MODIFIER_CLASSES, collosalTarget ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('collosalTarget')} disabled={largeTarget}>Collosal<br />Target</button>
+          <button className={className("LargeTarget", MODIFIER_CLASSES, largeTarget ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('largeTarget')} disabled={collosalTarget}>Large<br />Target</button>
+          <button className={className("FastMovingTarget", MODIFIER_CLASSES, fastMovingTarget ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('fastMovingTarget')} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Fast<br />Target</button>
         </div>
         <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("ExtremeRange", MODIFIER_CLASSES, extremeRange ? "bg-red-400" : "bg-white")} onClick={toggleExtremeRange} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking || longRange}>Extreme<br />Range<br />15+</button>
-          <button className={className("LongRange", MODIFIER_CLASSES, longRange ? "bg-red-400" : "bg-white")} onClick={toggleLongRange} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking || extremeRange}>Long<br />Range<br />7-14</button>
-          <button className={className("MoveAndShoot", MODIFIER_CLASSES, moveAndShoot ? "bg-red-400" : "bg-white")} onClick={toggleMoveAndShoot} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Move &<br />Shoot</button>
-          <button className={className("NotClosestTarget", MODIFIER_CLASSES, notClosestTarget ? "bg-red-400" : "bg-white")} onClick={toggleNotClosestTarget} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Not<br />Closest</button>
+          <button className={className("ExtremeRange", MODIFIER_CLASSES, extremeRange ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('extremeRange')} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking || longRange}>Extreme<br />Range<br />15+</button>
+          <button className={className("LongRange", MODIFIER_CLASSES, longRange ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('longRange')} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking || extremeRange}>Long<br />Range<br />7-14</button>
+          <button className={className("MoveAndShoot", MODIFIER_CLASSES, moveAndShoot ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('moveAndShoot')} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Move &<br />Shoot</button>
+          <button className={className("NotClosestTarget", MODIFIER_CLASSES, notClosestTarget ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('notClosestTarget')} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Not<br />Closest</button>
           <button className={className("ClearAll bg-yellow-400", MODIFIER_CLASSES)} onClick={handleClearAll}>Reset</button>
         </div>
       </div>
@@ -270,4 +244,48 @@ const App = () => {
   )
 }
 
-export default App
+export default App;
+
+const SITUATIONAL_MODIFIERS = {
+  disrupted: [-1,-1,-1],
+  frightened: [0,0,0],
+  inTheYellow: [-1,0,0],
+  inTheRed: [-2,0,0],
+  attackingToMyFlank: [-1,0,0,],
+  attackingToMyRear: [0,-1,-1],
+  chargingFourOrMoreDice: [2,0,0],
+  chargingThreeOrLessDice: [1,0,0],
+  flanking: [0,1,0],
+  pinching: [0,1,1],
+  rearAttacking: [0,1,1],
+  calvaryTarget: [0,-1,0],
+  collosalTarget: [0,2,0],
+  largeTarget: [0,-2,0],
+  extremeRange: [0,-1,0],
+  fastMovingTarget: [0,1,0],
+  longRange: [0,-1,0],
+  moveAndShoot: [0,-1,0],
+  notClosestTarget: [0,-1,0],
+};
+
+const MODIFIERS = {
+  disrupted: false,
+  frightened: false,
+  inTheYellow: false,
+  inTheRed: false,
+  attackingToMyFlank: false,
+  attackingToMyRear: false,
+  chargingFourOrMoreDice: false,
+  chargingThreeOrLessDice: false,
+  flanking: false,
+  pinching: false,
+  rearAttacking: false,
+  calvaryTarget:  false,
+  collosalTarget: false,
+  largeTarget:  false,
+  extremeRange:  false,
+  fastMovingTarget: false,
+  longRange:  false,
+  moveAndShoot:  false,
+  notClosestTarget:  false,
+};
