@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useState } from "react"
 import { keys, max, min, pick, pickBy, reduce, values } from "lodash";
-import { useUpdateEffect } from "react-use";
 import { GiPerspectiveDiceOne, GiPerspectiveDiceSix } from "react-icons/gi";
 import { FaMinus, FaPlus } from "react-icons/fa";
 import className from "classnames";
@@ -12,15 +11,12 @@ const MODIFIER_CLASSES = "flex-1 rounded";
 
 const App = () => {
   const [baseDice, setBaseDice] = useState(4);
-  const [diceModifier, setDiceModifier] = useState(0);
   const [offensiveSkill, setOffensiveSkill] = useState(0);
   const [offensivePower, setOffensivePower] = useState(0);
   const [defensiveSkill, setDefensiveSkill] = useState(0);
   const [defensivePower, setDefensivePower] = useState(0);
 
   const [commandActionModifiers, setCommandActionModifiers] = useState([0,0,0]);
-  const [offensiveSkillModifier, setOffensiveSkillModifier] = useState(0);
-  const [offensivePowerModifier, setOffensivePowerModifier] = useState(0);
   const [modifiers, setModifiers] = useState(MODIFIERS);
 
   const {
@@ -49,20 +45,8 @@ const App = () => {
     setBaseDice(min([max([baseDice + mod, 0]), MAX_DICE]));
   };
 
-  const handleIncDiceModifier = (mod) => {
-    setDiceModifier(diceModifier + mod);
-  }
-
   const handleIncOffensiveSkill = (mod) => {
     setOffensiveSkill((os) => (os + mod) % MAX_ROLL);
-  };
-
-  const handleIncOffensiveSkillModifier = (mod) => {
-    setOffensiveSkillModifier((osm) => osm + mod);
-  };
-
-  const handleIncOffensivePowerModifier = (mod) => {
-    setOffensivePowerModifier((opm) => opm + mod);
   };
 
   const handleIncOffensivePower = (mod) => {
@@ -77,16 +61,9 @@ const App = () => {
     setDefensivePower((dp) => (dp + mod) % MAX_ROLL);
   };
 
-  const handleAddModifiers = (mod) => {
-    const [d, os, op] = mod || [];
-    handleIncDiceModifier(d);
-    handleIncOffensiveSkillModifier(os);
-    handleIncOffensivePowerModifier(op);
-  };
-
   const toggleModifier = (val) => setModifiers((m) => ({ ...m, [val]: !m[val] }));
 
-  useUpdateEffect(() => {
+  const [diceModifier, offensiveSkillModifier, offensivePowerModifier] = useMemo(() => {
     const on = keys(pickBy(modifiers));
     const arrays = values(pick(SITUATIONAL_MODIFIERS, on));
     const mods = reduce(arrays, (sums, val) => ([
@@ -94,7 +71,7 @@ const App = () => {
       sums[1] + val[1],
       sums[2] + val[2],
     ]), [0,0,0]);
-    handleAddModifiers(mods);
+    return mods;
   }, [modifiers]);
 
   const handleClearAll = () => {
@@ -117,6 +94,10 @@ const App = () => {
     const woundTotal = (offensivePower - defensivePower) + caOffensivePower + offensivePowerModifier;
     return max([min([woundTotal, 5]), 1]);
   }, [offensivePower, defensivePower, caOffensivePower, offensivePowerModifier]);
+
+  useMemo(() => {
+    if (frightened) setCommandActionModifiers([0,0,0]);
+  }, [frightened]);
 
   return (
     <div className="BattleDeck flex flex-col h-screen bg-black gap-2">
@@ -260,9 +241,9 @@ const SITUATIONAL_MODIFIERS = {
   rearAttacking: [0,1,1],
   calvaryTarget: [0,-1,0],
   collosalTarget: [0,2,0],
-  largeTarget: [0,-2,0],
+  largeTarget: [0,1,0],
   extremeRange: [0,-1,0],
-  fastMovingTarget: [0,1,0],
+  fastMovingTarget: [0,-1,0],
   longRange: [0,-1,0],
   moveAndShoot: [0,-1,0],
   notClosestTarget: [0,-1,0],
