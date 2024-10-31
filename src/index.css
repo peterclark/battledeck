@@ -2,7 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  background-color: #000;
+}
+
 button:disabled,
-button[disabled]{
+button[disabled] {
   opacity: 50%;
 }
