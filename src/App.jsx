@@ -170,7 +170,7 @@ const App = () => {
   }, [modifiers, status]);
 
   return (
-    <div className="BattleDeck flex flex-col h-screen bg-black gap-2">
+    <div className="BattleDeck flex flex-col bg-black gap-2">
       <div className="Roll flex flex-1 text-9xl mx-4 mt-4 my-2 mb-0 gap-1">
         <div className="Dice flex-1 flex flex-col items-center justify-between bg-white rounded">
           <span className="text-green-900 flex gap-1">
