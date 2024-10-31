@@ -1,13 +1,27 @@
 import { useMemo } from "react";
-import { useState } from "react"
-import { keys, max, min, pick, pickBy, reduce, values } from "lodash";
+import { useState } from "react";
+import {
+  chunk,
+  filter,
+  keyBy,
+  map,
+  max,
+  min,
+  pick,
+  pickBy,
+  reduce,
+  some,
+  sortBy,
+  transform,
+  values,
+} from "lodash";
 import { GiPerspectiveDiceOne, GiPerspectiveDiceSix } from "react-icons/gi";
 import { FaMinus, FaPlus } from "react-icons/fa";
+import { MODIFIERS, COMMAND_ACTION_MODIFIERS } from "./constants";
 import className from "classnames";
 
 const MAX_DICE = 20;
 const MAX_ROLL = 10;
-const MODIFIER_CLASSES = "flex-1 rounded";
 
 const App = () => {
   const [baseDice, setBaseDice] = useState(4);
@@ -15,31 +29,12 @@ const App = () => {
   const [offensivePower, setOffensivePower] = useState(0);
   const [defensiveSkill, setDefensiveSkill] = useState(0);
   const [defensivePower, setDefensivePower] = useState(0);
-
-  const [commandActionModifiers, setCommandActionModifiers] = useState([0,0,0]);
+  const [commandActionModifiers, setCommandActionModifiers] = useState([
+    0, 0, 0,
+  ]);
   const [modifiers, setModifiers] = useState(MODIFIERS);
 
-  const {
-    disrupted,
-    frightened,
-    inTheYellow,
-    inTheRed,
-    attackingToMyFlank,
-    attackingToMyRear,
-    chargingFourOrMoreDice,
-    chargingThreeOrLessDice,
-    flanking,
-    pinching,
-    rearAttacking,
-    calvaryTarget,
-    collosalTarget,
-    largeTarget,
-    extremeRange,
-    fastMovingTarget,
-    longRange,
-    moveAndShoot,
-    notClosestTarget,
-  } = modifiers || {};
+  const { frightened } = modifiers || {};
 
   const handleIncDice = (mod) => {
     setBaseDice(min([max([baseDice + mod, 0]), MAX_DICE]));
@@ -61,43 +56,118 @@ const App = () => {
     setDefensivePower((dp) => (dp + mod) % MAX_ROLL);
   };
 
-  const toggleModifier = (val) => setModifiers((m) => ({ ...m, [val]: !m[val] }));
-
-  const [diceModifier, offensiveSkillModifier, offensivePowerModifier] = useMemo(() => {
-    const on = keys(pickBy(modifiers));
-    const arrays = values(pick(SITUATIONAL_MODIFIERS, on));
-    const mods = reduce(arrays, (sums, val) => ([
-      sums[0] + val[0],
-      sums[1] + val[1],
-      sums[2] + val[2],
-    ]), [0,0,0]);
-    return mods;
-  }, [modifiers]);
-
-  const handleClearAll = () => {
-    setModifiers(MODIFIERS);
+  const toggleModifier = (mod) => {
+    if (mod.id === "reset") {
+      setModifiers(MODIFIERS);
+      return;
+    }
+    const filtered = filter(modifiers, (m) => mod.id !== m.id);
+    const updated = {
+      ...keyBy(filtered, "id"),
+      [mod.id]: { ...mod, on: !mod.on },
+    };
+    const sorted = sortBy(updated, "position");
+    const keyed = keyBy(sorted, "id");
+    setModifiers(keyed);
   };
+
+  const [diceModifier, offensiveSkillModifier, offensivePowerModifier] =
+    useMemo(() => {
+      const modsOn = values(pickBy(modifiers, (mod) => mod.on));
+      const arrays = map(modsOn, "modifier");
+      const mods = reduce(
+        arrays,
+        (sums, val) => [sums[0] + val[0], sums[1] + val[1], sums[2] + val[2]],
+        [0, 0, 0]
+      );
+      return mods;
+    }, [modifiers]);
 
   const [caDice, caOffensiveSkill, caOffensivePower] = commandActionModifiers;
 
   const diceToRoll = useMemo(() => {
-    return max([(baseDice + caDice + diceModifier), 0]);
+    return max([baseDice + caDice + diceModifier, 0]);
   }, [baseDice, caDice, diceModifier]);
-  
+
   // 6 is always a miss, 1 is always a hit
   const rollToHit = useMemo(() => {
-    const hitTotal = (offensiveSkill - defensiveSkill) + caOffensiveSkill + offensiveSkillModifier;
+    const hitTotal =
+      offensiveSkill -
+      defensiveSkill +
+      caOffensiveSkill +
+      offensiveSkillModifier;
     return max([min([hitTotal, 5]), 1]);
-  }, [offensiveSkill, defensiveSkill, caOffensiveSkill, offensiveSkillModifier]);
-  
+  }, [
+    offensiveSkill,
+    defensiveSkill,
+    caOffensiveSkill,
+    offensiveSkillModifier,
+  ]);
+
   const rollToWound = useMemo(() => {
-    const woundTotal = (offensivePower - defensivePower) + caOffensivePower + offensivePowerModifier;
+    const woundTotal =
+      offensivePower -
+      defensivePower +
+      caOffensivePower +
+      offensivePowerModifier;
     return max([min([woundTotal, 5]), 1]);
-  }, [offensivePower, defensivePower, caOffensivePower, offensivePowerModifier]);
+  }, [
+    offensivePower,
+    defensivePower,
+    caOffensivePower,
+    offensivePowerModifier,
+  ]);
 
   useMemo(() => {
-    if (frightened) setCommandActionModifiers([0,0,0]);
-  }, [frightened]);
+    if (frightened.on) setCommandActionModifiers([0, 0, 0]);
+  }, [frightened.on]);
+
+  // Return all modifiers set to ON
+  const onModifiers = useMemo(() => filter(modifiers, "on"), [modifiers]);
+
+  // Return all DICE modifiers set to ON
+  const onModifiersForDice = useMemo(
+    () => filter(onModifiers, ({ modifier }) => modifier[0] !== 0),
+    [onModifiers]
+  );
+
+  // Return all SKILL modifiers set to ON
+  const onModifiersForSkill = useMemo(
+    () => filter(onModifiers, ({ modifier }) => modifier[1] !== 0),
+    [onModifiers]
+  );
+
+  // Return all POWER modifiers set to ON
+  const onModifiersForPower = useMemo(
+    () => filter(onModifiers, ({ modifier }) => modifier[2] !== 0),
+    [onModifiers]
+  );
+
+  // Return object of all modifiers ON/OFF status
+  // => { inTheRed: true, inTheYellow: false, ... }
+  const status = useMemo(() => {
+    const modStatuses = transform(
+      onModifiers,
+      (acc, mod) => {
+        acc[mod.id] = mod.on;
+      },
+      {}
+    );
+    return modStatuses;
+  }, [onModifiers]);
+
+  // Return object of all modifiers disabled status
+  // => { inTheRed: false, inTheYellow: true, ... }
+  const disabledModifiers = useMemo(() => {
+    const disabled = transform(
+      modifiers,
+      (acc, mod, key) => {
+        acc[key] = some(values(pick(status, mod.disabled)));
+      },
+      {}
+    );
+    return disabled;
+  }, [modifiers, status]);
 
   return (
     <div className="BattleDeck flex flex-col h-screen bg-black gap-2">
@@ -109,18 +179,27 @@ const App = () => {
               <span className="font-bold text-sm">Dice</span>
               <span>{baseDice} base</span>
               {caDice !== 0 && <span>{caDice} CA</span>}
-              {disrupted && <span>-1 DI</span>}
-              {inTheYellow && <span>-1 IY</span>}
-              {inTheRed && <span>-2 IR</span>}
-              {attackingToMyFlank && <span>-1 AMF</span>}
-              {chargingFourOrMoreDice && <span>+2 CH</span>}
-              {chargingThreeOrLessDice && <span>+1 CH</span>}
-              {frightened && <span>No CA</span>}
+              {map(onModifiersForDice, ({ id, modifier, code }) => (
+                <span key={id}>
+                  {modifier[0]} {code}
+                </span>
+              ))}
+              {frightened.on && <span>{frightened.code}</span>}
             </div>
           </span>
           <div className="text-5xl flex w-full h-1/2 max-h-20 gap-1 pb-2">
-            <button className="flex-1 ml-2 border-white rounded bg-red-400 text-red-900 flex items-center justify-center" onClick={() => handleIncDice(-1)}><FaMinus /></button>
-            <button className="flex-1 mr-2 border-white rounded bg-green-400 text-green-900 flex items-center justify-center" onClick={() => handleIncDice(1)}><FaPlus /></button>
+            <button
+              className="flex-1 ml-2 border-white rounded bg-red-400 text-red-900 flex items-center justify-center"
+              onClick={() => handleIncDice(-1)}
+            >
+              <FaMinus />
+            </button>
+            <button
+              className="flex-1 mr-2 border-white rounded bg-green-400 text-green-900 flex items-center justify-center"
+              onClick={() => handleIncDice(1)}
+            >
+              <FaPlus />
+            </button>
           </div>
         </div>
         <div className="RollToHit flex-1 flex flex-col items-center justify-between bg-white rounded">
@@ -130,25 +209,27 @@ const App = () => {
               <span className="font-bold text-sm">Hit</span>
               <span>{offensiveSkill - defensiveSkill} base</span>
               {caOffensiveSkill !== 0 && <span>{caOffensiveSkill} CA</span>}
-              {disrupted ? <span>-1 DI</span> : null}
-              {attackingToMyRear && <span>-1 AMR</span>}
-              {flanking && <span>+1 FL</span>}
-              {pinching && <span>+1 PI</span>}
-              {rearAttacking && <span>+1 RA</span>}
-              {calvaryTarget && <span>-1 CV</span>}
-              {collosalTarget && <span>+2 CO</span>}
-              {extremeRange && <span>-2 ER</span>}
-              {fastMovingTarget && <span>-1 FAST</span>}
-              {largeTarget && <span>+1 LG</span>}
-              {longRange && <span>-1 LR</span>}
-              {moveAndShoot && <span>-1 M&S</span>}
-              {notClosestTarget && <span>-1 NC</span>}
-              {frightened && <span>No CA</span>}
+              {map(onModifiersForSkill, ({ id, modifier, code }) => (
+                <span key={id}>
+                  {modifier[1]} {code}
+                </span>
+              ))}
+              {frightened.on && <span>{frightened.code}</span>}
             </div>
           </span>
           <div className="text-5xl flex w-full h-1/2 max-h-20 gap-1 pb-2">
-            <button className="OffensiveSkillRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"  onClick={() => handleIncOffensiveSkill(1)}>{offensiveSkill}</button>
-            <button className="DefensiveSkillRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100" onClick={() => handleIncDefensiveSkill(1)}>{defensiveSkill}</button>
+            <button
+              className="OffensiveSkillRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"
+              onClick={() => handleIncOffensiveSkill(1)}
+            >
+              {offensiveSkill}
+            </button>
+            <button
+              className="DefensiveSkillRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100"
+              onClick={() => handleIncDefensiveSkill(1)}
+            >
+              {defensiveSkill}
+            </button>
           </div>
         </div>
         <div className="RollToWound flex-1 flex flex-col items-center justify-between bg-white rounded">
@@ -158,61 +239,82 @@ const App = () => {
               <span className="font-bold text-sm">Wound</span>
               <span>{offensivePower - defensivePower} base</span>
               {caOffensivePower !== 0 && <span>{caOffensivePower} CA</span>}
-              {disrupted ? <span>-1 DI</span> : null}
-              {attackingToMyRear && <span>-1 AMR</span>}
-              {pinching && <span>+1 PI</span>}
-              {rearAttacking && <span>+1 RA</span>}
-              {frightened && <span>No CA</span>}
+              {map(onModifiersForPower, ({ id, modifier, code }) => (
+                <span key={id}>
+                  {modifier[2]} {code}
+                </span>
+              ))}
+              {frightened.on && <span>{frightened.code}</span>}
             </div>
           </div>
           <div className="text-5xl flex w-full h-1/2 max-h-20 gap-1 pb-2">
-            <button className="OffensivePowerRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"  onClick={() => handleIncOffensivePower(1)}>{offensivePower}</button>
-            <button className="DefensivePowerRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100" onClick={() => handleIncDefensivePower(1)}>{defensivePower}</button>
+            <button
+              className="OffensivePowerRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"
+              onClick={() => handleIncOffensivePower(1)}
+            >
+              {offensivePower}
+            </button>
+            <button
+              className="DefensivePowerRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100"
+              onClick={() => handleIncDefensivePower(1)}
+            >
+              {defensivePower}
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="text-white font-bold flex justify-center">Command Action Modifiers</div>
-      <div className="CommandActionModifiers flex h-20 gap-1 mx-4 min-h-20">
-        <button className={className("Plus1 flex-1 bg-red-400 rounded")} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d - 1, ...rest]))} disabled={frightened}>-1<br />Dice</button>
-        <button className={className("Plus1 flex-1 bg-green-400 rounded")} onClick={() => setCommandActionModifiers(([d, ...rest]) => ([d + 1, ...rest]))} disabled={frightened}>+1<br />Dice</button>
-        <button className={className("Plus1 flex-1 bg-red-400 rounded")} onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os - 1, ...rest]))} disabled={frightened}>-1<br />OS</button>
-        <button className={className("Plus1 flex-1 bg-green-400 rounded")} onClick={() => setCommandActionModifiers(([d, os, ...rest]) => ([d, os + 1, ...rest]))} disabled={frightened}>+1<br />OS</button>
-        <button className={className("Plus1 flex-1 bg-red-400 rounded")} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op - 1, ...rest]))} disabled={frightened}>-1<br />OP</button>
-        <button className={className("Plus1 flex-1 bg-green-400 rounded")} onClick={() => setCommandActionModifiers(([d, os, op, ...rest]) => ([d, os, op + 1, ...rest]))} disabled={frightened}>+1<br />OP</button>
+      <div className="text-white font-bold flex justify-center">
+        Command Action Modifiers
       </div>
-      <button className="ClearCommandActionModifiers bg-yellow-400 mx-4 rounded h-10" onClick={() => setCommandActionModifiers([0,0,0])} disabled={frightened}>Reset</button>
+      <div className="CommandActionModifiers flex h-20 gap-1 mx-4 min-h-20">
+        {map(COMMAND_ACTION_MODIFIERS, ({ id, name, color, mod }) => (
+          <button
+            key={id}
+            className={className("flex-1 rounded", id, color)}
+            disabled={frightened.on}
+            onClick={() =>
+              setCommandActionModifiers(([d, os, op]) => [
+                d + mod[0],
+                os + mod[1],
+                op + mod[2],
+              ])
+            }
+          >
+            <span className="whitespace-pre-line">{name}</span>
+          </button>
+        ))}
+      </div>
+      <button
+        className="ClearCommandActionModifiers bg-yellow-400 mx-4 rounded h-10"
+        onClick={() => setCommandActionModifiers([0, 0, 0])}
+        disabled={frightened.on}
+      >
+        Reset
+      </button>
 
-      <div className="text-white font-bold flex justify-center">Situational Modifiers</div>
+      <div className="text-white font-bold flex justify-center">
+        Situational Modifiers
+      </div>
       <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-1 text-sm">
-        <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("Disrupted w-1/5", MODIFIER_CLASSES, disrupted ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('disrupted')}>Disrupt<br />-ed</button>
-          <button className={className("Frightened w-1/5", MODIFIER_CLASSES, frightened ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('frightened')}>Frighten<br />-ed</button>
-          <button className={className("InTheYellow w-1/5", MODIFIER_CLASSES, inTheYellow ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('inTheYellow')} disabled={inTheRed}>In the<br />Yellow</button>
-          <button className={className("InTheRed w-1/5", MODIFIER_CLASSES, inTheRed ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('inTheRed')} disabled={inTheYellow}>In the<br />Red</button>
-          <button className={className("AttackingToFlank w-1/5", MODIFIER_CLASSES, attackingToMyFlank ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('attackingToMyFlank')} disabled={attackingToMyRear || flanking || pinching || rearAttacking || extremeRange || longRange || notClosestTarget || fastMovingTarget || moveAndShoot || notClosestTarget}>Attack<br />my Flank</button>
-        </div>
-        <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("AttackingToRear", MODIFIER_CLASSES, attackingToMyRear ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('attackingToMyRear')} disabled={attackingToMyFlank || flanking || pinching || rearAttacking || extremeRange || longRange || notClosestTarget || fastMovingTarget || moveAndShoot || notClosestTarget}>Attack<br />my Rear</button>
-          <button className={className("ChargingFourOrMoreDice", MODIFIER_CLASSES, chargingFourOrMoreDice ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('chargingFourOrMoreDice')} disabled={chargingThreeOrLessDice || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Charge<br />4+ dice</button>
-          <button className={className("ChargingThreeOrLessDice", MODIFIER_CLASSES, chargingThreeOrLessDice ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('chargingThreeOrLessDice')} disabled={chargingFourOrMoreDice || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Charge<br />3- dice</button>
-          <button className={className("Flanking", MODIFIER_CLASSES, flanking ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('flanking')} disabled={attackingToMyFlank || attackingToMyRear || rearAttacking || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Flanking<br />Enemy</button>
-          <button className={className("Pinching", MODIFIER_CLASSES, pinching ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('pinching')} disabled={attackingToMyFlank || attackingToMyRear || extremeRange || longRange || fastMovingTarget || moveAndShoot || notClosestTarget}>Pinching<br />Enemy</button>
-        </div>
-        <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("RearAttacking", MODIFIER_CLASSES, rearAttacking ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('rearAttacking')} disabled={attackingToMyFlank || attackingToMyRear || flanking || extremeRange || longRange || fastMovingTarget || fastMovingTarget || extremeRange || longRange || moveAndShoot || notClosestTarget}>Rear<br />Attack</button>
-          <button className={className("CalvaryTarget", MODIFIER_CLASSES, calvaryTarget ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('calvaryTarget')}>Calvary<br />Target</button>
-          <button className={className("ColossalTarget", MODIFIER_CLASSES, collosalTarget ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('collosalTarget')} disabled={largeTarget}>Collosal<br />Target</button>
-          <button className={className("LargeTarget", MODIFIER_CLASSES, largeTarget ? "bg-green-400" : "bg-white")} onClick={() => toggleModifier('largeTarget')} disabled={collosalTarget}>Large<br />Target</button>
-          <button className={className("FastMovingTarget", MODIFIER_CLASSES, fastMovingTarget ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('fastMovingTarget')} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Fast<br />Target</button>
-        </div>
-        <div className="flex flex-1 gap-1 min-h-20">
-          <button className={className("ExtremeRange", MODIFIER_CLASSES, extremeRange ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('extremeRange')} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking || longRange}>Extreme<br />Range<br />15+</button>
-          <button className={className("LongRange", MODIFIER_CLASSES, longRange ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('longRange')} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking || extremeRange}>Long<br />Range<br />7-14</button>
-          <button className={className("MoveAndShoot", MODIFIER_CLASSES, moveAndShoot ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('moveAndShoot')} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Move &<br />Shoot</button>
-          <button className={className("NotClosestTarget", MODIFIER_CLASSES, notClosestTarget ? "bg-red-400" : "bg-white")} onClick={() => toggleModifier('notClosestTarget')} disabled={attackingToMyFlank || attackingToMyRear || chargingFourOrMoreDice || chargingThreeOrLessDice || flanking || pinching || rearAttacking}>Not<br />Closest</button>
-          <button className={className("ClearAll bg-yellow-400", MODIFIER_CLASSES)} onClick={handleClearAll}>Reset</button>
-        </div>
+        {map(chunk(values(modifiers), 5), (group, index) => (
+          <div className="flex flex-1 gap-1 min-h-20" key={`group-${index}`}>
+            {map(group, (modifier) => (
+              <button
+                key={`modifier-${modifier.id}`}
+                className={className(
+                  modifier.id,
+                  "w-1/5 flex-1 rounded",
+                  modifier.on ? modifier.color : "bg-white"
+                )}
+                disabled={disabledModifiers[modifier.id]}
+                onClick={() => toggleModifier(modifier)}
+              >
+                <span className="whitespace-pre-line">{modifier.name}</span>
+              </button>
+            ))}
+          </div>
+        ))}
       </div>
       <div className="text-lg flex text-white items-center justify-center mx-4 mt-2 min-h-20">
         <div className="mx-4 text-3xl flex items-center gap-4">
@@ -222,51 +324,7 @@ const App = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default App;
-
-const SITUATIONAL_MODIFIERS = {
-  disrupted: [-1,-1,-1],
-  frightened: [0,0,0],
-  inTheYellow: [-1,0,0],
-  inTheRed: [-2,0,0],
-  attackingToMyFlank: [-1,0,0,],
-  attackingToMyRear: [0,-1,-1],
-  chargingFourOrMoreDice: [2,0,0],
-  chargingThreeOrLessDice: [1,0,0],
-  flanking: [0,1,0],
-  pinching: [0,1,1],
-  rearAttacking: [0,1,1],
-  calvaryTarget: [0,-1,0],
-  collosalTarget: [0,2,0],
-  largeTarget: [0,1,0],
-  extremeRange: [0,-1,0],
-  fastMovingTarget: [0,-1,0],
-  longRange: [0,-1,0],
-  moveAndShoot: [0,-1,0],
-  notClosestTarget: [0,-1,0],
-};
-
-const MODIFIERS = {
-  disrupted: false,
-  frightened: false,
-  inTheYellow: false,
-  inTheRed: false,
-  attackingToMyFlank: false,
-  attackingToMyRear: false,
-  chargingFourOrMoreDice: false,
-  chargingThreeOrLessDice: false,
-  flanking: false,
-  pinching: false,
-  rearAttacking: false,
-  calvaryTarget:  false,
-  collosalTarget: false,
-  largeTarget:  false,
-  extremeRange:  false,
-  fastMovingTarget: false,
-  longRange:  false,
-  moveAndShoot:  false,
-  notClosestTarget:  false,
-};
