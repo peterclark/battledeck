@@ -4,71 +4,68 @@ export default {
   theme: {
     extend: {
       colors: {
-        iron: {
-          900: "#0e0c0a",
-          800: "#171411",
-          700: "#1c1916",
-          600: "#26221d",
-          500: "#332d26",
-          400: "#4a4238",
-          300: "#6b6152",
+        parchment: {
+          50: "#fbf6e9",
+          100: "#f3ead3",
+          200: "#ede2c4",
+          300: "#e2d3ac",
+          400: "#d4c08d",
+          500: "#c9b98f",
         },
-        ember: {
-          600: "#ba7517",
-          500: "#ef9f27",
-          400: "#fac775",
-          300: "#fbe3b5",
+        ink: {
+          900: "#2a2118",
+          700: "#443626",
+          500: "#5f4c33",
+          300: "#8a7250",
         },
-        blood: {
-          700: "#521b1b",
-          600: "#791f1f",
-          500: "#a32d2d",
-          400: "#e24b4a",
-          300: "#f09595",
+        wax: {
+          700: "#6e1f1f",
+          500: "#a83232",
+          300: "#c97b7b",
         },
-        steel: {
-          500: "#378add",
-          300: "#85b7eb",
+        forest: {
+          700: "#2f4a1e",
+          500: "#4a6b2a",
+          300: "#8fae6b",
         },
-        moss: {
-          700: "#27500a",
-          500: "#639922",
-          300: "#c0dd97",
+        gilt: {
+          600: "#8a6a1f",
+          500: "#b08d2f",
+          300: "#d9bc6b",
         },
-        bone: {
-          100: "#f2ecdd",
-          300: "#d8ceb8",
-          500: "#a99f8a",
+        azure: {
+          600: "#1f4e79",
+          400: "#4a7bb0",
         },
       },
       fontFamily: {
-        display: ["Cinzel", "Georgia", "serif"],
+        display: ["'IM Fell English'", "Georgia", "serif"],
       },
       keyframes: {
         numberIn: {
-          "0%": { opacity: "0", transform: "translateY(-0.3em) scale(1.2)" },
-          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+          "0%": { opacity: "0", transform: "translateY(0.2em) rotate(-2deg)" },
+          "100%": { opacity: "1", transform: "translateY(0) rotate(0deg)" },
         },
-        emberPulse: {
-          "0%, 100%": { boxShadow: "0 0 8px rgba(239, 159, 39, 0.25)" },
-          "50%": { boxShadow: "0 0 18px rgba(239, 159, 39, 0.55)" },
+        inkStamp: {
+          "0%": {
+            transform: "scale(1.15)",
+            boxShadow: "0 0 0 0 rgba(68, 54, 38, 0.35)",
+          },
+          "60%": { transform: "scale(0.97)" },
+          "100%": {
+            transform: "scale(1)",
+            boxShadow: "0 0 0 12px rgba(68, 54, 38, 0)",
+          },
         },
-        bloodPulse: {
-          "0%, 100%": { boxShadow: "0 0 8px rgba(163, 45, 45, 0.3)" },
-          "50%": { boxShadow: "0 0 18px rgba(163, 45, 45, 0.6)" },
-        },
-        flicker: {
-          "0%, 100%": { opacity: "0.85" },
-          "25%": { opacity: "0.65" },
+        quillFade: {
+          "0%, 100%": { opacity: "0.75" },
           "50%": { opacity: "1" },
-          "75%": { opacity: "0.8" },
         },
       },
       animation: {
-        "number-in": "numberIn 250ms ease-out",
-        "ember-pulse": "emberPulse 2.2s ease-in-out infinite",
-        "blood-pulse": "bloodPulse 2.2s ease-in-out infinite",
-        flicker: "flicker 3.2s ease-in-out infinite",
+        "number-in": "numberIn 280ms ease-out",
+        "ink-stamp": "inkStamp 350ms ease-out",
+        "quill-fade": "quillFade 4s ease-in-out infinite",
       },
     },
   },

@@ -20,31 +20,31 @@ if (!KEY) {
 }
 
 const STYLE =
-  "Dark oil painting, grimdark fantasy battlefield mood, near-black charcoal " +
-  "and iron tones with ember-orange rim light, heavy chiaroscuro, painterly " +
-  "brushwork, no text, no watermark, original artwork.";
+  "Medieval illuminated manuscript watercolor, warm aged parchment tones, " +
+  "muted ink and gilt heraldic detail, soft washes, delicate linework, " +
+  "no text, no watermark, original artwork.";
 
 const PIECES = [
   {
     file: "banner.png",
     size: "1536x1024",
     prompt:
-      `${STYLE} A wide banner scene: silhouetted ranks of spearmen on a ` +
-      "ridge at dusk, tattered war banners, a low burning sun behind smoke.",
+      `${STYLE} A wide manuscript header: heraldic pennants and laurel ` +
+      "sprigs framing an open field, gilt rule border, wax seal in a corner.",
   },
   {
     file: "emblem-swords.png",
     size: "1024x1024",
     prompt:
       `${STYLE} A small circular emblem of two crossed medieval swords ` +
-      "over a battered iron shield, centered on plain black.",
+      "in sepia ink with gilt accents, centered on plain parchment.",
   },
   {
-    file: "emblem-horn.png",
+    file: "emblem-seal.png",
     size: "1024x1024",
     prompt:
-      `${STYLE} A small circular emblem of a carved war horn with ember ` +
-      "glow, centered on plain black.",
+      `${STYLE} A small red wax seal stamped with a rampant griffin, ` +
+      "centered on plain parchment.",
   },
 ];
 

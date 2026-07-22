@@ -1,24 +1,30 @@
-// Original hand-drawn SVG artwork for the grimdark theme. Replace with
-// AI-generated paintings via scripts/generate-art.mjs when desired.
+// Original hand-drawn SVG artwork for the illuminated-parchment theme.
+// Replace with AI-generated watercolor art via scripts/generate-art.mjs.
 
-const Spear = ({ x, top, bottom = 78 }) => (
-  <g>
-    <line x1={x} y1={top} x2={x} y2={bottom} stroke="#070605" strokeWidth="1.6" />
-    <polygon
-      points={`${x - 2.4},${top + 6} ${x},${top - 4} ${x + 2.4},${top + 6}`}
-      fill="#070605"
-    />
+const Laurel = ({ x, y, flip }) => (
+  <g
+    transform={`translate(${x} ${y}) scale(${flip ? -1 : 1} 1)`}
+    fill="#8fae6b"
+    opacity="0.75"
+  >
+    <path d="M0 30 Q10 18 12 0 Q4 16 -2 28 Z" />
+    <ellipse cx="3" cy="8" rx="2.6" ry="5" transform="rotate(30 3 8)" />
+    <ellipse cx="7" cy="14" rx="2.6" ry="5" transform="rotate(40 7 14)" />
+    <ellipse cx="10" cy="21" rx="2.6" ry="5" transform="rotate(55 10 21)" />
+    <ellipse cx="-1" cy="14" rx="2.4" ry="4.6" transform="rotate(-10 -1 14)" />
+    <ellipse cx="2" cy="21" rx="2.4" ry="4.6" transform="rotate(5 2 21)" />
   </g>
 );
 
-const Banner = ({ x, top, color }) => (
+const Pennant = ({ x, color }) => (
   <g>
-    <line x1={x} y1={top} x2={x} y2={78} stroke="#070605" strokeWidth="2" />
+    <line x1={x} y1="18" x2={x} y2="74" stroke="#5f4c33" strokeWidth="2" />
     <path
-      d={`M${x} ${top} L${x + 26} ${top + 4} L${x + 20} ${top + 12} L${x + 26} ${top + 20} L${x} ${top + 24} Z`}
+      d={`M${x} 18 L${x + 30} 23 L${x + 23} 31 L${x + 30} 39 L${x} 44 Z`}
       fill={color}
-      stroke="#070605"
+      stroke="#443626"
       strokeWidth="1"
+      opacity="0.9"
     />
   </g>
 );
@@ -30,43 +36,59 @@ export const BannerArt = () => (
     preserveAspectRatio="xMidYMid slice"
     aria-hidden="true"
   >
-    <rect width="360" height="92" fill="#14110d" />
-    <circle cx="292" cy="28" r="34" fill="#ef9f27" opacity="0.06" />
+    <rect width="360" height="92" fill="#f3ead3" />
+    <rect width="360" height="92" fill="#d4c08d" opacity="0.18" />
+    <rect x="8" y="6" width="344" height="80" fill="#f8f1de" rx="3" />
+    <rect
+      x="8"
+      y="6"
+      width="344"
+      height="80"
+      fill="none"
+      stroke="#b08d2f"
+      strokeWidth="1.5"
+      rx="3"
+    />
+    <rect
+      x="13"
+      y="11"
+      width="334"
+      height="70"
+      fill="none"
+      stroke="#c9b98f"
+      strokeWidth="0.8"
+      rx="2"
+    />
+    <Pennant x={34} color="#a83232" />
+    <Pennant x={296} color="#4a6b2a" />
+    <Laurel x={92} y={26} />
+    <Laurel x={268} y={26} flip />
+    <g transform="translate(180 66)" fill="#5f4c33">
+      <circle cx="-14" cy="0" r="1.8" />
+      <circle cx="14" cy="0" r="1.8" />
+      <path d="M-10 0 H10" stroke="#5f4c33" strokeWidth="1.2" />
+      <path
+        d="M0 -4 Q3 0 0 4 Q-3 0 0 -4 Z"
+        stroke="#a83232"
+        strokeWidth="1"
+        fill="#a83232"
+      />
+    </g>
     <circle
-      cx="292"
-      cy="28"
-      r="22"
-      fill="#ef9f27"
-      opacity="0.14"
-      className="animate-flicker"
+      cx="322"
+      cy="68"
+      r="9"
+      fill="#a83232"
+      opacity="0.9"
+      className="animate-quill-fade"
     />
-    <circle cx="292" cy="28" r="13" fill="#ef9f27" opacity="0.85" />
-    <circle cx="288" cy="25" r="3" fill="#fbe3b5" opacity="0.9" />
-    <path
-      d="M0 60 L38 53 L84 59 L142 49 L206 57 L262 51 L318 57 L360 52 L360 92 L0 92 Z"
-      fill="#0f0d0a"
-    />
-    <Spear x={24} top={34} />
-    <Spear x={35} top={40} />
-    <Spear x={46} top={31} />
-    <Spear x={57} top={38} />
-    <Spear x={68} top={35} />
-    <Banner x={92} top={26} color="#521b1b" />
-    <Spear x={132} top={36} />
-    <Spear x={143} top={30} />
-    <Spear x={154} top={39} />
-    <Spear x={165} top={33} />
-    <Banner x={188} top={30} color="#26221d" />
-    <Spear x={228} top={37} />
-    <Spear x={239} top={32} />
-    <Spear x={250} top={40} />
-    <Spear x={261} top={35} />
-    <Spear x={330} top={38} />
-    <Spear x={341} top={33} />
-    <Spear x={352} top={41} />
-    <path
-      d="M0 78 Q60 70 120 76 T240 74 T360 76 L360 92 L0 92 Z"
-      fill="#080706"
+    <circle
+      cx="322"
+      cy="68"
+      r="5.2"
+      fill="none"
+      stroke="#f6e3de"
+      strokeWidth="1.4"
     />
   </svg>
 );

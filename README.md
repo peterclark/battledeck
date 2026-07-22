@@ -9,11 +9,12 @@ contributing modifier.
 Single-page React + Vite + Tailwind. No persistence, no backend — designed to sit on
 a phone or tablet next to the table.
 
-The UI uses a "grimdark warband" theme: dark iron surfaces with ember accents,
-metal-plate buttons, synthesized tap sounds (mutable, top-right toggle), haptic
-feedback, and long-press gestures — tap a Skill/Power rank to raise it, hold to
-lower it; hold the dice buttons to auto-repeat. Add it to your phone's home
-screen for a full-screen table companion.
+The UI uses an "illuminated parchment" theme: a general's field ledger with warm
+parchment surfaces, manuscript type, ink-stamp toggle animations, synthesized
+quill/wax-seal tap sounds (mutable, top-right toggle), haptic feedback, and
+long-press gestures — tap a Skill/Power rank to raise it, hold to lower it; hold
+the dice buttons to auto-repeat. Add it to your phone's home screen for a
+full-screen table companion.
 
 ## Commands
 

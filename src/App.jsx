@@ -26,21 +26,21 @@ import { usePressable } from "./hooks";
 import {
   buzz,
   isMuted,
-  playBonus,
-  playDrum,
-  playPenalty,
-  playTick,
+  playPage,
+  playQuill,
+  playScratch,
+  playSeal,
   setMuted,
 } from "./sounds";
 
 const MAX_DICE = 20;
 const MAX_ROLL = 10;
 
-// Map the semantic colors in constants.js onto grimdark plate styles
-const PLATE_ON = {
-  "bg-green-400": "plate-on-ember animate-ember-pulse",
-  "bg-red-400": "plate-on-blood animate-blood-pulse",
-  "bg-yellow-400": "plate-on-gold",
+// Map the semantic colors in constants.js onto ink-stamp styles
+const STAMP_ON = {
+  "bg-green-400": "stamp-on-green animate-ink-stamp",
+  "bg-red-400": "stamp-on-red animate-ink-stamp",
+  "bg-yellow-400": "stamp-on-gold",
 };
 
 const AnimatedNumber = ({ value, className: cls }) => (
@@ -54,12 +54,12 @@ const RankButton = ({ label, value, onInc, tone }) => {
   const press = usePressable({
     onTap: () => {
       onInc(1);
-      playTick();
+      playQuill();
       buzz();
     },
     onHold: () => {
       onInc(-1);
-      playTick();
+      playQuill();
       buzz();
     },
     repeat: 280,
@@ -67,7 +67,7 @@ const RankButton = ({ label, value, onInc, tone }) => {
   return (
     <button
       className={className(
-        "plate flex-1 flex flex-col items-center justify-center py-1",
+        "stamp flex-1 flex flex-col items-center justify-center py-1",
         tone
       )}
       aria-label={`${label} rank ${value}. Tap to raise, hold to lower.`}
@@ -85,8 +85,8 @@ const StatCard = ({ title, value, tone, lines }) => (
       value={value}
       className={className("font-display text-6xl leading-none", tone)}
     />
-    <div className="flex flex-col justify-center pt-1 font-mono text-[10px] leading-tight text-bone-500">
-      <span className="text-[11px] font-bold tracking-wider text-bone-300">
+    <div className="flex flex-col justify-center pt-1 font-mono text-[10px] leading-tight text-ink-300">
+      <span className="text-[11px] font-bold tracking-wider text-ink-700">
         {title}
       </span>
       {lines}
@@ -129,7 +129,7 @@ const App = () => {
   const toggleModifier = (mod) => {
     if (mod.id === "reset") {
       setModifiers(MODIFIERS);
-      playDrum();
+      playPage();
       buzz(16);
       return;
     }
@@ -141,9 +141,9 @@ const App = () => {
     } else {
       next = { ...mod, on: !mod.on };
     }
-    if (!next.on) playTick();
-    else if (mod.color === "bg-green-400") playBonus();
-    else playPenalty();
+    if (!next.on) playQuill();
+    else if (mod.color === "bg-green-400") playSeal();
+    else playScratch();
     buzz();
     setModifiers((mods) => ({ ...mods, [mod.id]: next }));
   };
@@ -154,8 +154,8 @@ const App = () => {
       os + mod[1],
       op + mod[2],
     ]);
-    if (color === "bg-green-400") playBonus();
-    else playPenalty();
+    if (color === "bg-green-400") playSeal();
+    else playScratch();
     buzz();
   };
 
@@ -163,7 +163,7 @@ const App = () => {
     const next = !muted;
     setMuted(next);
     setMutedState(next);
-    if (!next) playTick();
+    if (!next) playQuill();
   };
 
   const [diceModifier, offensiveSkillModifier, offensivePowerModifier] =
@@ -281,12 +281,12 @@ const App = () => {
   const diceDown = usePressable({
     onTap: () => {
       handleIncDice(-1);
-      playDrum();
+      playPage();
       buzz();
     },
     onHold: () => {
       handleIncDice(-1);
-      playDrum();
+      playPage();
       buzz();
     },
     repeat: 140,
@@ -295,12 +295,12 @@ const App = () => {
   const diceUp = usePressable({
     onTap: () => {
       handleIncDice(1);
-      playDrum();
+      playPage();
       buzz();
     },
     onHold: () => {
       handleIncDice(1);
-      playDrum();
+      playPage();
       buzz();
     },
     repeat: 140,
@@ -308,18 +308,18 @@ const App = () => {
 
   return (
     <div
-      className="BattleDeck mx-auto flex min-h-dvh max-w-md flex-col bg-iron-900 text-bone-100"
+      className="BattleDeck mx-auto flex min-h-dvh max-w-md flex-col bg-parchment-100 text-ink-700 shadow-[0_0_24px_rgba(90,70,40,0.25)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <header className="relative">
         <BannerArt />
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <h1 className="font-display text-2xl font-bold tracking-[0.35em] text-ember-400 [text-shadow:0_2px_10px_rgba(0,0,0,0.9)]">
-            BATTLEDECK
+          <h1 className="font-display text-3xl tracking-[0.18em] text-ink-700">
+            BattleDeck
           </h1>
         </div>
         <button
-          className="plate absolute right-2 top-2 flex h-9 w-9 items-center justify-center text-bone-300"
+          className="stamp absolute right-3 top-3 flex h-9 w-9 items-center justify-center text-ink-500"
           onClick={toggleMute}
           aria-label={muted ? "Unmute sounds" : "Mute sounds"}
         >
@@ -327,13 +327,13 @@ const App = () => {
         </button>
       </header>
 
-      <div className="sticky top-0 z-20 border-b border-iron-500 bg-iron-900/95 px-3 pb-2 pt-1 backdrop-blur-sm">
+      <div className="sticky top-0 z-20 border-b border-parchment-500 bg-parchment-100/95 px-3 pb-2 pt-1 backdrop-blur-sm">
         <div className="Roll grid grid-cols-3 gap-1.5">
           <div className="Dice flex flex-col gap-1">
             <StatCard
               title="Dice"
               value={diceToRoll}
-              tone="text-ember-400"
+              tone="text-forest-700"
               lines={
                 <>
                   <span>{baseDice} base</span>
@@ -349,14 +349,14 @@ const App = () => {
             />
             <div className="flex gap-1">
               <button
-                className="plate plate-danger flex h-12 flex-1 items-center justify-center text-xl"
+                className="stamp stamp-danger flex h-12 flex-1 items-center justify-center text-xl"
                 aria-label="Remove one die. Hold to repeat."
                 {...diceDown}
               >
                 <FaMinus />
               </button>
               <button
-                className="plate plate-boon flex h-12 flex-1 items-center justify-center text-xl"
+                className="stamp stamp-boon flex h-12 flex-1 items-center justify-center text-xl"
                 aria-label="Add one die. Hold to repeat."
                 {...diceUp}
               >
@@ -369,7 +369,7 @@ const App = () => {
             <StatCard
               title="Hit"
               value={rollToHit}
-              tone="text-blood-300"
+              tone="text-wax-500"
               lines={
                 <>
                   <span>{offensiveSkill - defensiveSkill} base</span>
@@ -381,7 +381,7 @@ const App = () => {
                   ))}
                   {frightened.on && <span>{frightened.code}</span>}
                   {hitOverkill > 0 && (
-                    <span className="text-ember-500">
+                    <span className="text-gilt-600">
                       OK: {hitOverkill}&times;6&rarr;5
                     </span>
                   )}
@@ -393,13 +393,13 @@ const App = () => {
                 label="OS"
                 value={offensiveSkill}
                 onInc={handleIncOffensiveSkill}
-                tone="OffensiveSkillRank text-blood-300"
+                tone="OffensiveSkillRank text-wax-500"
               />
               <RankButton
                 label="DS"
                 value={defensiveSkill}
                 onInc={handleIncDefensiveSkill}
-                tone="DefensiveSkillRank text-steel-300"
+                tone="DefensiveSkillRank text-azure-600"
               />
             </div>
           </div>
@@ -408,7 +408,7 @@ const App = () => {
             <StatCard
               title="Wound"
               value={rollToWound}
-              tone="text-steel-300"
+              tone="text-azure-600"
               lines={
                 <>
                   <span>{offensivePower - defensivePower} base</span>
@@ -420,7 +420,7 @@ const App = () => {
                   ))}
                   {frightened.on && <span>{frightened.code}</span>}
                   {woundOverkill > 0 && (
-                    <span className="text-ember-500">
+                    <span className="text-gilt-600">
                       OK: {woundOverkill}&times;6&rarr;5
                     </span>
                   )}
@@ -432,13 +432,13 @@ const App = () => {
                 label="OP"
                 value={offensivePower}
                 onInc={handleIncOffensivePower}
-                tone="OffensivePowerRank text-blood-300"
+                tone="OffensivePowerRank text-wax-500"
               />
               <RankButton
                 label="DP"
                 value={defensivePower}
                 onInc={handleIncDefensivePower}
-                tone="DefensivePowerRank text-steel-300"
+                tone="DefensivePowerRank text-azure-600"
               />
             </div>
           </div>
@@ -448,11 +448,11 @@ const App = () => {
       <div
         className={className(
           "flex flex-col gap-2 px-3 pt-3 transition-opacity duration-300",
-          frightened.on && "opacity-40 saturate-50"
+          frightened.on && "opacity-40 sepia"
         )}
       >
-        <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-bone-500">
-          <GiScrollUnfurled className="text-lg text-ember-600" aria-hidden />
+        <div className="flex items-center justify-center gap-2 font-display text-sm tracking-[0.2em] text-ink-500">
+          <GiScrollUnfurled className="text-lg text-gilt-500" aria-hidden />
           Command cards
         </div>
         <div className="CommandCardModifiers flex h-16 gap-1">
@@ -460,9 +460,9 @@ const App = () => {
             <button
               key={id}
               className={className(
-                "plate flex-1 text-sm",
+                "stamp flex-1 text-sm",
                 id,
-                color === "bg-green-400" ? "plate-boon" : "plate-danger"
+                color === "bg-green-400" ? "stamp-boon" : "stamp-danger"
               )}
               disabled={frightened.on}
               onClick={() => handleCommandCard({ mod, color })}
@@ -472,10 +472,10 @@ const App = () => {
           ))}
         </div>
         <button
-          className="ClearCommandCardModifiers plate plate-on-gold h-10 text-sm tracking-widest"
+          className="ClearCommandCardModifiers stamp stamp-on-gold h-10 font-display text-sm tracking-[0.2em]"
           onClick={() => {
             setCommandCardModifiers([0, 0, 0]);
-            playDrum();
+            playPage();
             buzz(16);
           }}
           disabled={frightened.on}
@@ -485,8 +485,8 @@ const App = () => {
       </div>
 
       <div className="flex flex-col gap-2 px-3 pb-4 pt-3">
-        <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-bone-500">
-          <GiCrossedSwords className="text-lg text-ember-600" aria-hidden />
+        <div className="flex items-center justify-center gap-2 font-display text-sm tracking-[0.2em] text-ink-500">
+          <GiCrossedSwords className="text-lg text-gilt-500" aria-hidden />
           Situational modifiers
         </div>
         <div className="SituationalModifiers flex flex-1 flex-col gap-1 text-[11px] leading-tight">
@@ -497,8 +497,8 @@ const App = () => {
                   key={`modifier-${modifier.id}`}
                   className={className(
                     modifier.id,
-                    "plate w-1/5 flex-1",
-                    modifier.on && PLATE_ON[modifier.color]
+                    "stamp w-1/5 flex-1",
+                    modifier.on && STAMP_ON[modifier.color]
                   )}
                   disabled={disabledModifiers[modifier.id]}
                   onClick={() => toggleModifier(modifier)}
@@ -514,11 +514,11 @@ const App = () => {
         </div>
       </div>
 
-      <div className="mt-auto flex items-center justify-center pb-4 pt-1 text-bone-500">
+      <div className="mt-auto flex items-center justify-center pb-4 pt-1 text-ink-500">
         <div className="flex items-center gap-3 font-display text-xl tracking-widest">
-          <GiPerspectiveDiceOne className="text-2xl text-ember-600" />
+          <GiPerspectiveDiceOne className="text-2xl text-gilt-500" />
           BattleDeck
-          <GiPerspectiveDiceSix className="text-2xl text-ember-600" />
+          <GiPerspectiveDiceSix className="text-2xl text-gilt-500" />
         </div>
       </div>
     </div>
