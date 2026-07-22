@@ -1,0 +1,18 @@
+{
+  "name": "BattleDeck",
+  "short_name": "BattleDeck",
+  "description": "Attack calculator for the Battleground: Fantasy Warfare tabletop wargame",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e0c0a",
+  "theme_color": "#0e0c0a",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -39,9 +39,17 @@ Skill/Power counters wrap modulo `MAX_ROLL=10` — tapping them only increments;
 
 When adding a new modifier: give it a unique `position`, add it to any relevant `disabled` arrays on peers, and if it should suppress or be suppressed by others make sure both sides list each other.
 
-### Styling
+### Styling — grimdark theme
 
-Tailwind (`tailwind.config.js` scans `./src/**/*.{js,jsx}`) with `classnames` for conditional classes. Colors follow a convention: `bg-green-400` for beneficial modifiers, `bg-red-400` for penalties, `bg-yellow-400` for reset/clear controls. Layout is a vertical flex stack sized to the viewport.
+Tailwind (`tailwind.config.js` scans `./src/**/*.{js,jsx}`) with `classnames` for conditional classes. Mobile-first: `max-w-md` column, sticky derived-value header, `min-h-dvh` + safe-area padding, installable via `public/manifest.webmanifest` (no service worker). Cinzel display font loads from Google Fonts in `index.html`.
+
+Custom palette lives in `tailwind.config.js` (`iron`, `ember`, `blood`, `steel`, `moss`, `bone`) plus keyframes (`number-in`, `ember-pulse`, `blood-pulse`, `flicker`). Metal-plate button styles are the `.plate*` classes in `src/index.css`. The `color` values in `constants.js` (`bg-green-400` = bonus, `bg-red-400` = penalty, `bg-yellow-400` = reset) are **semantic tokens only** — `App.jsx` maps them to plate styles via `PLATE_ON`; they are not rendered as Tailwind classes.
+
+### Interaction: sounds, haptics, gestures
+
+- `src/sounds.js` — Web Audio-synthesized taps (no assets): `playDrum` (dice/reset), `playBonus` (sword-ring), `playPenalty` (clank), `playTick` (off/rank taps); mute persists to localStorage; `buzz()` wraps `navigator.vibrate`.
+- `src/hooks.js` — `usePressable({ onTap, onHold, repeat })` pointer-gesture hook. Rank buttons: tap = +1, hold = −1 (rank handlers use `(x + mod + MAX_ROLL) % MAX_ROLL` so decrement wraps correctly). Dice ±: hold to auto-repeat.
+- `src/Artwork.jsx` — original hand-drawn SVG banner art. `scripts/generate-art.mjs` generates painted replacements via the OpenAI Images API (`OPENAI_API_KEY`); prompts intentionally avoid Battleground/Your Move Games trade dress.
 
 ### ESLint
 
