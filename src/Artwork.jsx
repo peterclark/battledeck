@@ -1,31 +1,27 @@
-// Original hand-drawn SVG artwork for the illuminated-parchment theme.
-// Replace with AI-generated watercolor art via scripts/generate-art.mjs.
+// Original flat-vector SVG artwork for the arcane-tactics-HUD theme.
+// Replace with AI-generated vector art via scripts/generate-art.mjs.
 
-const Laurel = ({ x, y, flip }) => (
+const Hex = ({ x, y, r, fill, opacity }) => {
+  const pts = [0, 1, 2, 3, 4, 5]
+    .map((i) => {
+      const a = (Math.PI / 3) * i + Math.PI / 6;
+      return `${x + r * Math.cos(a)},${y + r * Math.sin(a)}`;
+    })
+    .join(" ");
+  return <polygon points={pts} fill={fill} opacity={opacity} />;
+};
+
+const Chevrons = ({ x, color, flip }) => (
   <g
-    transform={`translate(${x} ${y}) scale(${flip ? -1 : 1} 1)`}
-    fill="#8fae6b"
-    opacity="0.75"
+    transform={`translate(${x} 46) scale(${flip ? -1 : 1} 1)`}
+    stroke={color}
+    strokeWidth="3"
+    fill="none"
+    strokeLinecap="round"
   >
-    <path d="M0 30 Q10 18 12 0 Q4 16 -2 28 Z" />
-    <ellipse cx="3" cy="8" rx="2.6" ry="5" transform="rotate(30 3 8)" />
-    <ellipse cx="7" cy="14" rx="2.6" ry="5" transform="rotate(40 7 14)" />
-    <ellipse cx="10" cy="21" rx="2.6" ry="5" transform="rotate(55 10 21)" />
-    <ellipse cx="-1" cy="14" rx="2.4" ry="4.6" transform="rotate(-10 -1 14)" />
-    <ellipse cx="2" cy="21" rx="2.4" ry="4.6" transform="rotate(5 2 21)" />
-  </g>
-);
-
-const Pennant = ({ x, color }) => (
-  <g>
-    <line x1={x} y1="18" x2={x} y2="74" stroke="#5f4c33" strokeWidth="2" />
-    <path
-      d={`M${x} 18 L${x + 30} 23 L${x + 23} 31 L${x + 30} 39 L${x} 44 Z`}
-      fill={color}
-      stroke="#443626"
-      strokeWidth="1"
-      opacity="0.9"
-    />
+    <path d="M0 -14 L12 0 L0 14" />
+    <path d="M-14 -14 L-2 0 L-14 14" opacity="0.55" />
+    <path d="M-28 -14 L-16 0 L-28 14" opacity="0.3" />
   </g>
 );
 
@@ -36,59 +32,46 @@ export const BannerArt = () => (
     preserveAspectRatio="xMidYMid slice"
     aria-hidden="true"
   >
-    <rect width="360" height="92" fill="#f3ead3" />
-    <rect width="360" height="92" fill="#d4c08d" opacity="0.18" />
-    <rect x="8" y="6" width="344" height="80" fill="#f8f1de" rx="3" />
-    <rect
-      x="8"
-      y="6"
-      width="344"
-      height="80"
-      fill="none"
-      stroke="#b08d2f"
-      strokeWidth="1.5"
-      rx="3"
-    />
-    <rect
-      x="13"
-      y="11"
-      width="334"
-      height="70"
-      fill="none"
-      stroke="#c9b98f"
-      strokeWidth="0.8"
-      rx="2"
-    />
-    <Pennant x={34} color="#a83232" />
-    <Pennant x={296} color="#4a6b2a" />
-    <Laurel x={92} y={26} />
-    <Laurel x={268} y={26} flip />
-    <g transform="translate(180 66)" fill="#5f4c33">
-      <circle cx="-14" cy="0" r="1.8" />
-      <circle cx="14" cy="0" r="1.8" />
-      <path d="M-10 0 H10" stroke="#5f4c33" strokeWidth="1.2" />
+    <rect width="360" height="92" fill="#10131c" />
+    <Hex x={30} y={18} r={14} fill="#171c29" />
+    <Hex x={56} y={32} r={14} fill="#171c29" opacity="0.7" />
+    <Hex x={30} y={46} r={14} fill="#171c29" opacity="0.5" />
+    <Hex x={330} y={74} r={14} fill="#171c29" />
+    <Hex x={304} y={60} r={14} fill="#171c29" opacity="0.7" />
+    <Hex x={330} y={46} r={14} fill="#171c29" opacity="0.5" />
+    <Chevrons x={96} color="#1d9e75" flip />
+    <Chevrons x={264} color="#d85a30" />
+    <g className="animate-glow-drift">
       <path
-        d="M0 -4 Q3 0 0 4 Q-3 0 0 -4 Z"
-        stroke="#a83232"
-        strokeWidth="1"
-        fill="#a83232"
+        d="M180 16 L202 46 L180 76 L158 46 Z"
+        fill="none"
+        stroke="#7f77dd"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M180 26 L194 46 L180 66 L166 46 Z"
+        fill="#2b2657"
+        opacity="0.8"
       />
     </g>
-    <circle
-      cx="322"
-      cy="68"
-      r="9"
-      fill="#a83232"
-      opacity="0.9"
-      className="animate-quill-fade"
+    <circle cx="180" cy="46" r="3" fill="#cecbf6" />
+    <line
+      x1="14"
+      y1="86"
+      x2="346"
+      y2="86"
+      stroke="#2b3450"
+      strokeWidth="1.5"
     />
-    <circle
-      cx="322"
-      cy="68"
-      r="5.2"
-      fill="none"
-      stroke="#f6e3de"
-      strokeWidth="1.4"
+    <line
+      x1="120"
+      y1="86"
+      x2="240"
+      y2="86"
+      stroke="#7f77dd"
+      strokeWidth="1.5"
+      className="animate-glow-drift"
     />
   </svg>
 );

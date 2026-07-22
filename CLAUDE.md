@@ -39,17 +39,17 @@ Skill/Power counters wrap modulo `MAX_ROLL=10` — tapping them only increments;
 
 When adding a new modifier: give it a unique `position`, add it to any relevant `disabled` arrays on peers, and if it should suppress or be suppressed by others make sure both sides list each other.
 
-### Styling — illuminated-parchment theme
+### Styling — arcane-tactics-HUD theme
 
-Tailwind (`tailwind.config.js` scans `./src/**/*.{js,jsx}`) with `classnames` for conditional classes. Mobile-first: `max-w-md` column, sticky derived-value header, `min-h-dvh` + safe-area padding, installable via `public/manifest.webmanifest` (no service worker). IM Fell English display font loads from Google Fonts in `index.html`.
+Tailwind (`tailwind.config.js` scans `./src/**/*.{js,jsx}`) with `classnames` for conditional classes. Mobile-first: `max-w-md` column, sticky derived-value header, `min-h-dvh` + safe-area padding, installable via `public/manifest.webmanifest` (no service worker). Chakra Petch display font loads from Google Fonts in `index.html`.
 
-Custom palette lives in `tailwind.config.js` (`parchment`, `ink`, `wax`, `forest`, `gilt`, `azure`) plus keyframes (`number-in`, `ink-stamp`, `quill-fade`). Ledger-cell button styles are the `.stamp*` classes in `src/index.css`; active modifiers get a pressed-into-paper inset shadow, a ±1° hand-stamped tilt, and a one-shot `animate-ink-stamp` ink-ring. The `color` values in `constants.js` (`bg-green-400` = bonus, `bg-red-400` = penalty, `bg-yellow-400` = reset) are **semantic tokens only** — `App.jsx` maps them to stamp styles via `STAMP_ON`; they are not rendered as Tailwind classes.
+Custom palette lives in `tailwind.config.js` (`night`, `arcane`, `rune`, `emberx`, `sky`, `rose`, `mist`) plus keyframes (`number-in` and `pop-in` with springy overshoot easing, `rune-pulse`, `rose-pulse`, `glow-drift`). Chunky HUD-key button styles are the `.key*` classes in `src/index.css` — a raised bottom edge (`box-shadow: 0 3px 0`) that compresses on press; active modifiers glow teal (bonus) or rose (penalty) and pop in. The `color` values in `constants.js` (`bg-green-400` = bonus, `bg-red-400` = penalty, `bg-yellow-400` = reset) are **semantic tokens only** — `App.jsx` maps them to key styles via `KEY_ON`; they are not rendered as Tailwind classes.
 
 ### Interaction: sounds, haptics, gestures
 
-- `src/sounds.js` — Web Audio-synthesized taps (no assets): `playPage` (dice/reset rustle), `playSeal` (wax-seal thump for bonuses), `playScratch` (quill scratch for penalties), `playQuill` (off/rank ticks); mute persists to localStorage; `buzz()` wraps `navigator.vibrate`.
+- `src/sounds.js` — Web Audio-synthesized taps (no assets): `playClick` (dice/reset), `playChime` (rising two-note bonus), `playBlip` (low penalty), `playTick` (off/rank ticks); mute persists to localStorage; `buzz()` wraps `navigator.vibrate`.
 - `src/hooks.js` — `usePressable({ onTap, onHold, repeat })` pointer-gesture hook. Rank buttons: tap = +1, hold = −1 (rank handlers use `(x + mod + MAX_ROLL) % MAX_ROLL` so decrement wraps correctly). Dice ±: hold to auto-repeat.
-- `src/Artwork.jsx` — original hand-drawn SVG manuscript-header art (pennants, laurels, wax seal). `scripts/generate-art.mjs` generates watercolor replacements via the OpenAI Images API (`OPENAI_API_KEY`); prompts intentionally avoid Battleground/Your Move Games trade dress.
+- `src/Artwork.jsx` — original flat-vector SVG header art (hex grid, chevrons, glowing rune diamond). `scripts/generate-art.mjs` generates vector-style replacements via the OpenAI Images API (`OPENAI_API_KEY`); prompts intentionally avoid Battleground/Your Move Games trade dress.
 
 ### ESLint
 

@@ -39,26 +39,6 @@ const tone = (c, { type = "sine", from, to, dur, gain = 0.2, at = 0 }) => {
   osc.stop(t + dur + 0.02);
 };
 
-const noise = (c, { dur, gain = 0.15, freq = 800, q = 1, at = 0 }) => {
-  const length = Math.ceil(c.sampleRate * dur);
-  const buffer = c.createBuffer(1, length, c.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < length; i += 1) data[i] = Math.random() * 2 - 1;
-  const src = c.createBufferSource();
-  src.buffer = buffer;
-  const filter = c.createBiquadFilter();
-  filter.type = "bandpass";
-  filter.frequency.value = freq;
-  filter.Q.value = q;
-  const g = c.createGain();
-  const t = c.currentTime + at;
-  g.gain.setValueAtTime(gain, t);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  src.connect(filter).connect(g).connect(c.destination);
-  src.start(t);
-  src.stop(t + dur);
-};
-
 const play = (fn) => {
   if (muted) return;
   try {
@@ -69,31 +49,30 @@ const play = (fn) => {
   }
 };
 
-// Page rustle — dice taps, resets
-export const playPage = () =>
+// Crisp UI click — dice taps, resets
+export const playClick = () =>
   play((c) => {
-    noise(c, { dur: 0.16, gain: 0.14, freq: 1400, q: 0.6 });
-    noise(c, { dur: 0.12, gain: 0.1, freq: 2400, q: 0.8, at: 0.06 });
+    tone(c, { type: "square", from: 1800, to: 1200, dur: 0.035, gain: 0.08 });
+    tone(c, { from: 320, to: 240, dur: 0.06, gain: 0.1 });
   });
 
-// Soft wax-seal thump — turning on a bonus
-export const playSeal = () =>
+// Rising two-note chime — turning on a bonus
+export const playChime = () =>
   play((c) => {
-    tone(c, { from: 220, to: 150, dur: 0.18, gain: 0.28 });
-    tone(c, { type: "triangle", from: 660, dur: 0.12, gain: 0.05, at: 0.01 });
+    tone(c, { type: "triangle", from: 660, dur: 0.12, gain: 0.12 });
+    tone(c, { type: "triangle", from: 990, dur: 0.18, gain: 0.1, at: 0.07 });
   });
 
-// Rough quill scratch — turning on a penalty
-export const playScratch = () =>
+// Low descending blip — turning on a penalty
+export const playBlip = () =>
   play((c) => {
-    noise(c, { dur: 0.12, gain: 0.2, freq: 900, q: 1.2 });
-    tone(c, { type: "square", from: 120, to: 80, dur: 0.1, gain: 0.06 });
+    tone(c, { type: "triangle", from: 240, to: 150, dur: 0.14, gain: 0.16 });
   });
 
-// Tiny quill tick — rank taps, toggling something off
-export const playQuill = () =>
+// Tiny tick — rank taps, toggling something off
+export const playTick = () =>
   play((c) => {
-    noise(c, { dur: 0.035, gain: 0.12, freq: 2800, q: 2.5 });
+    tone(c, { type: "square", from: 1400, dur: 0.025, gain: 0.06 });
   });
 
 export const buzz = (ms = 8) => {

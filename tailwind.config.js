@@ -4,68 +4,75 @@ export default {
   theme: {
     extend: {
       colors: {
-        parchment: {
-          50: "#fbf6e9",
-          100: "#f3ead3",
-          200: "#ede2c4",
-          300: "#e2d3ac",
-          400: "#d4c08d",
-          500: "#c9b98f",
+        night: {
+          900: "#0b0e16",
+          800: "#10131c",
+          700: "#171c29",
+          600: "#1b2130",
+          500: "#232a3d",
+          400: "#2b3450",
         },
-        ink: {
-          900: "#2a2118",
-          700: "#443626",
-          500: "#5f4c33",
-          300: "#8a7250",
+        arcane: {
+          600: "#534ab7",
+          500: "#7f77dd",
+          300: "#afa9ec",
+          200: "#cecbf6",
         },
-        wax: {
-          700: "#6e1f1f",
-          500: "#a83232",
-          300: "#c97b7b",
+        rune: {
+          500: "#1d9e75",
+          300: "#5dcaa5",
         },
-        forest: {
-          700: "#2f4a1e",
-          500: "#4a6b2a",
-          300: "#8fae6b",
+        emberx: {
+          500: "#d85a30",
+          300: "#f0997b",
         },
-        gilt: {
-          600: "#8a6a1f",
-          500: "#b08d2f",
-          300: "#d9bc6b",
+        sky: {
+          500: "#378add",
+          300: "#85b7eb",
         },
-        azure: {
-          600: "#1f4e79",
-          400: "#4a7bb0",
+        rose: {
+          500: "#993556",
+          300: "#ed93b1",
+        },
+        mist: {
+          100: "#e8eaf2",
+          300: "#b8bdd0",
+          500: "#7d84a0",
         },
       },
       fontFamily: {
-        display: ["'IM Fell English'", "Georgia", "serif"],
+        display: ["'Chakra Petch'", "system-ui", "sans-serif"],
       },
       keyframes: {
         numberIn: {
-          "0%": { opacity: "0", transform: "translateY(0.2em) rotate(-2deg)" },
-          "100%": { opacity: "1", transform: "translateY(0) rotate(0deg)" },
+          "0%": { opacity: "0", transform: "scale(1.35)" },
+          "60%": { transform: "scale(0.92)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
         },
-        inkStamp: {
-          "0%": {
-            transform: "scale(1.15)",
-            boxShadow: "0 0 0 0 rgba(68, 54, 38, 0.35)",
-          },
-          "60%": { transform: "scale(0.97)" },
-          "100%": {
-            transform: "scale(1)",
-            boxShadow: "0 0 0 12px rgba(68, 54, 38, 0)",
-          },
+        popIn: {
+          "0%": { transform: "scale(1.1)" },
+          "55%": { transform: "scale(0.95)" },
+          "100%": { transform: "scale(1)" },
         },
-        quillFade: {
-          "0%, 100%": { opacity: "0.75" },
+        runePulse: {
+          "0%, 100%": { boxShadow: "0 0 8px rgba(93, 202, 165, 0.25)" },
+          "50%": { boxShadow: "0 0 18px rgba(93, 202, 165, 0.55)" },
+        },
+        rosePulse: {
+          "0%, 100%": { boxShadow: "0 0 8px rgba(237, 147, 177, 0.25)" },
+          "50%": { boxShadow: "0 0 18px rgba(237, 147, 177, 0.5)" },
+        },
+        glowDrift: {
+          "0%, 100%": { opacity: "0.5" },
           "50%": { opacity: "1" },
         },
       },
       animation: {
-        "number-in": "numberIn 280ms ease-out",
-        "ink-stamp": "inkStamp 350ms ease-out",
-        "quill-fade": "quillFade 4s ease-in-out infinite",
+        "number-in": "numberIn 260ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "pop-in": "popIn 220ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "rune-pulse": "runePulse 2.4s ease-in-out infinite",
+        "rose-pulse": "rosePulse 2.4s ease-in-out infinite",
+        "glow-drift": "glowDrift 3.6s ease-in-out infinite",
       },
     },
   },

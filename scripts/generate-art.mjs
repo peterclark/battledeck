@@ -20,31 +20,31 @@ if (!KEY) {
 }
 
 const STYLE =
-  "Medieval illuminated manuscript watercolor, warm aged parchment tones, " +
-  "muted ink and gilt heraldic detail, soft washes, delicate linework, " +
-  "no text, no watermark, original artwork.";
+  "Flat vector game-HUD illustration, deep navy background, clean geometric " +
+  "shapes, glowing arcane purple and teal accents, crisp edges, minimal " +
+  "shading, no text, no watermark, original artwork.";
 
 const PIECES = [
   {
     file: "banner.png",
     size: "1536x1024",
     prompt:
-      `${STYLE} A wide manuscript header: heraldic pennants and laurel ` +
-      "sprigs framing an open field, gilt rule border, wax seal in a corner.",
+      `${STYLE} A wide header: a glowing geometric rune diamond flanked by ` +
+      "chevron motifs and a faint hexagon grid.",
   },
   {
     file: "emblem-swords.png",
     size: "1024x1024",
     prompt:
-      `${STYLE} A small circular emblem of two crossed medieval swords ` +
-      "in sepia ink with gilt accents, centered on plain parchment.",
+      `${STYLE} A small emblem of two crossed stylized swords inside a ` +
+      "hexagon, centered on plain navy.",
   },
   {
-    file: "emblem-seal.png",
+    file: "emblem-rune.png",
     size: "1024x1024",
     prompt:
-      `${STYLE} A small red wax seal stamped with a rampant griffin, ` +
-      "centered on plain parchment.",
+      `${STYLE} A small glowing rune diamond emblem with orbiting points, ` +
+      "centered on plain navy.",
   },
 ];
 

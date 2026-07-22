@@ -26,21 +26,21 @@ import { usePressable } from "./hooks";
 import {
   buzz,
   isMuted,
-  playPage,
-  playQuill,
-  playScratch,
-  playSeal,
+  playBlip,
+  playChime,
+  playClick,
+  playTick,
   setMuted,
 } from "./sounds";
 
 const MAX_DICE = 20;
 const MAX_ROLL = 10;
 
-// Map the semantic colors in constants.js onto ink-stamp styles
-const STAMP_ON = {
-  "bg-green-400": "stamp-on-green animate-ink-stamp",
-  "bg-red-400": "stamp-on-red animate-ink-stamp",
-  "bg-yellow-400": "stamp-on-gold",
+// Map the semantic colors in constants.js onto HUD key styles
+const KEY_ON = {
+  "bg-green-400": "key-on-rune animate-rune-pulse",
+  "bg-red-400": "key-on-rose animate-rose-pulse",
+  "bg-yellow-400": "key-on-arcane",
 };
 
 const AnimatedNumber = ({ value, className: cls }) => (
@@ -54,12 +54,12 @@ const RankButton = ({ label, value, onInc, tone }) => {
   const press = usePressable({
     onTap: () => {
       onInc(1);
-      playQuill();
+      playTick();
       buzz();
     },
     onHold: () => {
       onInc(-1);
-      playQuill();
+      playTick();
       buzz();
     },
     repeat: 280,
@@ -67,13 +67,15 @@ const RankButton = ({ label, value, onInc, tone }) => {
   return (
     <button
       className={className(
-        "stamp flex-1 flex flex-col items-center justify-center py-1",
+        "key flex-1 flex flex-col items-center justify-center py-1",
         tone
       )}
       aria-label={`${label} rank ${value}. Tap to raise, hold to lower.`}
       {...press}
     >
-      <span className="font-display text-3xl leading-none">{value}</span>
+      <span className="font-display text-3xl font-bold leading-none">
+        {value}
+      </span>
       <span className="text-[10px] tracking-widest opacity-70">{label}</span>
     </button>
   );
@@ -83,10 +85,10 @@ const StatCard = ({ title, value, tone, lines }) => (
   <div className="flex items-start justify-center gap-1.5 pt-1">
     <AnimatedNumber
       value={value}
-      className={className("font-display text-6xl leading-none", tone)}
+      className={className("font-display text-6xl font-bold leading-none", tone)}
     />
-    <div className="flex flex-col justify-center pt-1 font-mono text-[10px] leading-tight text-ink-300">
-      <span className="text-[11px] font-bold tracking-wider text-ink-700">
+    <div className="flex flex-col justify-center pt-1 font-mono text-[10px] leading-tight text-mist-500">
+      <span className="text-[11px] font-bold tracking-wider text-mist-300">
         {title}
       </span>
       {lines}
@@ -129,7 +131,7 @@ const App = () => {
   const toggleModifier = (mod) => {
     if (mod.id === "reset") {
       setModifiers(MODIFIERS);
-      playPage();
+      playClick();
       buzz(16);
       return;
     }
@@ -141,9 +143,9 @@ const App = () => {
     } else {
       next = { ...mod, on: !mod.on };
     }
-    if (!next.on) playQuill();
-    else if (mod.color === "bg-green-400") playSeal();
-    else playScratch();
+    if (!next.on) playTick();
+    else if (mod.color === "bg-green-400") playChime();
+    else playBlip();
     buzz();
     setModifiers((mods) => ({ ...mods, [mod.id]: next }));
   };
@@ -154,8 +156,8 @@ const App = () => {
       os + mod[1],
       op + mod[2],
     ]);
-    if (color === "bg-green-400") playSeal();
-    else playScratch();
+    if (color === "bg-green-400") playChime();
+    else playBlip();
     buzz();
   };
 
@@ -163,7 +165,7 @@ const App = () => {
     const next = !muted;
     setMuted(next);
     setMutedState(next);
-    if (!next) playQuill();
+    if (!next) playTick();
   };
 
   const [diceModifier, offensiveSkillModifier, offensivePowerModifier] =
@@ -281,12 +283,12 @@ const App = () => {
   const diceDown = usePressable({
     onTap: () => {
       handleIncDice(-1);
-      playPage();
+      playClick();
       buzz();
     },
     onHold: () => {
       handleIncDice(-1);
-      playPage();
+      playClick();
       buzz();
     },
     repeat: 140,
@@ -295,12 +297,12 @@ const App = () => {
   const diceUp = usePressable({
     onTap: () => {
       handleIncDice(1);
-      playPage();
+      playClick();
       buzz();
     },
     onHold: () => {
       handleIncDice(1);
-      playPage();
+      playClick();
       buzz();
     },
     repeat: 140,
@@ -308,18 +310,18 @@ const App = () => {
 
   return (
     <div
-      className="BattleDeck mx-auto flex min-h-dvh max-w-md flex-col bg-parchment-100 text-ink-700 shadow-[0_0_24px_rgba(90,70,40,0.25)]"
+      className="BattleDeck mx-auto flex min-h-dvh max-w-md flex-col bg-night-800 text-mist-100"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <header className="relative">
         <BannerArt />
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <h1 className="font-display text-3xl tracking-[0.18em] text-ink-700">
-            BattleDeck
+          <h1 className="font-display text-2xl font-bold tracking-[0.3em] text-arcane-300 [text-shadow:0_2px_10px_rgba(11,14,22,0.9)]">
+            BATTLEDECK
           </h1>
         </div>
         <button
-          className="stamp absolute right-3 top-3 flex h-9 w-9 items-center justify-center text-ink-500"
+          className="key absolute right-2 top-2 flex h-9 w-9 items-center justify-center text-mist-300"
           onClick={toggleMute}
           aria-label={muted ? "Unmute sounds" : "Mute sounds"}
         >
@@ -327,13 +329,13 @@ const App = () => {
         </button>
       </header>
 
-      <div className="sticky top-0 z-20 border-b border-parchment-500 bg-parchment-100/95 px-3 pb-2 pt-1 backdrop-blur-sm">
+      <div className="sticky top-0 z-20 border-b border-night-400 bg-night-800/95 px-3 pb-2 pt-1 backdrop-blur-sm">
         <div className="Roll grid grid-cols-3 gap-1.5">
           <div className="Dice flex flex-col gap-1">
             <StatCard
               title="Dice"
               value={diceToRoll}
-              tone="text-forest-700"
+              tone="text-rune-300"
               lines={
                 <>
                   <span>{baseDice} base</span>
@@ -349,14 +351,14 @@ const App = () => {
             />
             <div className="flex gap-1">
               <button
-                className="stamp stamp-danger flex h-12 flex-1 items-center justify-center text-xl"
+                className="key key-danger flex h-12 flex-1 items-center justify-center text-xl"
                 aria-label="Remove one die. Hold to repeat."
                 {...diceDown}
               >
                 <FaMinus />
               </button>
               <button
-                className="stamp stamp-boon flex h-12 flex-1 items-center justify-center text-xl"
+                className="key key-boon flex h-12 flex-1 items-center justify-center text-xl"
                 aria-label="Add one die. Hold to repeat."
                 {...diceUp}
               >
@@ -369,7 +371,7 @@ const App = () => {
             <StatCard
               title="Hit"
               value={rollToHit}
-              tone="text-wax-500"
+              tone="text-emberx-300"
               lines={
                 <>
                   <span>{offensiveSkill - defensiveSkill} base</span>
@@ -381,7 +383,7 @@ const App = () => {
                   ))}
                   {frightened.on && <span>{frightened.code}</span>}
                   {hitOverkill > 0 && (
-                    <span className="text-gilt-600">
+                    <span className="text-arcane-300">
                       OK: {hitOverkill}&times;6&rarr;5
                     </span>
                   )}
@@ -393,13 +395,13 @@ const App = () => {
                 label="OS"
                 value={offensiveSkill}
                 onInc={handleIncOffensiveSkill}
-                tone="OffensiveSkillRank text-wax-500"
+                tone="OffensiveSkillRank text-emberx-300"
               />
               <RankButton
                 label="DS"
                 value={defensiveSkill}
                 onInc={handleIncDefensiveSkill}
-                tone="DefensiveSkillRank text-azure-600"
+                tone="DefensiveSkillRank text-sky-300"
               />
             </div>
           </div>
@@ -408,7 +410,7 @@ const App = () => {
             <StatCard
               title="Wound"
               value={rollToWound}
-              tone="text-azure-600"
+              tone="text-sky-300"
               lines={
                 <>
                   <span>{offensivePower - defensivePower} base</span>
@@ -420,7 +422,7 @@ const App = () => {
                   ))}
                   {frightened.on && <span>{frightened.code}</span>}
                   {woundOverkill > 0 && (
-                    <span className="text-gilt-600">
+                    <span className="text-arcane-300">
                       OK: {woundOverkill}&times;6&rarr;5
                     </span>
                   )}
@@ -432,13 +434,13 @@ const App = () => {
                 label="OP"
                 value={offensivePower}
                 onInc={handleIncOffensivePower}
-                tone="OffensivePowerRank text-wax-500"
+                tone="OffensivePowerRank text-emberx-300"
               />
               <RankButton
                 label="DP"
                 value={defensivePower}
                 onInc={handleIncDefensivePower}
-                tone="DefensivePowerRank text-azure-600"
+                tone="DefensivePowerRank text-sky-300"
               />
             </div>
           </div>
@@ -448,11 +450,11 @@ const App = () => {
       <div
         className={className(
           "flex flex-col gap-2 px-3 pt-3 transition-opacity duration-300",
-          frightened.on && "opacity-40 sepia"
+          frightened.on && "opacity-40 saturate-50"
         )}
       >
-        <div className="flex items-center justify-center gap-2 font-display text-sm tracking-[0.2em] text-ink-500">
-          <GiScrollUnfurled className="text-lg text-gilt-500" aria-hidden />
+        <div className="flex items-center justify-center gap-2 font-display text-[11px] font-bold uppercase tracking-[0.25em] text-mist-500">
+          <GiScrollUnfurled className="text-lg text-arcane-500" aria-hidden />
           Command cards
         </div>
         <div className="CommandCardModifiers flex h-16 gap-1">
@@ -460,9 +462,9 @@ const App = () => {
             <button
               key={id}
               className={className(
-                "stamp flex-1 text-sm",
+                "key flex-1 text-sm",
                 id,
-                color === "bg-green-400" ? "stamp-boon" : "stamp-danger"
+                color === "bg-green-400" ? "key-boon" : "key-danger"
               )}
               disabled={frightened.on}
               onClick={() => handleCommandCard({ mod, color })}
@@ -472,10 +474,10 @@ const App = () => {
           ))}
         </div>
         <button
-          className="ClearCommandCardModifiers stamp stamp-on-gold h-10 font-display text-sm tracking-[0.2em]"
+          className="ClearCommandCardModifiers key key-on-arcane h-10 font-display text-sm tracking-[0.2em]"
           onClick={() => {
             setCommandCardModifiers([0, 0, 0]);
-            playPage();
+            playClick();
             buzz(16);
           }}
           disabled={frightened.on}
@@ -485,8 +487,8 @@ const App = () => {
       </div>
 
       <div className="flex flex-col gap-2 px-3 pb-4 pt-3">
-        <div className="flex items-center justify-center gap-2 font-display text-sm tracking-[0.2em] text-ink-500">
-          <GiCrossedSwords className="text-lg text-gilt-500" aria-hidden />
+        <div className="flex items-center justify-center gap-2 font-display text-[11px] font-bold uppercase tracking-[0.25em] text-mist-500">
+          <GiCrossedSwords className="text-lg text-arcane-500" aria-hidden />
           Situational modifiers
         </div>
         <div className="SituationalModifiers flex flex-1 flex-col gap-1 text-[11px] leading-tight">
@@ -497,8 +499,9 @@ const App = () => {
                   key={`modifier-${modifier.id}`}
                   className={className(
                     modifier.id,
-                    "stamp w-1/5 flex-1",
-                    modifier.on && STAMP_ON[modifier.color]
+                    "key w-1/5 flex-1",
+                    modifier.on && KEY_ON[modifier.color],
+                    modifier.on && "animate-pop-in"
                   )}
                   disabled={disabledModifiers[modifier.id]}
                   onClick={() => toggleModifier(modifier)}
@@ -514,11 +517,11 @@ const App = () => {
         </div>
       </div>
 
-      <div className="mt-auto flex items-center justify-center pb-4 pt-1 text-ink-500">
+      <div className="mt-auto flex items-center justify-center pb-4 pt-1 text-mist-500">
         <div className="flex items-center gap-3 font-display text-xl tracking-widest">
-          <GiPerspectiveDiceOne className="text-2xl text-gilt-500" />
+          <GiPerspectiveDiceOne className="text-2xl text-arcane-500" />
           BattleDeck
-          <GiPerspectiveDiceSix className="text-2xl text-gilt-500" />
+          <GiPerspectiveDiceSix className="text-2xl text-arcane-500" />
         </div>
       </div>
     </div>
