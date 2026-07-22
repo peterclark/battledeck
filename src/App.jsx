@@ -1,9 +1,7 @@
-import { useMemo } from "react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   chunk,
   filter,
-  keyBy,
   map,
   max,
   min,
@@ -11,13 +9,12 @@ import {
   pickBy,
   reduce,
   some,
-  sortBy,
   transform,
   values,
 } from "lodash";
 import { GiPerspectiveDiceOne, GiPerspectiveDiceSix } from "react-icons/gi";
 import { FaMinus, FaPlus } from "react-icons/fa";
-import { MODIFIERS, COMMAND_ACTION_MODIFIERS } from "./constants";
+import { MODIFIERS, COMMAND_CARD_MODIFIERS } from "./constants";
 import className from "classnames";
 
 const MAX_DICE = 20;
@@ -29,15 +26,13 @@ const App = () => {
   const [offensivePower, setOffensivePower] = useState(0);
   const [defensiveSkill, setDefensiveSkill] = useState(0);
   const [defensivePower, setDefensivePower] = useState(0);
-  const [commandActionModifiers, setCommandActionModifiers] = useState([
-    0, 0, 0,
-  ]);
+  const [commandCardModifiers, setCommandCardModifiers] = useState([0, 0, 0]);
   const [modifiers, setModifiers] = useState(MODIFIERS);
 
   const { frightened } = modifiers || {};
 
   const handleIncDice = (mod) => {
-    setBaseDice(min([max([baseDice + mod, 0]), MAX_DICE]));
+    setBaseDice((dice) => min([max([dice + mod, 0]), MAX_DICE]));
   };
 
   const handleIncOffensiveSkill = (mod) => {
@@ -61,65 +56,80 @@ const App = () => {
       setModifiers(MODIFIERS);
       return;
     }
-    const filtered = filter(modifiers, (m) => mod.id !== m.id);
-    const updated = {
-      ...keyBy(filtered, "id"),
-      [mod.id]: { ...mod, on: !mod.on },
-    };
-    const sorted = sortBy(updated, "position");
-    const keyed = keyBy(sorted, "id");
-    setModifiers(keyed);
+    // Modifiers with a maxCount stack: taps cycle 0 -> 1 -> ... -> maxCount -> 0
+    let next;
+    if (mod.maxCount) {
+      const count = ((mod.count ?? 0) + 1) % (mod.maxCount + 1);
+      next = { ...mod, count, on: count > 0 };
+    } else {
+      next = { ...mod, on: !mod.on };
+    }
+    setModifiers((mods) => ({ ...mods, [mod.id]: next }));
   };
 
   const [diceModifier, offensiveSkillModifier, offensivePowerModifier] =
     useMemo(() => {
       const modsOn = values(pickBy(modifiers, (mod) => mod.on));
-      const arrays = map(modsOn, "modifier");
       const mods = reduce(
-        arrays,
-        (sums, val) => [sums[0] + val[0], sums[1] + val[1], sums[2] + val[2]],
+        modsOn,
+        (sums, { modifier, count }) => {
+          const stack = count ?? 1;
+          return [
+            sums[0] + modifier[0] * stack,
+            sums[1] + modifier[1] * stack,
+            sums[2] + modifier[2] * stack,
+          ];
+        },
         [0, 0, 0]
       );
       return mods;
     }, [modifiers]);
 
-  const [caDice, caOffensiveSkill, caOffensivePower] = commandActionModifiers;
+  const [ccDice, ccOffensiveSkill, ccOffensivePower] = commandCardModifiers;
 
   const diceToRoll = useMemo(() => {
-    return max([baseDice + caDice + diceModifier, 0]);
-  }, [baseDice, caDice, diceModifier]);
+    return min([max([baseDice + ccDice + diceModifier, 0]), MAX_DICE]);
+  }, [baseDice, ccDice, diceModifier]);
 
-  // 6 is always a miss, 1 is always a hit
-  const rollToHit = useMemo(() => {
+  // 6 is always a miss, 1 is always a hit. Totals above 5 trigger the
+  // Overkill rule: one rolled 6 becomes a 5 per point over 5.
+  const { value: rollToHit, overkill: hitOverkill } = useMemo(() => {
     const hitTotal =
       offensiveSkill -
       defensiveSkill +
-      caOffensiveSkill +
+      ccOffensiveSkill +
       offensiveSkillModifier;
-    return max([min([hitTotal, 5]), 1]);
+    return {
+      value: max([min([hitTotal, 5]), 1]),
+      overkill: max([hitTotal - 5, 0]),
+    };
   }, [
     offensiveSkill,
     defensiveSkill,
-    caOffensiveSkill,
+    ccOffensiveSkill,
     offensiveSkillModifier,
   ]);
 
-  const rollToWound = useMemo(() => {
+  const { value: rollToWound, overkill: woundOverkill } = useMemo(() => {
     const woundTotal =
       offensivePower -
       defensivePower +
-      caOffensivePower +
+      ccOffensivePower +
       offensivePowerModifier;
-    return max([min([woundTotal, 5]), 1]);
+    return {
+      value: max([min([woundTotal, 5]), 1]),
+      overkill: max([woundTotal - 5, 0]),
+    };
   }, [
     offensivePower,
     defensivePower,
-    caOffensivePower,
+    ccOffensivePower,
     offensivePowerModifier,
   ]);
 
-  useMemo(() => {
-    if (frightened.on) setCommandActionModifiers([0, 0, 0]);
+  // A Frightened unit can't have Command Cards played on it
+  useEffect(() => {
+    if (frightened.on) setCommandCardModifiers([0, 0, 0]);
   }, [frightened.on]);
 
   // Return all modifiers set to ON
@@ -178,10 +188,10 @@ const App = () => {
             <div className="flex flex-col text-xs justify-center font-mono">
               <span className="font-bold text-sm">Dice</span>
               <span>{baseDice} base</span>
-              {caDice !== 0 && <span>{caDice} CA</span>}
-              {map(onModifiersForDice, ({ id, modifier, code }) => (
+              {ccDice !== 0 && <span>{ccDice} CC</span>}
+              {map(onModifiersForDice, ({ id, modifier, count, code }) => (
                 <span key={id}>
-                  {modifier[0]} {code}
+                  {modifier[0] * (count ?? 1)} {code}
                 </span>
               ))}
               {frightened.on && <span>{frightened.code}</span>}
@@ -208,13 +218,14 @@ const App = () => {
             <div className="flex flex-col text-xs justify-center font-mono">
               <span className="font-bold text-sm">Hit</span>
               <span>{offensiveSkill - defensiveSkill} base</span>
-              {caOffensiveSkill !== 0 && <span>{caOffensiveSkill} CA</span>}
-              {map(onModifiersForSkill, ({ id, modifier, code }) => (
+              {ccOffensiveSkill !== 0 && <span>{ccOffensiveSkill} CC</span>}
+              {map(onModifiersForSkill, ({ id, modifier, count, code }) => (
                 <span key={id}>
-                  {modifier[1]} {code}
+                  {modifier[1] * (count ?? 1)} {code}
                 </span>
               ))}
               {frightened.on && <span>{frightened.code}</span>}
+              {hitOverkill > 0 && <span>OK: {hitOverkill}&times;6&rarr;5</span>}
             </div>
           </span>
           <div className="text-5xl flex w-full h-1/2 max-h-20 gap-1 pb-2">
@@ -238,13 +249,16 @@ const App = () => {
             <div className="flex flex-col text-xs justify-center font-mono">
               <span className="font-bold text-sm">Wound</span>
               <span>{offensivePower - defensivePower} base</span>
-              {caOffensivePower !== 0 && <span>{caOffensivePower} CA</span>}
-              {map(onModifiersForPower, ({ id, modifier, code }) => (
+              {ccOffensivePower !== 0 && <span>{ccOffensivePower} CC</span>}
+              {map(onModifiersForPower, ({ id, modifier, count, code }) => (
                 <span key={id}>
-                  {modifier[2]} {code}
+                  {modifier[2] * (count ?? 1)} {code}
                 </span>
               ))}
               {frightened.on && <span>{frightened.code}</span>}
+              {woundOverkill > 0 && (
+                <span>OK: {woundOverkill}&times;6&rarr;5</span>
+              )}
             </div>
           </div>
           <div className="text-5xl flex w-full h-1/2 max-h-20 gap-1 pb-2">
@@ -265,16 +279,16 @@ const App = () => {
       </div>
 
       <div className="text-white font-bold flex justify-center">
-        Command Action Modifiers
+        Command Card Modifiers
       </div>
-      <div className="CommandActionModifiers flex h-20 gap-1 mx-4 min-h-20">
-        {map(COMMAND_ACTION_MODIFIERS, ({ id, name, color, mod }) => (
+      <div className="CommandCardModifiers flex h-20 gap-1 mx-4 min-h-20">
+        {map(COMMAND_CARD_MODIFIERS, ({ id, name, color, mod }) => (
           <button
             key={id}
             className={className("flex-1 rounded", id, color)}
             disabled={frightened.on}
             onClick={() =>
-              setCommandActionModifiers(([d, os, op]) => [
+              setCommandCardModifiers(([d, os, op]) => [
                 d + mod[0],
                 os + mod[1],
                 op + mod[2],
@@ -286,8 +300,8 @@ const App = () => {
         ))}
       </div>
       <button
-        className="ClearCommandActionModifiers bg-yellow-400 mx-4 rounded h-10"
-        onClick={() => setCommandActionModifiers([0, 0, 0])}
+        className="ClearCommandCardModifiers bg-yellow-400 mx-4 rounded h-10"
+        onClick={() => setCommandCardModifiers([0, 0, 0])}
         disabled={frightened.on}
       >
         Reset
@@ -310,7 +324,10 @@ const App = () => {
                 disabled={disabledModifiers[modifier.id]}
                 onClick={() => toggleModifier(modifier)}
               >
-                <span className="whitespace-pre-line">{modifier.name}</span>
+                <span className="whitespace-pre-line">
+                  {modifier.name}
+                  {modifier.count > 1 ? ` ×${modifier.count}` : ""}
+                </span>
               </button>
             ))}
           </div>
