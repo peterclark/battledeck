@@ -1,8 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 import { map } from "lodash";
+import classNames from "classnames";
 import { FaArrowLeft, FaTimes } from "react-icons/fa";
+import { PLATE_ON } from "./constants";
 import { HELP_PAGES, HELP_ROOT } from "./helpContent";
 import { buzz, playTick } from "./sounds";
+
+// "Disrupt\n-ed" -> "Disrupted", "In the\nYellow" -> "In the Yellow"
+const flatName = (name) => name.replace(/\n-/g, "").replace(/\n/g, " ");
+
+// A live battle-screen toggle rendered beside the rule that mentions it —
+// same state, sounds, and exclusion rules as the main grid.
+const ActionChip = ({ mod, disabled, onToggle }) => (
+  <button
+    className={classNames(
+      `HelpAction-${mod.id}`,
+      "plate shrink-0 px-2 py-1.5 text-[10px] leading-tight",
+      mod.on && PLATE_ON[mod.color]
+    )}
+    disabled={disabled}
+    aria-pressed={mod.on}
+    onClick={() => onToggle(mod)}
+  >
+    {flatName(mod.name)}
+    {mod.count > 1 ? ` ×${mod.count}` : ""}
+  </button>
+);
 
 const LinkCard = ({ to, note, index, numbered, onOpen }) => {
   const target = HELP_PAGES[to];
@@ -34,7 +57,7 @@ const LinkCard = ({ to, note, index, numbered, onOpen }) => {
 // Full-screen rules help. The app has no router, so navigation is a simple
 // page-id stack: link cards push, back links pop, and backing out of the
 // root page closes the overlay.
-const Help = ({ onClose }) => {
+const Help = ({ onClose, modifiers, disabledModifiers, onToggleModifier }) => {
   const [stack, setStack] = useState([HELP_ROOT]);
   const overlayRef = useRef(null);
 
@@ -148,14 +171,34 @@ const Help = ({ onClose }) => {
                 {heading}
               </div>
               <ul className="flex flex-col gap-1.5">
-                {map(items, (item) => (
-                  <li
-                    key={item}
-                    className="border-l-2 border-iron-400 pl-2.5 text-xs leading-snug text-bone-300"
-                  >
-                    {item}
-                  </li>
-                ))}
+                {map(items, (item) => {
+                  const { text, actions } =
+                    typeof item === "string" ? { text: item } : item;
+                  return (
+                    <li
+                      key={text}
+                      className="flex items-start gap-2 border-l-2 border-iron-400 pl-2.5 text-xs leading-snug text-bone-300"
+                    >
+                      <span className="flex-1">{text}</span>
+                      {actions && modifiers && onToggleModifier && (
+                        <span className="flex shrink-0 flex-col items-stretch gap-1">
+                          {map(
+                            actions,
+                            (id) =>
+                              modifiers[id] && (
+                                <ActionChip
+                                  key={id}
+                                  mod={modifiers[id]}
+                                  disabled={disabledModifiers?.[id]}
+                                  onToggle={onToggleModifier}
+                                />
+                              )
+                          )}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

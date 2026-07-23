@@ -17,6 +17,8 @@ import {
 // docs/battleground-quick-start-summary.md. Pages form a tree rooted at
 // HELP_ROOT: `links` entries point at deeper pages by id (the card's title
 // and icon come from the target page), `sections` hold the page's own text.
+// An item is either a plain string or `{ text, actions: [modifierIds] }` —
+// actions render live battle-screen toggle chips beside the rule.
 export const HELP_ROOT = "turnOverview";
 
 export const HELP_PAGES = {
@@ -67,7 +69,10 @@ export const HELP_PAGES = {
         heading: "In this phase",
         items: [
           "Pinched units — engaged on 2+ sides where a pincher Final Rushed this turn — take a rout check.",
-          "Fear checks against frightening enemies. A failed check makes the unit Frightened: no Command Cards may be played on it this turn (BattleDeck's Frightened button models this).",
+          {
+            text: "Fear checks against frightening enemies. A failed check makes the unit Frightened: no Command Cards may be played on it this turn (BattleDeck's Frightened button models this).",
+            actions: ["frightened"],
+          },
           "Units engaged with a routing enemy make free attacks against it.",
           "Routing units make their rout move.",
         ],
@@ -107,7 +112,10 @@ export const HELP_PAGES = {
         heading: "In this phase",
         items: [
           "Units that marked their last Green box, last Yellow box, or any Red box take a rout check (multiple triggers in one phase still mean just one check).",
-          "Units engaged with a newly routing enemy make free attacks — usually with the Rear Attack bonus.",
+          {
+            text: "Units engaged with a newly routing enemy make free attacks — usually with the Rear Attack bonus.",
+            actions: ["rearAttacking"],
+          },
           "Routing units make their rout move toward their own table edge.",
         ],
       },
@@ -145,7 +153,10 @@ export const HELP_PAGES = {
           "Draw a Command Card (1 CA) — hand limit 15.",
           "Rally (1 CA) — stop a routing unit; it reforms on Hold and can't act this turn.",
           "Reload (1 CA) — erase one marked Ammo Box.",
-          "Reorganize (2 CA) — Disrupted becomes Ready; not while engaged.",
+          {
+            text: "Reorganize (2 CA) — Disrupted becomes Ready; not while engaged.",
+            actions: ["disrupted"],
+          },
           "Sound the Charge (all CAs) — mass order change to Close/Ranged, rally all routers, reorganize all unengaged Disrupted units.",
           "Faction abilities (cost varies).",
         ],
@@ -182,7 +193,10 @@ export const HELP_PAGES = {
           "If a visible enemy's facing side is within the unit's Movement stat, pick the unit up and place it in contact with as much of that side as possible.",
           "If the facing side was blocked at the start of the turn, the unit may rush the nearest open side instead.",
           "With two enemies in reach, rush the nearest — you pick on ties.",
-          "Rushing into contact counts as charging: tap Charging in BattleDeck for the bonus dice.",
+          {
+            text: "Rushing into contact counts as charging: tap Charging in BattleDeck for the bonus dice.",
+            actions: ["chargingFourOrMoreDice", "chargingThreeOrLessDice"],
+          },
         ],
       },
     ],
@@ -241,7 +255,10 @@ export const HELP_PAGES = {
         heading: "The check",
         items: [
           "Roll 3d6 — pass if the total is at or under the unit's Courage stat.",
-          "In the Yellow −1 Courage, In the Red −2, charged by a Terrifying unit −1.",
+          {
+            text: "In the Yellow −1 Courage, In the Red −2, charged by a Terrifying unit −1.",
+            actions: ["inTheYellow", "inTheRed"],
+          },
         ],
       },
       {
@@ -255,7 +272,10 @@ export const HELP_PAGES = {
         heading: "Failing one",
         items: [
           "Engaged unit — routs: about-faces, still engaged, and every engaged enemy gets a free attack.",
-          "Unengaged and Ready — becomes Disrupted.",
+          {
+            text: "Unengaged and Ready — becomes Disrupted.",
+            actions: ["disrupted"],
+          },
           "Unengaged and Disrupted — routs.",
           "Already routing — destroyed.",
           "Rallying a router costs 1 Command Action; it reforms on Hold and can't act that turn.",

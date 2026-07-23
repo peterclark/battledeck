@@ -47,6 +47,51 @@ describe("Help overlay", () => {
     expect(last).toHaveFocus();
   });
 
+  it("action chips toggle the real modifier from inside help", () => {
+    const { container } = openHelp();
+    fireEvent.click(screen.getByText("Pre-Combat Courage"));
+    const chip = container.ownerDocument.querySelector(
+      ".HelpAction-frightened"
+    );
+    expect(chip).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(chip);
+    expect(chip).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByLabelText("Close help"));
+    // the toggle really landed on the battle screen
+    expect(container.querySelector("button.frightened")).toHaveClass(
+      "plate-on-blood"
+    );
+    expect(container.querySelector(".PlusOneDice")).toBeDisabled();
+  });
+
+  it("stance-specific chips switch the attack mode so the toggle is visible", () => {
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByText("Ranged"));
+    const trigger = screen.getByLabelText("How your turn works");
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByText("Post-Combat Courage"));
+    fireEvent.click(document.querySelector(".HelpAction-rearAttacking"));
+    fireEvent.click(screen.getByLabelText("Close help"));
+    expect(screen.getByText("Melee").closest("button")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(container.querySelector("button.rearAttacking")).toHaveClass(
+      "plate-on-ember"
+    );
+    expect(container.querySelector("button.longRange")).not.toBeInTheDocument();
+  });
+
+  it("chips respect mutual exclusion", () => {
+    openHelp();
+    fireEvent.click(screen.getByText("Pre-Combat Courage"));
+    fireEvent.click(screen.getByText("Courage & Routing"));
+    fireEvent.click(document.querySelector(".HelpAction-inTheYellow"));
+    expect(document.querySelector(".HelpAction-inTheRed")).toBeDisabled();
+    fireEvent.click(document.querySelector(".HelpAction-inTheYellow"));
+    expect(document.querySelector(".HelpAction-inTheRed")).toBeEnabled();
+  });
+
   it("locks background scroll while open", () => {
     const { dialog } = openHelp();
     expect(document.body.style.overflow).toBe("hidden");

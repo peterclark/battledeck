@@ -26,7 +26,7 @@ import {
   FaVolumeMute,
 } from "react-icons/fa";
 import className from "classnames";
-import { MODIFIERS, COMMAND_CARD_MODIFIERS } from "./constants";
+import { MODIFIERS, COMMAND_CARD_MODIFIERS, PLATE_ON } from "./constants";
 import {
   MAX_DICE,
   MAX_ROLL,
@@ -47,13 +47,6 @@ import {
   playTick,
   setMuted,
 } from "./sounds";
-
-// Map the semantic colors in constants.js onto grimdark plate styles
-const PLATE_ON = {
-  "bg-green-400": "plate-on-ember animate-ember-pulse",
-  "bg-red-400": "plate-on-blood animate-blood-pulse",
-  "bg-yellow-400": "plate-on-gold",
-};
 
 const AnimatedNumber = ({ value, className: cls }) => (
   <span key={value} className={className("inline-block animate-number-in", cls)}>
@@ -192,8 +185,7 @@ const App = () => {
 
   // An attack is either melee or ranged: switching stance swaps which
   // situational modifiers are shown and turns the other stance's off.
-  const switchAttackMode = (mode) => {
-    if (mode === attackMode) return;
+  const setStance = (mode) => {
     setAttackMode(mode);
     setModifiers((mods) =>
       mapValues(mods, (mod) =>
@@ -202,8 +194,23 @@ const App = () => {
           : mod
       )
     );
+  };
+
+  const switchAttackMode = (mode) => {
+    if (mode === attackMode) return;
+    setStance(mode);
     playTick();
     buzz();
+  };
+
+  // Toggles coming from the rules help can reference a modifier from the
+  // other stance — switch stance first so the toggle is legal and visible
+  // on the battle screen.
+  const activateModifier = (mod) => {
+    if (mod.category && mod.category !== attackMode && !mod.on) {
+      setStance(mod.category);
+    }
+    toggleModifier(mod);
   };
 
   const toggleModifier = (mod) => {
@@ -411,7 +418,14 @@ const App = () => {
         </button>
       </header>
 
-      {showHelp && <Help onClose={() => setShowHelp(false)} />}
+      {showHelp && (
+        <Help
+          onClose={() => setShowHelp(false)}
+          modifiers={modifiers}
+          disabledModifiers={disabledModifiers}
+          onToggleModifier={activateModifier}
+        />
+      )}
 
       <div className="sticky top-0 z-20 border-b border-iron-500 bg-iron-900/95 px-3 pb-2 pt-1 backdrop-blur-sm">
         <div className="Roll grid grid-cols-3 gap-1.5">
