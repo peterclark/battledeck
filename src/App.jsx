@@ -32,6 +32,7 @@ import {
   deriveRoll,
   sumModifiers,
 } from "./derive";
+import { loadState, saveState } from "./persistence";
 import { BannerArt } from "./Artwork";
 import Help from "./Help";
 import { usePressable } from "./hooks";
@@ -144,13 +145,17 @@ const StatCard = ({ title, value, tone, lines }) => (
 );
 
 const App = () => {
-  const [baseDice, setBaseDice] = useState(4);
-  const [offensiveSkill, setOffensiveSkill] = useState(0);
-  const [offensivePower, setOffensivePower] = useState(0);
-  const [defensiveSkill, setDefensiveSkill] = useState(0);
-  const [defensivePower, setDefensivePower] = useState(0);
-  const [commandCardModifiers, setCommandCardModifiers] = useState([0, 0, 0]);
-  const [modifiers, setModifiers] = useState(MODIFIERS);
+  // Restore any persisted mid-game state once on mount
+  const [initial] = useState(loadState);
+  const [baseDice, setBaseDice] = useState(initial.baseDice);
+  const [offensiveSkill, setOffensiveSkill] = useState(initial.offensiveSkill);
+  const [offensivePower, setOffensivePower] = useState(initial.offensivePower);
+  const [defensiveSkill, setDefensiveSkill] = useState(initial.defensiveSkill);
+  const [defensivePower, setDefensivePower] = useState(initial.defensivePower);
+  const [commandCardModifiers, setCommandCardModifiers] = useState(
+    initial.commandCardModifiers
+  );
+  const [modifiers, setModifiers] = useState(initial.modifiers);
   const [muted, setMutedState] = useState(isMuted());
   const [showHelp, setShowHelp] = useState(false);
 
@@ -246,6 +251,27 @@ const App = () => {
   useEffect(() => {
     if (frightened.on) setCommandCardModifiers([0, 0, 0]);
   }, [frightened.on]);
+
+  // Persist the calculator so a reload or tab eviction doesn't lose the game
+  useEffect(() => {
+    saveState({
+      baseDice,
+      offensiveSkill,
+      offensivePower,
+      defensiveSkill,
+      defensivePower,
+      commandCardModifiers,
+      modifiers,
+    });
+  }, [
+    baseDice,
+    offensiveSkill,
+    offensivePower,
+    defensiveSkill,
+    defensivePower,
+    commandCardModifiers,
+    modifiers,
+  ]);
 
   // Return all modifiers set to ON
   const onModifiers = useMemo(() => filter(modifiers, "on"), [modifiers]);
