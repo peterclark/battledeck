@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   chunk,
   filter,
+  keyBy,
   map,
   mapValues,
   max,
@@ -22,6 +23,7 @@ import {
   FaMinus,
   FaPlus,
   FaQuestion,
+  FaTimes,
   FaVolumeUp,
   FaVolumeMute,
 } from "react-icons/fa";
@@ -33,6 +35,7 @@ import {
   deriveDice,
   deriveRoll,
   sumModifiers,
+  sumTriples,
 } from "./derive";
 import { loadState, saveState } from "./persistence";
 import { BannerArt } from "./Artwork";
@@ -47,6 +50,11 @@ import {
   playTick,
   setMuted,
 } from "./sounds";
+
+const CARDS_BY_ID = keyBy(COMMAND_CARD_MODIFIERS, "id");
+
+// "+1\nOS" -> "+1 OS"
+const flatCardName = (name) => name.replace(/\n/g, " ");
 
 const AnimatedNumber = ({ value, className: cls }) => (
   <span key={value} className={className("inline-block animate-number-in", cls)}>
@@ -147,9 +155,9 @@ const App = () => {
   const [offensivePower, setOffensivePower] = useState(initial.offensivePower);
   const [defensiveSkill, setDefensiveSkill] = useState(initial.defensiveSkill);
   const [defensivePower, setDefensivePower] = useState(initial.defensivePower);
-  const [commandCardModifiers, setCommandCardModifiers] = useState(
-    initial.commandCardModifiers
-  );
+  // Command Cards played this attack, in play order (array of card ids) —
+  // kept as a log, not a net total, so opposing cards stay visible
+  const [playedCards, setPlayedCards] = useState(initial.playedCards);
   const [modifiers, setModifiers] = useState(initial.modifiers);
   const [attackMode, setAttackMode] = useState(initial.attackMode);
   const [muted, setMutedState] = useState(isMuted());
@@ -229,14 +237,16 @@ const App = () => {
     setModifiers((mods) => ({ ...mods, [mod.id]: next }));
   };
 
-  const handleCommandCard = ({ mod, color }) => {
-    setCommandCardModifiers(([d, os, op]) => [
-      d + mod[0],
-      os + mod[1],
-      op + mod[2],
-    ]);
+  const handleCommandCard = ({ id, color }) => {
+    setPlayedCards((cards) => [...cards, id]);
     if (color === "bg-green-400") playBonus();
     else playPenalty();
+    buzz();
+  };
+
+  const removePlayedCard = (index) => {
+    setPlayedCards((cards) => filter(cards, (_, i) => i !== index));
+    playTick();
     buzz();
   };
 
@@ -250,7 +260,10 @@ const App = () => {
   const [diceModifier, offensiveSkillModifier, offensivePowerModifier] =
     useMemo(() => sumModifiers(modifiers), [modifiers]);
 
-  const [ccDice, ccOffensiveSkill, ccOffensivePower] = commandCardModifiers;
+  const [ccDice, ccOffensiveSkill, ccOffensivePower] = useMemo(
+    () => sumTriples(map(playedCards, (id) => CARDS_BY_ID[id].mod)),
+    [playedCards]
+  );
 
   const diceToRoll = useMemo(
     () => deriveDice(baseDice, ccDice, diceModifier),
@@ -275,7 +288,7 @@ const App = () => {
 
   // A Frightened unit can't have Command Cards played on it
   useEffect(() => {
-    if (frightened.on) setCommandCardModifiers([0, 0, 0]);
+    if (frightened.on) setPlayedCards([]);
   }, [frightened.on]);
 
   // Persist the calculator so a reload or tab eviction doesn't lose the game
@@ -287,7 +300,7 @@ const App = () => {
       offensivePower,
       defensiveSkill,
       defensivePower,
-      commandCardModifiers,
+      playedCards,
       modifiers,
     });
   }, [
@@ -297,9 +310,19 @@ const App = () => {
     offensivePower,
     defensiveSkill,
     defensivePower,
-    commandCardModifiers,
+    playedCards,
     modifiers,
   ]);
+
+  // One breakdown line per played card touching this column (0=dice, 1=OS,
+  // 2=OP) — opposing cards show as separate lines instead of a hidden net
+  const ccLines = (column) =>
+    map(playedCards, (id, index) => {
+      const value = CARDS_BY_ID[id].mod[column];
+      return (
+        value !== 0 && <span key={`cc-${index}`}>{value} CC</span>
+      );
+    });
 
   // General modifiers plus the active stance's, in position order
   const visibleModifiers = useMemo(
@@ -437,7 +460,7 @@ const App = () => {
               lines={
                 <>
                   <span>{baseDice} base</span>
-                  {ccDice !== 0 && <span>{ccDice} CC</span>}
+                  {ccLines(0)}
                   {map(onModifiersForDice, ({ id, modifier, count, code }) => (
                     <span key={id}>
                       {modifier[0] * (count ?? 1)} {code}
@@ -473,7 +496,7 @@ const App = () => {
               lines={
                 <>
                   <span>{offensiveSkill - defensiveSkill} base</span>
-                  {ccOffensiveSkill !== 0 && <span>{ccOffensiveSkill} CC</span>}
+                  {ccLines(1)}
                   {map(onModifiersForSkill, ({ id, modifier, count, code }) => (
                     <span key={id}>
                       {modifier[1] * (count ?? 1)} {code}
@@ -512,7 +535,7 @@ const App = () => {
               lines={
                 <>
                   <span>{offensivePower - defensivePower} base</span>
-                  {ccOffensivePower !== 0 && <span>{ccOffensivePower} CC</span>}
+                  {ccLines(2)}
                   {map(onModifiersForPower, ({ id, modifier, count, code }) => (
                     <span key={id}>
                       {modifier[2] * (count ?? 1)} {code}
@@ -556,7 +579,7 @@ const App = () => {
           Command cards
         </div>
         <div className="CommandCardModifiers flex h-16 gap-1">
-          {map(COMMAND_CARD_MODIFIERS, ({ id, name, color, mod }) => (
+          {map(COMMAND_CARD_MODIFIERS, ({ id, name, color }) => (
             <button
               key={id}
               className={className(
@@ -565,18 +588,40 @@ const App = () => {
                 color === "bg-green-400" ? "plate-boon" : "plate-danger"
               )}
               disabled={frightened.on}
-              onClick={() => handleCommandCard({ mod, color })}
+              onClick={() => handleCommandCard({ id, color })}
             >
               <span className="whitespace-pre-line">{name}</span>
             </button>
           ))}
         </div>
+        {playedCards.length > 0 && (
+          <div className="PlayedCards flex flex-wrap justify-center gap-1">
+            {map(playedCards, (id, index) => {
+              const card = CARDS_BY_ID[id];
+              return (
+                <button
+                  key={`played-${id}-${index}`}
+                  className={className(
+                    "PlayedCard plate flex items-center gap-1.5 px-2.5 py-1.5 text-[11px]",
+                    card.color === "bg-green-400" ? "plate-boon" : "plate-danger"
+                  )}
+                  aria-label={`Played ${flatCardName(card.name)}. Tap to remove.`}
+                  disabled={frightened.on}
+                  onClick={() => removePlayedCard(index)}
+                >
+                  {flatCardName(card.name)}
+                  <FaTimes className="text-[9px] opacity-60" aria-hidden />
+                </button>
+              );
+            })}
+          </div>
+        )}
         <ConfirmResetButton
           className="ClearCommandCardModifiers plate plate-on-gold h-10 text-sm tracking-widest"
           disabled={frightened.on}
           armLabel="Tap again to reset"
           onReset={() => {
-            setCommandCardModifiers([0, 0, 0]);
+            setPlayedCards([]);
             playDrum();
             buzz(16);
           }}

@@ -1,6 +1,9 @@
 import { mapValues } from "lodash";
-import { MODIFIERS } from "./constants";
+import { COMMAND_CARD_MODIFIERS, MODIFIERS } from "./constants";
 import { MAX_DICE, MAX_ROLL } from "./derive";
+
+const CARD_IDS = new Set(COMMAND_CARD_MODIFIERS.map((card) => card.id));
+const MAX_PLAYED_CARDS = 30;
 
 // Persist the whole calculator to localStorage so mid-game state survives a
 // reload or a mobile browser evicting the tab. Only the dynamic bits of each
@@ -19,7 +22,7 @@ export const DEFAULT_STATE = {
   offensivePower: 0,
   defensiveSkill: 0,
   defensivePower: 0,
-  commandCardModifiers: [0, 0, 0],
+  playedCards: [],
   modifiers: MODIFIERS,
 };
 
@@ -28,9 +31,6 @@ export const loadState = () => {
     const raw = localStorage.getItem(KEY);
     if (!raw) return DEFAULT_STATE;
     const stored = JSON.parse(raw);
-    const cc = Array.isArray(stored.commandCardModifiers)
-      ? stored.commandCardModifiers
-      : [];
     return {
       attackMode: stored.attackMode === "ranged" ? "ranged" : "melee",
       baseDice: clampInt(stored.baseDice, 0, MAX_DICE, 4),
@@ -38,7 +38,9 @@ export const loadState = () => {
       offensivePower: clampInt(stored.offensivePower, 0, MAX_ROLL - 1, 0),
       defensiveSkill: clampInt(stored.defensiveSkill, 0, MAX_ROLL - 1, 0),
       defensivePower: clampInt(stored.defensivePower, 0, MAX_ROLL - 1, 0),
-      commandCardModifiers: [0, 1, 2].map((i) => clampInt(cc[i], -99, 99, 0)),
+      playedCards: (Array.isArray(stored.playedCards) ? stored.playedCards : [])
+        .filter((id) => CARD_IDS.has(id))
+        .slice(0, MAX_PLAYED_CARDS),
       modifiers: mapValues(MODIFIERS, (mod, id) => {
         const saved = stored.modifiers?.[id];
         if (!saved || id === "reset") return mod;
@@ -66,7 +68,7 @@ export const saveState = (state) => {
         offensivePower: state.offensivePower,
         defensiveSkill: state.defensiveSkill,
         defensivePower: state.defensivePower,
-        commandCardModifiers: state.commandCardModifiers,
+        playedCards: state.playedCards,
         modifiers: mapValues(state.modifiers, ({ on, count }) =>
           count === undefined ? { on } : { on, count }
         ),
