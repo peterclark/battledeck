@@ -140,6 +140,47 @@ describe("App", () => {
     }
   });
 
+  it("shows melee + general modifiers by default, ranged set after switching", () => {
+    const { getByText, modifier } = setup();
+    expect(modifier("flanking")).toBeInTheDocument();
+    expect(modifier("disrupted")).toBeInTheDocument();
+    expect(modifier("longRange")).not.toBeInTheDocument();
+    fireEvent.click(getByText("Ranged"));
+    expect(modifier("longRange")).toBeInTheDocument();
+    expect(modifier("softCover")).toBeInTheDocument();
+    expect(modifier("flanking")).not.toBeInTheDocument();
+    expect(modifier("disrupted")).toBeInTheDocument(); // general stays
+    expect(modifier("reset")).toBeInTheDocument();
+  });
+
+  it("switching stance turns the other stance's modifiers off", () => {
+    const { getByText, hit, modifier } = setup();
+    fireEvent.click(modifier("flanking"));
+    expect(within(hit()).getByText("1 FL")).toBeInTheDocument();
+    fireEvent.click(getByText("Ranged"));
+    expect(within(hit()).queryByText("1 FL")).not.toBeInTheDocument();
+    fireEvent.click(getByText("Melee"));
+    expect(modifier("flanking")).not.toHaveClass("plate-on-ember");
+    // pinch count is cleared too, not just the on flag
+    fireEvent.click(modifier("pinching"));
+    fireEvent.click(modifier("pinching"));
+    fireEvent.click(getByText("Ranged"));
+    fireEvent.click(getByText("Melee"));
+    expect(modifier("pinching")).not.toHaveTextContent("×");
+  });
+
+  it("persists the attack mode across remounts", () => {
+    const first = setup();
+    fireEvent.click(first.getByText("Ranged"));
+    first.unmount();
+    const second = setup();
+    expect(second.modifier("longRange")).toBeInTheDocument();
+    expect(second.getByText("Ranged").closest("button")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+  });
+
   it("restores mid-game state after an unmount and remount (reload)", () => {
     const first = setup();
     tap(first.getByLabelText(/Add one die/));

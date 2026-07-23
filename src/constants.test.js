@@ -41,6 +41,34 @@ describe("MODIFIERS invariants", () => {
     }
   });
 
+  it("categories are melee, ranged, or absent — and partition as expected", () => {
+    const byCategory = { melee: [], ranged: [], general: [] };
+    for (const [key, mod] of entries) {
+      expect([undefined, "melee", "ranged"]).toContain(mod.category);
+      byCategory[mod.category ?? "general"].push(key);
+    }
+    expect(byCategory.melee.sort()).toEqual([
+      "attackingToMyFlank",
+      "attackingToMyRear",
+      "chargingFourOrMoreDice",
+      "chargingThreeOrLessDice",
+      "flanking",
+      "pinching",
+      "rearAttacking",
+      "targetHighGround",
+    ]);
+    expect(byCategory.ranged.sort()).toEqual([
+      "extremeRange",
+      "fastMovingTarget",
+      "hardCover",
+      "longRange",
+      "moveAndShoot",
+      "notClosestTarget",
+      "softCover",
+    ]);
+    expect(byCategory.general).toContain("reset");
+  });
+
   it("colors are one of the three semantic tokens", () => {
     const tokens = ["bg-green-400", "bg-red-400", "bg-yellow-400"];
     for (const [, mod] of entries) {

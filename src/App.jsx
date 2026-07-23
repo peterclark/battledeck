@@ -3,6 +3,7 @@ import {
   chunk,
   filter,
   map,
+  mapValues,
   max,
   min,
   pick,
@@ -11,6 +12,7 @@ import {
   values,
 } from "lodash";
 import {
+  GiBowArrow,
   GiPerspectiveDiceOne,
   GiPerspectiveDiceSix,
   GiCrossedSwords,
@@ -156,6 +158,7 @@ const App = () => {
     initial.commandCardModifiers
   );
   const [modifiers, setModifiers] = useState(initial.modifiers);
+  const [attackMode, setAttackMode] = useState(initial.attackMode);
   const [muted, setMutedState] = useState(isMuted());
   const [showHelp, setShowHelp] = useState(false);
 
@@ -185,6 +188,22 @@ const App = () => {
     setModifiers(MODIFIERS);
     playDrum();
     buzz(16);
+  };
+
+  // An attack is either melee or ranged: switching stance swaps which
+  // situational modifiers are shown and turns the other stance's off.
+  const switchAttackMode = (mode) => {
+    if (mode === attackMode) return;
+    setAttackMode(mode);
+    setModifiers((mods) =>
+      mapValues(mods, (mod) =>
+        mod.category && mod.category !== mode && mod.on
+          ? { ...mod, on: false, ...(mod.maxCount ? { count: 0 } : {}) }
+          : mod
+      )
+    );
+    playTick();
+    buzz();
   };
 
   const toggleModifier = (mod) => {
@@ -255,6 +274,7 @@ const App = () => {
   // Persist the calculator so a reload or tab eviction doesn't lose the game
   useEffect(() => {
     saveState({
+      attackMode,
       baseDice,
       offensiveSkill,
       offensivePower,
@@ -264,6 +284,7 @@ const App = () => {
       modifiers,
     });
   }, [
+    attackMode,
     baseDice,
     offensiveSkill,
     offensivePower,
@@ -272,6 +293,16 @@ const App = () => {
     commandCardModifiers,
     modifiers,
   ]);
+
+  // General modifiers plus the active stance's, in position order
+  const visibleModifiers = useMemo(
+    () =>
+      filter(
+        values(modifiers),
+        (mod) => !mod.category || mod.category === attackMode
+      ),
+    [modifiers, attackMode]
+  );
 
   // Return all modifiers set to ON
   const onModifiers = useMemo(() => filter(modifiers, "on"), [modifiers]);
@@ -545,8 +576,32 @@ const App = () => {
           <GiCrossedSwords className="text-lg text-ember-600" aria-hidden />
           Situational modifiers
         </div>
+        <div className="AttackModeSwitch flex gap-1" role="group" aria-label="Attack type">
+          <button
+            className={className(
+              "MeleeMode plate flex h-10 flex-1 items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em]",
+              attackMode === "melee" && "plate-on-ember"
+            )}
+            aria-pressed={attackMode === "melee"}
+            onClick={() => switchAttackMode("melee")}
+          >
+            <GiCrossedSwords className="text-lg" aria-hidden />
+            Melee
+          </button>
+          <button
+            className={className(
+              "RangedMode plate flex h-10 flex-1 items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em]",
+              attackMode === "ranged" && "plate-on-ember"
+            )}
+            aria-pressed={attackMode === "ranged"}
+            onClick={() => switchAttackMode("ranged")}
+          >
+            <GiBowArrow className="text-lg" aria-hidden />
+            Ranged
+          </button>
+        </div>
         <div className="SituationalModifiers flex flex-1 flex-col gap-1 text-[11px] leading-tight">
-          {map(chunk(values(modifiers), 5), (group, index) => (
+          {map(chunk(visibleModifiers, 5), (group, index) => (
             <div className="flex min-h-16 flex-1 gap-1" key={`group-${index}`}>
               {map(group, (modifier) =>
                 modifier.id === "reset" ? (

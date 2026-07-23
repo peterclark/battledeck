@@ -74,6 +74,13 @@ describe("persistence", () => {
     expect(loaded.modifiers.pinching.on).toBe(false);
   });
 
+  it("round-trips the attack mode and rejects unknown values", () => {
+    saveState({ ...DEFAULT_STATE, attackMode: "ranged" });
+    expect(loadState().attackMode).toBe("ranged");
+    localStorage.setItem(KEY, JSON.stringify({ attackMode: "psychic" }));
+    expect(loadState().attackMode).toBe("melee");
+  });
+
   it("survives corrupt JSON", () => {
     localStorage.setItem(KEY, "{not json");
     expect(loadState()).toEqual(DEFAULT_STATE);

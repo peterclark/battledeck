@@ -1,3 +1,6 @@
+// `category` marks stance-specific modifiers — "melee" or "ranged" (absent
+// means the modifier applies to both). The grid shows general modifiers plus
+// the active stance's, and switching stance turns the other stance's off.
 export const MODIFIERS = {
   disrupted: {
     position: 1,
@@ -40,6 +43,7 @@ export const MODIFIERS = {
   attackingToMyFlank: {
     position: 5,
     id: "attackingToMyFlank",
+    category: "melee",
     name: "Attack\nmy Flank",
     on: false,
     color: "bg-red-400",
@@ -62,6 +66,7 @@ export const MODIFIERS = {
   attackingToMyRear: {
     position: 6,
     id: "attackingToMyRear",
+    category: "melee",
     name: "Attack\nmy Rear",
     on: false,
     color: "bg-red-400",
@@ -84,6 +89,7 @@ export const MODIFIERS = {
   chargingFourOrMoreDice: {
     position: 7,
     id: "chargingFourOrMoreDice",
+    category: "melee",
     name: "Charge\n4+ dice",
     on: false,
     color: "bg-green-400",
@@ -103,6 +109,7 @@ export const MODIFIERS = {
   chargingThreeOrLessDice: {
     position: 8,
     id: "chargingThreeOrLessDice",
+    category: "melee",
     name: "Charge\n3- dice",
     on: false,
     color: "bg-green-400",
@@ -122,6 +129,7 @@ export const MODIFIERS = {
   flanking: {
     position: 9,
     id: "flanking",
+    category: "melee",
     name: "Flanking\nEnemy",
     on: false,
     color: "bg-green-400",
@@ -143,6 +151,7 @@ export const MODIFIERS = {
   pinching: {
     position: 10,
     id: "pinching",
+    category: "melee",
     name: "Pinching\nEnemy",
     on: false,
     count: 0,
@@ -165,6 +174,7 @@ export const MODIFIERS = {
   rearAttacking: {
     position: 11,
     id: "rearAttacking",
+    category: "melee",
     name: "Rear\nAttack",
     on: false,
     color: "bg-green-400",
@@ -215,6 +225,7 @@ export const MODIFIERS = {
   fastMovingTarget: {
     position: 15,
     id: "fastMovingTarget",
+    category: "ranged",
     name: "Fast\nTarget",
     on: false,
     color: "bg-red-400",
@@ -234,6 +245,7 @@ export const MODIFIERS = {
   extremeRange: {
     position: 16,
     id: "extremeRange",
+    category: "ranged",
     name: "Extreme\nRange\n15+",
     on: false,
     color: "bg-red-400",
@@ -254,6 +266,7 @@ export const MODIFIERS = {
   longRange: {
     position: 17,
     id: "longRange",
+    category: "ranged",
     name: "Long\nRange\n7-14",
     on: false,
     color: "bg-red-400",
@@ -274,6 +287,7 @@ export const MODIFIERS = {
   moveAndShoot: {
     position: 18,
     id: "moveAndShoot",
+    category: "ranged",
     name: "Move &\nShoot",
     on: false,
     color: "bg-red-400",
@@ -293,6 +307,7 @@ export const MODIFIERS = {
   notClosestTarget: {
     position: 19,
     id: "notClosestTarget",
+    category: "ranged",
     name: "Not\nClosest",
     on: false,
     color: "bg-red-400",
@@ -312,6 +327,7 @@ export const MODIFIERS = {
   targetHighGround: {
     position: 20,
     id: "targetHighGround",
+    category: "melee",
     name: "High\nGround",
     on: false,
     color: "bg-red-400",
@@ -328,6 +344,7 @@ export const MODIFIERS = {
   softCover: {
     position: 21,
     id: "softCover",
+    category: "ranged",
     name: "Soft\nCover",
     on: false,
     color: "bg-red-400",
@@ -347,6 +364,7 @@ export const MODIFIERS = {
   hardCover: {
     position: 22,
     id: "hardCover",
+    category: "ranged",
     name: "Hard\nCover",
     on: false,
     color: "bg-red-400",
