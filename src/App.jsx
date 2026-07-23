@@ -18,10 +18,17 @@ import {
   GiCrossedSwords,
   GiScrollUnfurled,
 } from "react-icons/gi";
-import { FaMinus, FaPlus, FaVolumeUp, FaVolumeMute } from "react-icons/fa";
+import {
+  FaMinus,
+  FaPlus,
+  FaQuestion,
+  FaVolumeUp,
+  FaVolumeMute,
+} from "react-icons/fa";
 import className from "classnames";
 import { MODIFIERS, COMMAND_CARD_MODIFIERS } from "./constants";
 import { BannerArt } from "./Artwork";
+import Help from "./Help";
 import { usePressable } from "./hooks";
 import {
   buzz,
@@ -103,6 +110,7 @@ const App = () => {
   const [commandCardModifiers, setCommandCardModifiers] = useState([0, 0, 0]);
   const [modifiers, setModifiers] = useState(MODIFIERS);
   const [muted, setMutedState] = useState(isMuted());
+  const [showHelp, setShowHelp] = useState(false);
 
   const { frightened } = modifiers || {};
 
@@ -325,7 +333,20 @@ const App = () => {
         >
           {muted ? <FaVolumeMute /> : <FaVolumeUp />}
         </button>
+        <button
+          className="HelpLink plate absolute left-2 top-2 flex h-9 w-9 items-center justify-center text-bone-300"
+          onClick={() => {
+            setShowHelp(true);
+            playTick();
+            buzz();
+          }}
+          aria-label="How your turn works"
+        >
+          <FaQuestion />
+        </button>
       </header>
+
+      {showHelp && <Help onClose={() => setShowHelp(false)} />}
 
       <div className="sticky top-0 z-20 border-b border-iron-500 bg-iron-900/95 px-3 pb-2 pt-1 backdrop-blur-sm">
         <div className="Roll grid grid-cols-3 gap-1.5">
