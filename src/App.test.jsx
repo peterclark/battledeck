@@ -140,6 +140,21 @@ describe("App", () => {
     }
   });
 
+  it("restores mid-game state after an unmount and remount (reload)", () => {
+    const first = setup();
+    tap(first.getByLabelText(/Add one die/));
+    fireEvent.click(first.modifier("disrupted"));
+    fireEvent.click(first.modifier("pinching"));
+    fireEvent.click(first.modifier("pinching"));
+    first.unmount();
+
+    const second = setup();
+    expect(second.dice().querySelector(".text-6xl")).toHaveTextContent("4"); // 5 base -1 DI
+    expect(within(second.dice()).getByText("5 base")).toBeInTheDocument();
+    expect(within(second.dice()).getByText("-1 DI")).toBeInTheDocument();
+    expect(second.modifier("pinching")).toHaveTextContent("×2");
+  });
+
   it("a single stray tap on reset does not reset", () => {
     const { dice, modifier } = setup();
     fireEvent.click(modifier("disrupted"));
