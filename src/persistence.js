@@ -13,6 +13,7 @@ const clampInt = (value, min, max, fallback) =>
   Number.isInteger(value) && value >= min && value <= max ? value : fallback;
 
 export const DEFAULT_STATE = {
+  attackMode: "melee",
   baseDice: 4,
   offensiveSkill: 0,
   offensivePower: 0,
@@ -31,6 +32,7 @@ export const loadState = () => {
       ? stored.commandCardModifiers
       : [];
     return {
+      attackMode: stored.attackMode === "ranged" ? "ranged" : "melee",
       baseDice: clampInt(stored.baseDice, 0, MAX_DICE, 4),
       offensiveSkill: clampInt(stored.offensiveSkill, 0, MAX_ROLL - 1, 0),
       offensivePower: clampInt(stored.offensivePower, 0, MAX_ROLL - 1, 0),
@@ -58,6 +60,7 @@ export const saveState = (state) => {
     localStorage.setItem(
       KEY,
       JSON.stringify({
+        attackMode: state.attackMode,
         baseDice: state.baseDice,
         offensiveSkill: state.offensiveSkill,
         offensivePower: state.offensivePower,
