@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   chunk,
   filter,
@@ -6,8 +6,6 @@ import {
   max,
   min,
   pick,
-  pickBy,
-  reduce,
   some,
   transform,
   values,
@@ -27,6 +25,13 @@ import {
 } from "react-icons/fa";
 import className from "classnames";
 import { MODIFIERS, COMMAND_CARD_MODIFIERS } from "./constants";
+import {
+  MAX_DICE,
+  MAX_ROLL,
+  deriveDice,
+  deriveRoll,
+  sumModifiers,
+} from "./derive";
 import { BannerArt } from "./Artwork";
 import Help from "./Help";
 import { usePressable } from "./hooks";
@@ -39,9 +44,6 @@ import {
   playTick,
   setMuted,
 } from "./sounds";
-
-const MAX_DICE = 20;
-const MAX_ROLL = 10;
 
 // Map the semantic colors in constants.js onto grimdark plate styles
 const PLATE_ON = {
@@ -56,20 +58,20 @@ const AnimatedNumber = ({ value, className: cls }) => (
   </span>
 );
 
-// Tap increments the rank; holding decrements (repeating while held)
+// Tap increments the rank; holding decrements (repeating while held).
+// Keyboard: Enter/Space raise, arrow keys raise/lower.
 const RankButton = ({ label, value, onInc, tone }) => {
+  const inc = (mod) => {
+    onInc(mod);
+    playTick();
+    buzz();
+  };
   const press = usePressable({
-    onTap: () => {
-      onInc(1);
-      playTick();
-      buzz();
-    },
-    onHold: () => {
-      onInc(-1);
-      playTick();
-      buzz();
-    },
+    onTap: () => inc(1),
+    onHold: () => inc(-1),
     repeat: 280,
+    onArrowUp: () => inc(1),
+    onArrowDown: () => inc(-1),
   });
   return (
     <button
@@ -82,6 +84,46 @@ const RankButton = ({ label, value, onInc, tone }) => {
     >
       <span className="font-display text-3xl leading-none">{value}</span>
       <span className="text-[10px] tracking-widest opacity-70">{label}</span>
+    </button>
+  );
+};
+
+// Reset wipes state and sits next to frequently-tapped controls, so it asks
+// for confirmation: hold to reset, or tap twice within the arm window (the
+// second path keeps reset reachable by keyboard and discoverable by touch).
+const ConfirmResetButton = ({
+  onReset,
+  className: cls,
+  disabled,
+  armLabel,
+  children,
+}) => {
+  const [armed, setArmed] = useState(false);
+  const armTimer = useRef(null);
+  useEffect(() => () => clearTimeout(armTimer.current), []);
+  const fire = () => {
+    clearTimeout(armTimer.current);
+    setArmed(false);
+    onReset();
+  };
+  const press = usePressable({
+    onTap: () => {
+      if (armed) return fire();
+      setArmed(true);
+      playTick();
+      buzz();
+      armTimer.current = setTimeout(() => setArmed(false), 1600);
+    },
+    onHold: fire,
+  });
+  return (
+    <button
+      className={cls}
+      disabled={disabled}
+      aria-label="Reset. Hold, or tap twice, to confirm."
+      {...press}
+    >
+      <span className="whitespace-pre-line">{armed ? armLabel : children}</span>
     </button>
   );
 };
@@ -134,13 +176,13 @@ const App = () => {
     setDefensivePower((dp) => (dp + mod + MAX_ROLL) % MAX_ROLL);
   };
 
+  const resetModifiers = () => {
+    setModifiers(MODIFIERS);
+    playDrum();
+    buzz(16);
+  };
+
   const toggleModifier = (mod) => {
-    if (mod.id === "reset") {
-      setModifiers(MODIFIERS);
-      playDrum();
-      buzz(16);
-      return;
-    }
     // Modifiers with a maxCount stack: taps cycle 0 -> 1 -> ... -> maxCount -> 0
     let next;
     if (mod.maxCount) {
@@ -175,64 +217,30 @@ const App = () => {
   };
 
   const [diceModifier, offensiveSkillModifier, offensivePowerModifier] =
-    useMemo(() => {
-      const modsOn = values(pickBy(modifiers, (mod) => mod.on));
-      const mods = reduce(
-        modsOn,
-        (sums, { modifier, count }) => {
-          const stack = count ?? 1;
-          return [
-            sums[0] + modifier[0] * stack,
-            sums[1] + modifier[1] * stack,
-            sums[2] + modifier[2] * stack,
-          ];
-        },
-        [0, 0, 0]
-      );
-      return mods;
-    }, [modifiers]);
+    useMemo(() => sumModifiers(modifiers), [modifiers]);
 
   const [ccDice, ccOffensiveSkill, ccOffensivePower] = commandCardModifiers;
 
-  const diceToRoll = useMemo(() => {
-    return min([max([baseDice + ccDice + diceModifier, 0]), MAX_DICE]);
-  }, [baseDice, ccDice, diceModifier]);
+  const diceToRoll = useMemo(
+    () => deriveDice(baseDice, ccDice, diceModifier),
+    [baseDice, ccDice, diceModifier]
+  );
 
-  // 6 is always a miss, 1 is always a hit. Totals above 5 trigger the
-  // Overkill rule: one rolled 6 becomes a 5 per point over 5.
-  const { value: rollToHit, overkill: hitOverkill } = useMemo(() => {
-    const hitTotal =
-      offensiveSkill -
-      defensiveSkill +
-      ccOffensiveSkill +
-      offensiveSkillModifier;
-    return {
-      value: max([min([hitTotal, 5]), 1]),
-      overkill: max([hitTotal - 5, 0]),
-    };
-  }, [
-    offensiveSkill,
-    defensiveSkill,
-    ccOffensiveSkill,
-    offensiveSkillModifier,
-  ]);
+  const { value: rollToHit, overkill: hitOverkill } = useMemo(
+    () =>
+      deriveRoll(
+        offensiveSkill - defensiveSkill + ccOffensiveSkill + offensiveSkillModifier
+      ),
+    [offensiveSkill, defensiveSkill, ccOffensiveSkill, offensiveSkillModifier]
+  );
 
-  const { value: rollToWound, overkill: woundOverkill } = useMemo(() => {
-    const woundTotal =
-      offensivePower -
-      defensivePower +
-      ccOffensivePower +
-      offensivePowerModifier;
-    return {
-      value: max([min([woundTotal, 5]), 1]),
-      overkill: max([woundTotal - 5, 0]),
-    };
-  }, [
-    offensivePower,
-    defensivePower,
-    ccOffensivePower,
-    offensivePowerModifier,
-  ]);
+  const { value: rollToWound, overkill: woundOverkill } = useMemo(
+    () =>
+      deriveRoll(
+        offensivePower - defensivePower + ccOffensivePower + offensivePowerModifier
+      ),
+    [offensivePower, defensivePower, ccOffensivePower, offensivePowerModifier]
+  );
 
   // A Frightened unit can't have Command Cards played on it
   useEffect(() => {
@@ -492,17 +500,18 @@ const App = () => {
             </button>
           ))}
         </div>
-        <button
+        <ConfirmResetButton
           className="ClearCommandCardModifiers plate plate-on-gold h-10 text-sm tracking-widest"
-          onClick={() => {
+          disabled={frightened.on}
+          armLabel="Tap again to reset"
+          onReset={() => {
             setCommandCardModifiers([0, 0, 0]);
             playDrum();
             buzz(16);
           }}
-          disabled={frightened.on}
         >
           Reset
-        </button>
+        </ConfirmResetButton>
       </div>
 
       <div className="flex flex-col gap-2 px-3 pb-4 pt-3">
@@ -513,23 +522,38 @@ const App = () => {
         <div className="SituationalModifiers flex flex-1 flex-col gap-1 text-[11px] leading-tight">
           {map(chunk(values(modifiers), 5), (group, index) => (
             <div className="flex min-h-16 flex-1 gap-1" key={`group-${index}`}>
-              {map(group, (modifier) => (
-                <button
-                  key={`modifier-${modifier.id}`}
-                  className={className(
-                    modifier.id,
-                    "plate w-1/5 flex-1",
-                    modifier.on && PLATE_ON[modifier.color]
-                  )}
-                  disabled={disabledModifiers[modifier.id]}
-                  onClick={() => toggleModifier(modifier)}
-                >
-                  <span className="whitespace-pre-line">
+              {map(group, (modifier) =>
+                modifier.id === "reset" ? (
+                  <ConfirmResetButton
+                    key="modifier-reset"
+                    className={className(
+                      modifier.id,
+                      "plate w-1/5 flex-1",
+                      PLATE_ON[modifier.color]
+                    )}
+                    armLabel={"Tap\nagain"}
+                    onReset={resetModifiers}
+                  >
                     {modifier.name}
-                    {modifier.count > 1 ? ` ×${modifier.count}` : ""}
-                  </span>
-                </button>
-              ))}
+                  </ConfirmResetButton>
+                ) : (
+                  <button
+                    key={`modifier-${modifier.id}`}
+                    className={className(
+                      modifier.id,
+                      "plate w-1/5 flex-1",
+                      modifier.on && PLATE_ON[modifier.color]
+                    )}
+                    disabled={disabledModifiers[modifier.id]}
+                    onClick={() => toggleModifier(modifier)}
+                  >
+                    <span className="whitespace-pre-line">
+                      {modifier.name}
+                      {modifier.count > 1 ? ` ×${modifier.count}` : ""}
+                    </span>
+                  </button>
+                )
+              )}
             </div>
           ))}
         </div>

@@ -2,8 +2,18 @@ import { useRef } from "react";
 
 // Pointer-based press gesture: quick press fires onTap on release; holding
 // past holdDelay fires onHold instead (repeating every `repeat` ms if set).
-// Moving off the button or a pointer cancel abandons the gesture.
-export function usePressable({ onTap, onHold, holdDelay = 400, repeat = 0 }) {
+// The pointer is captured on press so a slightly rolling thumb doesn't
+// silently swallow the tap; a pointer cancel abandons the gesture.
+// Keyboard: Enter/Space fire onTap; ArrowUp/ArrowDown fire the optional
+// onArrowUp/onArrowDown (so hold-only actions stay reachable by keyboard).
+export function usePressable({
+  onTap,
+  onHold,
+  holdDelay = 400,
+  repeat = 0,
+  onArrowUp,
+  onArrowDown,
+}) {
   const timer = useRef(null);
   const interval = useRef(null);
   const held = useRef(false);
@@ -15,6 +25,8 @@ export function usePressable({ onTap, onHold, holdDelay = 400, repeat = 0 }) {
 
   const down = (e) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
+    // Keep receiving pointer events even if the finger drifts off the button
+    e.currentTarget.setPointerCapture?.(e.pointerId);
     held.current = false;
     if (!onHold) return;
     timer.current = setTimeout(() => {
@@ -45,6 +57,12 @@ export function usePressable({ onTap, onHold, holdDelay = 400, repeat = 0 }) {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         onTap?.();
+      } else if (e.key === "ArrowUp" && onArrowUp) {
+        e.preventDefault();
+        onArrowUp();
+      } else if (e.key === "ArrowDown" && onArrowDown) {
+        e.preventDefault();
+        onArrowDown();
       }
     },
   };
