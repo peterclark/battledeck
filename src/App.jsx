@@ -1,9 +1,7 @@
-import { useMemo } from "react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   chunk,
   filter,
-  keyBy,
   map,
   max,
   min,
@@ -11,17 +9,90 @@ import {
   pickBy,
   reduce,
   some,
-  sortBy,
   transform,
   values,
 } from "lodash";
-import { GiPerspectiveDiceOne, GiPerspectiveDiceSix } from "react-icons/gi";
-import { FaMinus, FaPlus } from "react-icons/fa";
-import { MODIFIERS, COMMAND_ACTION_MODIFIERS } from "./constants";
+import {
+  GiPerspectiveDiceOne,
+  GiPerspectiveDiceSix,
+  GiCrossedSwords,
+  GiScrollUnfurled,
+} from "react-icons/gi";
+import { FaMinus, FaPlus, FaVolumeUp, FaVolumeMute } from "react-icons/fa";
 import className from "classnames";
+import { MODIFIERS, COMMAND_CARD_MODIFIERS } from "./constants";
+import { BannerArt } from "./Artwork";
+import { usePressable } from "./hooks";
+import {
+  buzz,
+  isMuted,
+  playBonus,
+  playDrum,
+  playPenalty,
+  playTick,
+  setMuted,
+} from "./sounds";
 
 const MAX_DICE = 20;
 const MAX_ROLL = 10;
+
+// Map the semantic colors in constants.js onto grimdark plate styles
+const PLATE_ON = {
+  "bg-green-400": "plate-on-ember animate-ember-pulse",
+  "bg-red-400": "plate-on-blood animate-blood-pulse",
+  "bg-yellow-400": "plate-on-gold",
+};
+
+const AnimatedNumber = ({ value, className: cls }) => (
+  <span key={value} className={className("inline-block animate-number-in", cls)}>
+    {value}
+  </span>
+);
+
+// Tap increments the rank; holding decrements (repeating while held)
+const RankButton = ({ label, value, onInc, tone }) => {
+  const press = usePressable({
+    onTap: () => {
+      onInc(1);
+      playTick();
+      buzz();
+    },
+    onHold: () => {
+      onInc(-1);
+      playTick();
+      buzz();
+    },
+    repeat: 280,
+  });
+  return (
+    <button
+      className={className(
+        "plate flex-1 flex flex-col items-center justify-center py-1",
+        tone
+      )}
+      aria-label={`${label} rank ${value}. Tap to raise, hold to lower.`}
+      {...press}
+    >
+      <span className="font-display text-3xl leading-none">{value}</span>
+      <span className="text-[10px] tracking-widest opacity-70">{label}</span>
+    </button>
+  );
+};
+
+const StatCard = ({ title, value, tone, lines }) => (
+  <div className="flex items-start justify-center gap-1.5 pt-1">
+    <AnimatedNumber
+      value={value}
+      className={className("font-display text-6xl leading-none", tone)}
+    />
+    <div className="flex flex-col justify-center pt-1 font-mono text-[10px] leading-tight text-bone-500">
+      <span className="text-[11px] font-bold tracking-wider text-bone-300">
+        {title}
+      </span>
+      {lines}
+    </div>
+  </div>
+);
 
 const App = () => {
   const [baseDice, setBaseDice] = useState(4);
@@ -29,97 +100,135 @@ const App = () => {
   const [offensivePower, setOffensivePower] = useState(0);
   const [defensiveSkill, setDefensiveSkill] = useState(0);
   const [defensivePower, setDefensivePower] = useState(0);
-  const [commandActionModifiers, setCommandActionModifiers] = useState([
-    0, 0, 0,
-  ]);
+  const [commandCardModifiers, setCommandCardModifiers] = useState([0, 0, 0]);
   const [modifiers, setModifiers] = useState(MODIFIERS);
+  const [muted, setMutedState] = useState(isMuted());
 
   const { frightened } = modifiers || {};
 
   const handleIncDice = (mod) => {
-    setBaseDice(min([max([baseDice + mod, 0]), MAX_DICE]));
+    setBaseDice((dice) => min([max([dice + mod, 0]), MAX_DICE]));
   };
 
   const handleIncOffensiveSkill = (mod) => {
-    setOffensiveSkill((os) => (os + mod) % MAX_ROLL);
+    setOffensiveSkill((os) => (os + mod + MAX_ROLL) % MAX_ROLL);
   };
 
   const handleIncOffensivePower = (mod) => {
-    setOffensivePower((op) => (op + mod) % MAX_ROLL);
+    setOffensivePower((op) => (op + mod + MAX_ROLL) % MAX_ROLL);
   };
 
   const handleIncDefensiveSkill = (mod) => {
-    setDefensiveSkill((ds) => (ds + mod) % MAX_ROLL);
+    setDefensiveSkill((ds) => (ds + mod + MAX_ROLL) % MAX_ROLL);
   };
 
   const handleIncDefensivePower = (mod) => {
-    setDefensivePower((dp) => (dp + mod) % MAX_ROLL);
+    setDefensivePower((dp) => (dp + mod + MAX_ROLL) % MAX_ROLL);
   };
 
   const toggleModifier = (mod) => {
     if (mod.id === "reset") {
       setModifiers(MODIFIERS);
+      playDrum();
+      buzz(16);
       return;
     }
-    const filtered = filter(modifiers, (m) => mod.id !== m.id);
-    const updated = {
-      ...keyBy(filtered, "id"),
-      [mod.id]: { ...mod, on: !mod.on },
-    };
-    const sorted = sortBy(updated, "position");
-    const keyed = keyBy(sorted, "id");
-    setModifiers(keyed);
+    // Modifiers with a maxCount stack: taps cycle 0 -> 1 -> ... -> maxCount -> 0
+    let next;
+    if (mod.maxCount) {
+      const count = ((mod.count ?? 0) + 1) % (mod.maxCount + 1);
+      next = { ...mod, count, on: count > 0 };
+    } else {
+      next = { ...mod, on: !mod.on };
+    }
+    if (!next.on) playTick();
+    else if (mod.color === "bg-green-400") playBonus();
+    else playPenalty();
+    buzz();
+    setModifiers((mods) => ({ ...mods, [mod.id]: next }));
+  };
+
+  const handleCommandCard = ({ mod, color }) => {
+    setCommandCardModifiers(([d, os, op]) => [
+      d + mod[0],
+      os + mod[1],
+      op + mod[2],
+    ]);
+    if (color === "bg-green-400") playBonus();
+    else playPenalty();
+    buzz();
+  };
+
+  const toggleMute = () => {
+    const next = !muted;
+    setMuted(next);
+    setMutedState(next);
+    if (!next) playTick();
   };
 
   const [diceModifier, offensiveSkillModifier, offensivePowerModifier] =
     useMemo(() => {
       const modsOn = values(pickBy(modifiers, (mod) => mod.on));
-      const arrays = map(modsOn, "modifier");
       const mods = reduce(
-        arrays,
-        (sums, val) => [sums[0] + val[0], sums[1] + val[1], sums[2] + val[2]],
+        modsOn,
+        (sums, { modifier, count }) => {
+          const stack = count ?? 1;
+          return [
+            sums[0] + modifier[0] * stack,
+            sums[1] + modifier[1] * stack,
+            sums[2] + modifier[2] * stack,
+          ];
+        },
         [0, 0, 0]
       );
       return mods;
     }, [modifiers]);
 
-  const [caDice, caOffensiveSkill, caOffensivePower] = commandActionModifiers;
+  const [ccDice, ccOffensiveSkill, ccOffensivePower] = commandCardModifiers;
 
   const diceToRoll = useMemo(() => {
-    return max([baseDice + caDice + diceModifier, 0]);
-  }, [baseDice, caDice, diceModifier]);
+    return min([max([baseDice + ccDice + diceModifier, 0]), MAX_DICE]);
+  }, [baseDice, ccDice, diceModifier]);
 
-  // 6 is always a miss, 1 is always a hit
-  const rollToHit = useMemo(() => {
+  // 6 is always a miss, 1 is always a hit. Totals above 5 trigger the
+  // Overkill rule: one rolled 6 becomes a 5 per point over 5.
+  const { value: rollToHit, overkill: hitOverkill } = useMemo(() => {
     const hitTotal =
       offensiveSkill -
       defensiveSkill +
-      caOffensiveSkill +
+      ccOffensiveSkill +
       offensiveSkillModifier;
-    return max([min([hitTotal, 5]), 1]);
+    return {
+      value: max([min([hitTotal, 5]), 1]),
+      overkill: max([hitTotal - 5, 0]),
+    };
   }, [
     offensiveSkill,
     defensiveSkill,
-    caOffensiveSkill,
+    ccOffensiveSkill,
     offensiveSkillModifier,
   ]);
 
-  const rollToWound = useMemo(() => {
+  const { value: rollToWound, overkill: woundOverkill } = useMemo(() => {
     const woundTotal =
       offensivePower -
       defensivePower +
-      caOffensivePower +
+      ccOffensivePower +
       offensivePowerModifier;
-    return max([min([woundTotal, 5]), 1]);
+    return {
+      value: max([min([woundTotal, 5]), 1]),
+      overkill: max([woundTotal - 5, 0]),
+    };
   }, [
     offensivePower,
     defensivePower,
-    caOffensivePower,
+    ccOffensivePower,
     offensivePowerModifier,
   ]);
 
-  useMemo(() => {
-    if (frightened.on) setCommandActionModifiers([0, 0, 0]);
+  // A Frightened unit can't have Command Cards played on it
+  useEffect(() => {
+    if (frightened.on) setCommandCardModifiers([0, 0, 0]);
   }, [frightened.on]);
 
   // Return all modifiers set to ON
@@ -169,158 +278,247 @@ const App = () => {
     return disabled;
   }, [modifiers, status]);
 
+  const diceDown = usePressable({
+    onTap: () => {
+      handleIncDice(-1);
+      playDrum();
+      buzz();
+    },
+    onHold: () => {
+      handleIncDice(-1);
+      playDrum();
+      buzz();
+    },
+    repeat: 140,
+  });
+
+  const diceUp = usePressable({
+    onTap: () => {
+      handleIncDice(1);
+      playDrum();
+      buzz();
+    },
+    onHold: () => {
+      handleIncDice(1);
+      playDrum();
+      buzz();
+    },
+    repeat: 140,
+  });
+
   return (
-    <div className="BattleDeck flex flex-col bg-black gap-2">
-      <div className="Roll flex flex-1 text-9xl mx-4 mt-4 my-2 mb-0 gap-1">
-        <div className="Dice flex-1 flex flex-col items-center justify-between bg-white rounded">
-          <span className="text-green-900 flex gap-1">
-            {diceToRoll}
-            <div className="flex flex-col text-xs justify-center font-mono">
-              <span className="font-bold text-sm">Dice</span>
-              <span>{baseDice} base</span>
-              {caDice !== 0 && <span>{caDice} CA</span>}
-              {map(onModifiersForDice, ({ id, modifier, code }) => (
-                <span key={id}>
-                  {modifier[0]} {code}
-                </span>
-              ))}
-              {frightened.on && <span>{frightened.code}</span>}
-            </div>
-          </span>
-          <div className="text-5xl flex w-full h-1/2 max-h-20 gap-1 pb-2">
-            <button
-              className="flex-1 ml-2 border-white rounded bg-red-400 text-red-900 flex items-center justify-center"
-              onClick={() => handleIncDice(-1)}
-            >
-              <FaMinus />
-            </button>
-            <button
-              className="flex-1 mr-2 border-white rounded bg-green-400 text-green-900 flex items-center justify-center"
-              onClick={() => handleIncDice(1)}
-            >
-              <FaPlus />
-            </button>
-          </div>
+    <div
+      className="BattleDeck mx-auto flex min-h-dvh max-w-md flex-col bg-iron-900 text-bone-100"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <header className="relative">
+        <BannerArt />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <h1 className="font-display text-2xl font-bold tracking-[0.35em] text-ember-400 [text-shadow:0_2px_10px_rgba(0,0,0,0.9)]">
+            BATTLEDECK
+          </h1>
         </div>
-        <div className="RollToHit flex-1 flex flex-col items-center justify-between bg-white rounded">
-          <span className="text-red-900 flex gap-1">
-            {rollToHit}
-            <div className="flex flex-col text-xs justify-center font-mono">
-              <span className="font-bold text-sm">Hit</span>
-              <span>{offensiveSkill - defensiveSkill} base</span>
-              {caOffensiveSkill !== 0 && <span>{caOffensiveSkill} CA</span>}
-              {map(onModifiersForSkill, ({ id, modifier, code }) => (
-                <span key={id}>
-                  {modifier[1]} {code}
-                </span>
-              ))}
-              {frightened.on && <span>{frightened.code}</span>}
-            </div>
-          </span>
-          <div className="text-5xl flex w-full h-1/2 max-h-20 gap-1 pb-2">
-            <button
-              className="OffensiveSkillRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"
-              onClick={() => handleIncOffensiveSkill(1)}
-            >
-              {offensiveSkill}
-            </button>
-            <button
-              className="DefensiveSkillRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100"
-              onClick={() => handleIncDefensiveSkill(1)}
-            >
-              {defensiveSkill}
-            </button>
-          </div>
-        </div>
-        <div className="RollToWound flex-1 flex flex-col items-center justify-between bg-white rounded">
-          <div className="text-blue-900 flex gap-1">
-            {rollToWound}
-            <div className="flex flex-col text-xs justify-center font-mono">
-              <span className="font-bold text-sm">Wound</span>
-              <span>{offensivePower - defensivePower} base</span>
-              {caOffensivePower !== 0 && <span>{caOffensivePower} CA</span>}
-              {map(onModifiersForPower, ({ id, modifier, code }) => (
-                <span key={id}>
-                  {modifier[2]} {code}
-                </span>
-              ))}
-              {frightened.on && <span>{frightened.code}</span>}
-            </div>
-          </div>
-          <div className="text-5xl flex w-full h-1/2 max-h-20 gap-1 pb-2">
-            <button
-              className="OffensivePowerRank ml-2 flex-1 border-white rounded bg-rose-900 text-rose-100"
-              onClick={() => handleIncOffensivePower(1)}
-            >
-              {offensivePower}
-            </button>
-            <button
-              className="DefensivePowerRank mr-2 flex-1 border-white rounded bg-blue-900 text-blue-100"
-              onClick={() => handleIncDefensivePower(1)}
-            >
-              {defensivePower}
-            </button>
-          </div>
-        </div>
-      </div>
+        <button
+          className="plate absolute right-2 top-2 flex h-9 w-9 items-center justify-center text-bone-300"
+          onClick={toggleMute}
+          aria-label={muted ? "Unmute sounds" : "Mute sounds"}
+        >
+          {muted ? <FaVolumeMute /> : <FaVolumeUp />}
+        </button>
+      </header>
 
-      <div className="text-white font-bold flex justify-center">
-        Command Action Modifiers
-      </div>
-      <div className="CommandActionModifiers flex h-20 gap-1 mx-4 min-h-20">
-        {map(COMMAND_ACTION_MODIFIERS, ({ id, name, color, mod }) => (
-          <button
-            key={id}
-            className={className("flex-1 rounded", id, color)}
-            disabled={frightened.on}
-            onClick={() =>
-              setCommandActionModifiers(([d, os, op]) => [
-                d + mod[0],
-                os + mod[1],
-                op + mod[2],
-              ])
-            }
-          >
-            <span className="whitespace-pre-line">{name}</span>
-          </button>
-        ))}
-      </div>
-      <button
-        className="ClearCommandActionModifiers bg-yellow-400 mx-4 rounded h-10"
-        onClick={() => setCommandActionModifiers([0, 0, 0])}
-        disabled={frightened.on}
-      >
-        Reset
-      </button>
-
-      <div className="text-white font-bold flex justify-center">
-        Situational Modifiers
-      </div>
-      <div className="SituationalModifiers mx-4 flex flex-col flex-1 gap-1 text-sm">
-        {map(chunk(values(modifiers), 5), (group, index) => (
-          <div className="flex flex-1 gap-1 min-h-20" key={`group-${index}`}>
-            {map(group, (modifier) => (
+      <div className="sticky top-0 z-20 border-b border-iron-500 bg-iron-900/95 px-3 pb-2 pt-1 backdrop-blur-sm">
+        <div className="Roll grid grid-cols-3 gap-1.5">
+          <div className="Dice flex flex-col gap-1">
+            <StatCard
+              title="Dice"
+              value={diceToRoll}
+              tone="text-ember-400"
+              lines={
+                <>
+                  <span>{baseDice} base</span>
+                  {ccDice !== 0 && <span>{ccDice} CC</span>}
+                  {map(onModifiersForDice, ({ id, modifier, count, code }) => (
+                    <span key={id}>
+                      {modifier[0] * (count ?? 1)} {code}
+                    </span>
+                  ))}
+                  {frightened.on && <span>{frightened.code}</span>}
+                </>
+              }
+            />
+            <div className="flex gap-1">
               <button
-                key={`modifier-${modifier.id}`}
-                className={className(
-                  modifier.id,
-                  "w-1/5 flex-1 rounded",
-                  modifier.on ? modifier.color : "bg-white"
-                )}
-                disabled={disabledModifiers[modifier.id]}
-                onClick={() => toggleModifier(modifier)}
+                className="plate plate-danger flex h-12 flex-1 items-center justify-center text-xl"
+                aria-label="Remove one die. Hold to repeat."
+                {...diceDown}
               >
-                <span className="whitespace-pre-line">{modifier.name}</span>
+                <FaMinus />
               </button>
-            ))}
+              <button
+                className="plate plate-boon flex h-12 flex-1 items-center justify-center text-xl"
+                aria-label="Add one die. Hold to repeat."
+                {...diceUp}
+              >
+                <FaPlus />
+              </button>
+            </div>
           </div>
-        ))}
+
+          <div className="RollToHit flex flex-col gap-1">
+            <StatCard
+              title="Hit"
+              value={rollToHit}
+              tone="text-blood-300"
+              lines={
+                <>
+                  <span>{offensiveSkill - defensiveSkill} base</span>
+                  {ccOffensiveSkill !== 0 && <span>{ccOffensiveSkill} CC</span>}
+                  {map(onModifiersForSkill, ({ id, modifier, count, code }) => (
+                    <span key={id}>
+                      {modifier[1] * (count ?? 1)} {code}
+                    </span>
+                  ))}
+                  {frightened.on && <span>{frightened.code}</span>}
+                  {hitOverkill > 0 && (
+                    <span className="text-ember-500">
+                      OK: {hitOverkill}&times;6&rarr;5
+                    </span>
+                  )}
+                </>
+              }
+            />
+            <div className="flex h-12 gap-1">
+              <RankButton
+                label="OS"
+                value={offensiveSkill}
+                onInc={handleIncOffensiveSkill}
+                tone="OffensiveSkillRank text-blood-300"
+              />
+              <RankButton
+                label="DS"
+                value={defensiveSkill}
+                onInc={handleIncDefensiveSkill}
+                tone="DefensiveSkillRank text-steel-300"
+              />
+            </div>
+          </div>
+
+          <div className="RollToWound flex flex-col gap-1">
+            <StatCard
+              title="Wound"
+              value={rollToWound}
+              tone="text-steel-300"
+              lines={
+                <>
+                  <span>{offensivePower - defensivePower} base</span>
+                  {ccOffensivePower !== 0 && <span>{ccOffensivePower} CC</span>}
+                  {map(onModifiersForPower, ({ id, modifier, count, code }) => (
+                    <span key={id}>
+                      {modifier[2] * (count ?? 1)} {code}
+                    </span>
+                  ))}
+                  {frightened.on && <span>{frightened.code}</span>}
+                  {woundOverkill > 0 && (
+                    <span className="text-ember-500">
+                      OK: {woundOverkill}&times;6&rarr;5
+                    </span>
+                  )}
+                </>
+              }
+            />
+            <div className="flex h-12 gap-1">
+              <RankButton
+                label="OP"
+                value={offensivePower}
+                onInc={handleIncOffensivePower}
+                tone="OffensivePowerRank text-blood-300"
+              />
+              <RankButton
+                label="DP"
+                value={defensivePower}
+                onInc={handleIncDefensivePower}
+                tone="DefensivePowerRank text-steel-300"
+              />
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="text-lg flex text-white items-center justify-center mx-4 mt-2 min-h-20">
-        <div className="mx-4 text-3xl flex items-center gap-4">
-          <GiPerspectiveDiceOne className="text-4xl" />
+
+      <div
+        className={className(
+          "flex flex-col gap-2 px-3 pt-3 transition-opacity duration-300",
+          frightened.on && "opacity-40 saturate-50"
+        )}
+      >
+        <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-bone-500">
+          <GiScrollUnfurled className="text-lg text-ember-600" aria-hidden />
+          Command cards
+        </div>
+        <div className="CommandCardModifiers flex h-16 gap-1">
+          {map(COMMAND_CARD_MODIFIERS, ({ id, name, color, mod }) => (
+            <button
+              key={id}
+              className={className(
+                "plate flex-1 text-sm",
+                id,
+                color === "bg-green-400" ? "plate-boon" : "plate-danger"
+              )}
+              disabled={frightened.on}
+              onClick={() => handleCommandCard({ mod, color })}
+            >
+              <span className="whitespace-pre-line">{name}</span>
+            </button>
+          ))}
+        </div>
+        <button
+          className="ClearCommandCardModifiers plate plate-on-gold h-10 text-sm tracking-widest"
+          onClick={() => {
+            setCommandCardModifiers([0, 0, 0]);
+            playDrum();
+            buzz(16);
+          }}
+          disabled={frightened.on}
+        >
+          Reset
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-2 px-3 pb-4 pt-3">
+        <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-bone-500">
+          <GiCrossedSwords className="text-lg text-ember-600" aria-hidden />
+          Situational modifiers
+        </div>
+        <div className="SituationalModifiers flex flex-1 flex-col gap-1 text-[11px] leading-tight">
+          {map(chunk(values(modifiers), 5), (group, index) => (
+            <div className="flex min-h-16 flex-1 gap-1" key={`group-${index}`}>
+              {map(group, (modifier) => (
+                <button
+                  key={`modifier-${modifier.id}`}
+                  className={className(
+                    modifier.id,
+                    "plate w-1/5 flex-1",
+                    modifier.on && PLATE_ON[modifier.color]
+                  )}
+                  disabled={disabledModifiers[modifier.id]}
+                  onClick={() => toggleModifier(modifier)}
+                >
+                  <span className="whitespace-pre-line">
+                    {modifier.name}
+                    {modifier.count > 1 ? ` ×${modifier.count}` : ""}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-auto flex items-center justify-center pb-4 pt-1 text-bone-500">
+        <div className="flex items-center gap-3 font-display text-xl tracking-widest">
+          <GiPerspectiveDiceOne className="text-2xl text-ember-600" />
           BattleDeck
-          <GiPerspectiveDiceSix className="text-4xl" />
+          <GiPerspectiveDiceSix className="text-2xl text-ember-600" />
         </div>
       </div>
     </div>
