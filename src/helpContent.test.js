@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MODIFIERS } from "./constants";
 import { HELP_PAGES, HELP_ROOT } from "./helpContent";
 
 // Link cards render the *target* page's title and icon, so every page needs
@@ -24,6 +25,28 @@ describe("help content integrity", () => {
           link.to
         );
         expect(link.note, `${id} -> ${link.to} needs a note`).toBeTruthy();
+      }
+    }
+  });
+
+  it("every item is a string or has text, and actions name real modifiers", () => {
+    for (const [id, page] of Object.entries(HELP_PAGES)) {
+      for (const section of page.sections ?? []) {
+        for (const item of section.items) {
+          if (typeof item === "string") continue;
+          expect(item.text, `${id} has an item without text`).toBeTruthy();
+          expect(
+            Array.isArray(item.actions) && item.actions.length,
+            `${id} item "${item.text.slice(0, 30)}" needs a non-empty actions array`
+          ).toBeTruthy();
+          for (const action of item.actions) {
+            expect(
+              Object.keys(MODIFIERS),
+              `${id} action references unknown modifier "${action}"`
+            ).toContain(action);
+            expect(action).not.toBe("reset");
+          }
+        }
       }
     }
   });

@@ -43,11 +43,13 @@ When adding a new modifier: give it a unique `position`, add it to any relevant 
 
 The header `?` button opens a full-screen help overlay covering the turn sequence. Since there is no router, `Help.jsx` navigates a page-id stack (link cards push, back links pop; backing out of the root closes the overlay). `helpContent.js` holds the page tree — condensed from `docs/battleground-rules-summary.md` / `docs/battleground-quick-start-summary.md` — rooted at `HELP_ROOT`; a page's `links` reference deeper pages by id and render cards using the target page's `title`/`icon`, so keep those fields on every page. Content edits should stay consistent with the rules summaries in `docs/`.
 
+A section item is either a plain string or `{ text, actions: [modifierIds] }`. Items with `actions` render live toggle chips beside the rule, wired to the real modifier state (`App.jsx` passes `modifiers`/`disabledModifiers`/`activateModifier` into `Help`). Toggling a stance-specific modifier from help switches the melee/ranged mode first so the toggle stays visible on the battle screen. Never reference `reset` from `actions`.
+
 ### Styling — grimdark theme
 
 Tailwind (`tailwind.config.js` scans `./src/**/*.{js,jsx}`) with `classnames` for conditional classes. Mobile-first: `max-w-md` column, sticky derived-value header, `min-h-dvh` + safe-area padding, installable via `public/manifest.webmanifest` (no service worker). Cinzel display font loads from Google Fonts in `index.html`.
 
-Custom palette lives in `tailwind.config.js` (`iron`, `ember`, `blood`, `steel`, `moss`, `bone`) plus keyframes (`number-in`, `ember-pulse`, `blood-pulse`, `flicker`). Metal-plate button styles are the `.plate*` classes in `src/index.css`. The `color` values in `constants.js` (`bg-green-400` = bonus, `bg-red-400` = penalty, `bg-yellow-400` = reset) are **semantic tokens only** — `App.jsx` maps them to plate styles via `PLATE_ON`; they are not rendered as Tailwind classes.
+Custom palette lives in `tailwind.config.js` (`iron`, `ember`, `blood`, `steel`, `moss`, `bone`) plus keyframes (`number-in`, `ember-pulse`, `blood-pulse`, `flicker`). Metal-plate button styles are the `.plate*` classes in `src/index.css`. The `color` values in `constants.js` (`bg-green-400` = bonus, `bg-red-400` = penalty, `bg-yellow-400` = reset) are **semantic tokens only** — the `PLATE_ON` map in `constants.js` converts them to plate styles (used by both the modifier grid and the help action chips); they are not rendered as Tailwind classes.
 
 ### Interaction: sounds, haptics, gestures
 

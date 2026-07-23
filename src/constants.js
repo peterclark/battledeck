@@ -1,3 +1,11 @@
+// Map the semantic color tokens below onto grimdark plate styles — shared by
+// the modifier grid and the rules-help action chips
+export const PLATE_ON = {
+  "bg-green-400": "plate-on-ember animate-ember-pulse",
+  "bg-red-400": "plate-on-blood animate-blood-pulse",
+  "bg-yellow-400": "plate-on-gold",
+};
+
 // `category` marks stance-specific modifiers — "melee" or "ranged" (absent
 // means the modifier applies to both). The grid shows general modifiers plus
 // the active stance's, and switching stance turns the other stance's off.
