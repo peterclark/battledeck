@@ -13,7 +13,7 @@ There is no test runner configured.
 
 ## Architecture
 
-BattleDeck is a single-page React helper for the Battleground tabletop wargame (see `docs/battleground-manual.pdf` and `docs/battleground-quick-start-rules.pdf`). It is a tap-friendly tally sheet — no persistence, no routing, no backend. Everything lives in `src/App.jsx` and `src/constants.js`.
+BattleDeck is a single-page React helper for the Battleground tabletop wargame (see `docs/battleground-manual.pdf` and `docs/battleground-quick-start-rules.pdf`). It is a tap-friendly tally sheet — no persistence, no routing, no backend. The tally UI lives in `src/App.jsx` and `src/constants.js`; the in-app rules help lives in `src/Help.jsx` and `src/helpContent.js`.
 
 The app computes three derived values from user taps:
 
@@ -38,6 +38,10 @@ Skill/Power counters wrap modulo `MAX_ROLL=10` — tapping them only increments;
 - `frightened` — special: when on, disables the Command Card buttons and clears command card state (per the rules, a Frightened unit can't have Command Cards played on it that turn)
 
 When adding a new modifier: give it a unique `position`, add it to any relevant `disabled` arrays on peers, and if it should suppress or be suppressed by others make sure both sides list each other.
+
+### Rules help (`src/Help.jsx` + `src/helpContent.js`)
+
+The header `?` button opens a full-screen help overlay covering the turn sequence. Since there is no router, `Help.jsx` navigates a page-id stack (link cards push, back links pop; backing out of the root closes the overlay). `helpContent.js` holds the page tree — condensed from `docs/battleground-rules-summary.md` / `docs/battleground-quick-start-summary.md` — rooted at `HELP_ROOT`; a page's `links` reference deeper pages by id and render cards using the target page's `title`/`icon`, so keep those fields on every page. Content edits should stay consistent with the rules summaries in `docs/`.
 
 ### Styling — grimdark theme
 
