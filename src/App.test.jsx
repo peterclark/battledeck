@@ -93,6 +93,48 @@ describe("App", () => {
     expect(within(hit()).queryByText(/PI/)).not.toBeInTheDocument();
   });
 
+  it("opposing command cards stay visible even when they cancel out", () => {
+    const { container, hit } = setup();
+    fireEvent.click(container.querySelector(".PlusOneOS"));
+    fireEvent.click(container.querySelector(".MinusOneOS"));
+    // net effect is zero, but both plays are on record
+    const chips = container.querySelectorAll(".PlayedCard");
+    expect(chips).toHaveLength(2);
+    expect(chips[0]).toHaveTextContent("+1 OS");
+    expect(chips[1]).toHaveTextContent("-1 OS");
+    expect(within(hit()).getByText("1 CC")).toBeInTheDocument();
+    expect(within(hit()).getByText("-1 CC")).toBeInTheDocument();
+    expect(hit().querySelector(".text-6xl")).toHaveTextContent("1");
+  });
+
+  it("tapping a played-card chip removes that single play", () => {
+    const { container, dice } = setup();
+    fireEvent.click(container.querySelector(".PlusOneDice"));
+    fireEvent.click(container.querySelector(".PlusOneDice"));
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("6");
+    fireEvent.click(container.querySelector(".PlayedCard"));
+    expect(container.querySelectorAll(".PlayedCard")).toHaveLength(1);
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("5");
+  });
+
+  it("command card reset clears the played-card log", () => {
+    const { container } = setup();
+    fireEvent.click(container.querySelector(".PlusOneOP"));
+    const reset = container.querySelector(".ClearCommandCardModifiers");
+    tap(reset);
+    tap(reset);
+    expect(container.querySelectorAll(".PlayedCard")).toHaveLength(0);
+  });
+
+  it("played cards persist across remounts", () => {
+    const first = setup();
+    fireEvent.click(first.container.querySelector(".PlusOneOS"));
+    fireEvent.click(first.container.querySelector(".MinusOneOS"));
+    first.unmount();
+    const second = setup();
+    expect(second.container.querySelectorAll(".PlayedCard")).toHaveLength(2);
+  });
+
   it("command cards adjust totals and Frightened clears and disables them", () => {
     const { container, dice, modifier } = setup();
     fireEvent.click(container.querySelector(".PlusOneDice"));
@@ -100,6 +142,7 @@ describe("App", () => {
     expect(within(dice()).getByText("1 CC")).toBeInTheDocument();
     fireEvent.click(modifier("frightened"));
     expect(within(dice()).queryByText("1 CC")).not.toBeInTheDocument();
+    expect(container.querySelectorAll(".PlayedCard")).toHaveLength(0);
     expect(container.querySelector(".PlusOneDice")).toBeDisabled();
     expect(container.querySelector(".ClearCommandCardModifiers")).toBeDisabled();
   });

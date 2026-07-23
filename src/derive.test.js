@@ -4,6 +4,7 @@ import {
   deriveDice,
   deriveRoll,
   sumModifiers,
+  sumTriples,
 } from "./derive";
 
 describe("sumModifiers", () => {
@@ -34,6 +35,22 @@ describe("sumModifiers", () => {
     expect(
       sumModifiers({ pinch: { on: true, count: 3, modifier: [0, 1, 1] } })
     ).toEqual([0, 3, 3]);
+  });
+});
+
+describe("sumTriples", () => {
+  it("returns zeros for no triples", () => {
+    expect(sumTriples([])).toEqual([0, 0, 0]);
+  });
+
+  it("sums played-card triples, opposing cards cancelling", () => {
+    expect(
+      sumTriples([
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, -1, 0],
+      ])
+    ).toEqual([1, 0, 0]);
   });
 });
 

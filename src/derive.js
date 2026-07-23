@@ -21,6 +21,15 @@ export const sumModifiers = (modifiers) => {
   );
 };
 
+// Sum an array of [dice, offensiveSkill, offensivePower] triples — used for
+// the Command Cards played this attack
+export const sumTriples = (triples) =>
+  reduce(
+    triples,
+    (sums, t) => [sums[0] + t[0], sums[1] + t[1], sums[2] + t[2]],
+    [0, 0, 0]
+  );
+
 // Dice to roll, clamped to [0, MAX_DICE]
 export const deriveDice = (baseDice, commandCardDice, diceModifier) =>
   Math.min(Math.max(baseDice + commandCardDice + diceModifier, 0), MAX_DICE);

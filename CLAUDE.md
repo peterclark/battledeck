@@ -27,7 +27,7 @@ Skill/Power counters wrap modulo `MAX_ROLL=10` — tapping them only increments;
 
 ### Modifier model (`src/constants.js`)
 
-`MODIFIERS` and `COMMAND_CARD_MODIFIERS` drive nearly all UI. The Command Card buttons represent the effects of Command Cards played during an attack. Each situational modifier is a `[dice, offensiveSkill, offensivePower]` triple plus:
+`MODIFIERS` and `COMMAND_CARD_MODIFIERS` drive nearly all UI. The Command Card buttons represent the effects of Command Cards played during an attack. Plays are kept as a log (`playedCards`, an ordered array of card ids), not a net total: each play renders a removable chip under the buttons and its own `±N CC` breakdown line, so opposing cards stay visible even when their effects cancel. Frightened and the Command Card Reset clear the log. Each situational modifier is a `[dice, offensiveSkill, offensivePower]` triple plus:
 
 - `position` — render order in the 5-column grid (`chunk(values(modifiers), 5)`)
 - `on` — toggle state

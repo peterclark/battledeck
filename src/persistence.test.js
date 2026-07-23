@@ -15,7 +15,7 @@ describe("persistence", () => {
       baseDice: 7,
       offensiveSkill: 3,
       defensivePower: 9,
-      commandCardModifiers: [1, -1, 2],
+      playedCards: ["PlusOneDice", "MinusOneOS", "PlusOneDice"],
       modifiers: {
         ...MODIFIERS,
         disrupted: { ...MODIFIERS.disrupted, on: true },
@@ -26,7 +26,11 @@ describe("persistence", () => {
     expect(loaded.baseDice).toBe(7);
     expect(loaded.offensiveSkill).toBe(3);
     expect(loaded.defensivePower).toBe(9);
-    expect(loaded.commandCardModifiers).toEqual([1, -1, 2]);
+    expect(loaded.playedCards).toEqual([
+      "PlusOneDice",
+      "MinusOneOS",
+      "PlusOneDice",
+    ]);
     expect(loaded.modifiers.disrupted.on).toBe(true);
     expect(loaded.modifiers.pinching.count).toBe(2);
     expect(loaded.modifiers.pinching.on).toBe(true);
@@ -61,7 +65,7 @@ describe("persistence", () => {
         baseDice: 999,
         offensiveSkill: -2,
         defensiveSkill: "9",
-        commandCardModifiers: ["x", 2],
+        playedCards: ["PlusOneOS", "notACard", 42, { id: "PlusOneOP" }],
         modifiers: { pinching: { on: true, count: 99 } },
       })
     );
@@ -69,7 +73,7 @@ describe("persistence", () => {
     expect(loaded.baseDice).toBe(4);
     expect(loaded.offensiveSkill).toBe(0);
     expect(loaded.defensiveSkill).toBe(0);
-    expect(loaded.commandCardModifiers).toEqual([0, 2, 0]);
+    expect(loaded.playedCards).toEqual(["PlusOneOS"]);
     expect(loaded.modifiers.pinching.count).toBe(0);
     expect(loaded.modifiers.pinching.on).toBe(false);
   });
