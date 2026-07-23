@@ -27,6 +27,12 @@ button:active:not(:disabled) {
   transform: translateY(1px) scale(0.985);
 }
 
+/* Keyboard focus ring — the UA default is invisible on near-black plates */
+:focus-visible {
+  outline: 2px solid #ef9f27;
+  outline-offset: 2px;
+}
+
 .plate {
   background: linear-gradient(180deg, #332d26 0%, #241f1a 45%, #1c1815 100%);
   border: 1px solid #4a4238;
