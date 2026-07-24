@@ -246,3 +246,119 @@ describe("App", () => {
     expect(within(dice()).getByText("-1 DI")).toBeInTheDocument();
   });
 });
+
+describe("Units", () => {
+  // The battle screen can already show the unit's name in a slot, so scope
+  // the row tap to the picker overlay
+  const pickUnit = (utils, role, unitName = "Communal Pikemen") => {
+    fireEvent.click(utils.getByLabelText(`Pick ${role} unit`));
+    const overlay = utils.container.querySelector(".UnitPicker");
+    fireEvent.click(within(overlay).getByText(unitName));
+  };
+
+  const pickAttacker = (utils) => pickUnit(utils, "attacker");
+  const pickDefender = (utils) => pickUnit(utils, "defender");
+
+  it("picking an attacker prefills dice, OS, and OP from its card", () => {
+    const utils = setup();
+    pickAttacker(utils);
+    const { container, dice, hit, wound } = utils;
+    expect(within(dice()).getByText("7 base")).toBeInTheDocument();
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("7");
+    expect(
+      within(container.querySelector(".OffensiveSkillRank")).getByText("6")
+    ).toBeInTheDocument();
+    // OS 6 vs DS 0 is an unclamped 6: shows 5 with one point of Overkill
+    expect(hit().querySelector(".text-6xl")).toHaveTextContent("5");
+    expect(within(hit()).getByText(/OK: 1/)).toBeInTheDocument();
+    expect(wound().querySelector(".text-6xl")).toHaveTextContent("5"); // OP 5
+  });
+
+  it("picking a defender prefills DS and Toughness", () => {
+    const utils = setup();
+    pickAttacker(utils);
+    pickDefender(utils);
+    const { container, hit, wound } = utils;
+    expect(
+      within(container.querySelector(".DefensiveSkillRank")).getByText("2")
+    ).toBeInTheDocument();
+    // OS 6 - DS 2 = 4 to hit; OP 5 - T 2 = 3 to wound
+    expect(within(hit()).getByText("4 base")).toBeInTheDocument();
+    expect(hit().querySelector(".text-6xl")).toHaveTextContent("4");
+    expect(within(wound()).getByText("3 base")).toBeInTheDocument();
+    expect(wound().querySelector(".text-6xl")).toHaveTextContent("3");
+  });
+
+  it("applies the Knights' Cavalry bonus while Charging, with a breakdown line", () => {
+    const utils = setup();
+    pickUnit(utils, "attacker", "Knights");
+    pickDefender(utils);
+    const { dice, wound, modifier } = utils;
+    fireEvent.click(modifier("chargingFourOrMoreDice"));
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("8"); // 6 +2 CH
+    expect(within(wound()).getByText("1 CAV")).toBeInTheDocument();
+    expect(wound().querySelector(".text-6xl")).toHaveTextContent("5"); // 6-2 +1 CAV
+    fireEvent.click(modifier("chargingFourOrMoreDice"));
+    expect(within(wound()).queryByText("1 CAV")).not.toBeInTheDocument();
+  });
+
+  it("applies Spears automatically: +1 OS vs a Cavalry defender, -1 die charging", () => {
+    const utils = setup();
+    pickAttacker(utils); // Communal Pikemen
+    pickUnit(utils, "defender", "Lancers");
+    const { dice, hit, modifier } = utils;
+    // OS 6 - DS 2 + 1 SP (Lancers are Cavalry) = 5
+    expect(within(hit()).getByText("1 SP")).toBeInTheDocument();
+    expect(hit().querySelector(".text-6xl")).toHaveTextContent("5");
+    // charging: 7 base +2 CH -1 SP = 8 dice
+    fireEvent.click(modifier("chargingFourOrMoreDice"));
+    expect(within(dice()).getByText("-1 SP")).toBeInTheDocument();
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("8");
+  });
+
+  it("applies the archers' Engaged penalty in melee but not at range", () => {
+    const utils = setup();
+    pickUnit(utils, "attacker", "Bowmen");
+    const { hit, wound, getByText } = utils;
+    // melee: OS 5 - 2 ENG = 3, OP 5 - 2 ENG = 3
+    expect(within(hit()).getByText("-2 ENG")).toBeInTheDocument();
+    expect(hit().querySelector(".text-6xl")).toHaveTextContent("3");
+    expect(wound().querySelector(".text-6xl")).toHaveTextContent("3");
+    fireEvent.click(getByText("Ranged"));
+    expect(within(hit()).queryByText("-2 ENG")).not.toBeInTheDocument();
+    expect(hit().querySelector(".text-6xl")).toHaveTextContent("5"); // OS 5 vs DS 0
+  });
+
+  it("selecting a melee-only attacker while ranged switches back to melee", () => {
+    const utils = setup();
+    fireEvent.click(utils.getByText("Ranged"));
+    pickAttacker(utils);
+    expect(utils.getByText("Melee").closest("button")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(utils.modifier("flanking")).toBeInTheDocument();
+  });
+
+  it("clearing a slot keeps the prefilled numbers", () => {
+    const utils = setup();
+    pickAttacker(utils);
+    fireEvent.click(utils.getByLabelText("Clear attacker unit"));
+    expect(utils.getByLabelText("Pick attacker unit")).toBeInTheDocument();
+    expect(within(utils.dice()).getByText("7 base")).toBeInTheDocument();
+  });
+
+  it("unit selections persist across remounts", () => {
+    const first = setup();
+    pickAttacker(first);
+    pickDefender(first);
+    first.unmount();
+    const second = setup();
+    expect(
+      second.getByLabelText(/attacker: Communal Pikemen/)
+    ).toBeInTheDocument();
+    expect(
+      second.getByLabelText(/defender: Communal Pikemen/)
+    ).toBeInTheDocument();
+  });
+});
