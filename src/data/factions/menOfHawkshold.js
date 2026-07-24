@@ -227,7 +227,7 @@ export default {
       defensivePower: 3,
       courage: 13,
       move: 3.5,
-      damage: { green: 6, yellow: 2, red: 3 },
+      damage: { green: 5, yellow: 2, red: 3 },
       keywords: ["fellingBlow", "unique"],
     },
     {
@@ -256,7 +256,7 @@ export default {
       defensivePower: 2,
       courage: 12,
       move: 3.5,
-      damage: { green: 6, yellow: 2, red: 3 },
+      damage: { green: 5, yellow: 2, red: 3 },
     },
   ],
 };
