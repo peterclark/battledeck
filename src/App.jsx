@@ -378,8 +378,8 @@ const App = () => {
   // Spears while Charging) — applied automatically and shown as their own
   // breakdown lines
   const attackerAbilities = useMemo(
-    () => (attacker ? activeAbilities(attacker, modifiers) : []),
-    [attacker, modifiers]
+    () => (attacker ? activeAbilities(attacker, modifiers, attackMode) : []),
+    [attacker, modifiers, attackMode]
   );
 
   const [abilityDice, abilityOS, abilityOP] = useMemo(

@@ -26,6 +26,7 @@ const Profile = ({ icon: Icon, profile }) => (
     <Icon className="text-xs text-ember-600" aria-hidden />
     {profile.dice}d · OS {profile.offensiveSkill} · P {profile.offensivePower}
     {profile.range ? ` · ${profile.range}″` : ""}
+    {profile.ammo ? ` · ${profile.ammo} ammo` : ""}
   </span>
 );
 

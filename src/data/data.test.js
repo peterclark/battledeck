@@ -42,7 +42,7 @@ describe("faction data", () => {
       expect(unit.name).toBeTruthy();
       expect(isInteger(unit.points), `${unit.id} points`).toBe(true);
       expect(unit.points).toBeGreaterThan(0);
-      expect(unit.class).toBeTruthy();
+      expect(["core", "standard", "elite", "unique"]).toContain(unit.class);
 
       // at least one way to attack, each profile fully specified
       expect(unit.melee || unit.ranged, `${unit.id} profile`).toBeTruthy();
@@ -50,6 +50,10 @@ describe("faction data", () => {
       if (unit.ranged) {
         expectProfile(unit, unit.ranged);
         expect(unit.ranged.range, `${unit.id} range`).toBeGreaterThan(0);
+        if (unit.ranged.ammo !== undefined) {
+          expect(isInteger(unit.ranged.ammo), `${unit.id} ammo`).toBe(true);
+          expect(unit.ranged.ammo).toBeGreaterThan(0);
+        }
       }
 
       expect(isRank(unit.defensiveSkill), `${unit.id} DS`).toBe(true);
@@ -85,22 +89,46 @@ describe("faction data", () => {
             expect(MODIFIERS[id], `${ability.name} references ${id}`).toBeTruthy()
           );
         }
+        if (ability.stance) {
+          expect(["melee", "ranged"]).toContain(ability.stance);
+          expect(ability.bonus, `${ability.name} stance without bonus`).toBeTruthy();
+        }
       })
     );
   });
 
   it("attackProfile picks the stance's profile and falls back to null", () => {
     const pikemen = UNITS_BY_UID["menOfHawkshold/communalPikemen"];
+    const bowmen = UNITS_BY_UID["menOfHawkshold/bowmen"];
     expect(attackProfile(pikemen, "melee")).toBe(pikemen.melee);
     expect(attackProfile(pikemen, "ranged")).toBeNull();
+    expect(attackProfile(bowmen, "ranged")).toBe(bowmen.ranged);
   });
 
   it("activeAbilities gates a `when` ability on its modifiers", () => {
-    const pikemen = UNITS_BY_UID["menOfHawkshold/communalPikemen"];
+    const knights = UNITS_BY_UID["menOfHawkshold/knights"];
     const off = { chargingFourOrMoreDice: { on: false } };
     const on = { chargingThreeOrLessDice: { on: true } };
-    expect(activeAbilities(pikemen, off)).toHaveLength(0);
-    expect(map(activeAbilities(pikemen, on), "name")).toEqual(["Spears"]);
-    expect(activeAbilities(null, on)).toEqual([]);
+    expect(activeAbilities(knights, off, "melee")).toHaveLength(0);
+    expect(map(activeAbilities(knights, on, "melee"), "name")).toEqual([
+      "Cavalry",
+    ]);
+    expect(activeAbilities(null, on, "melee")).toEqual([]);
+  });
+
+  it("activeAbilities gates a `stance` ability on the attack mode", () => {
+    const bowmen = UNITS_BY_UID["menOfHawkshold/bowmen"];
+    expect(map(activeAbilities(bowmen, {}, "melee"), "name")).toEqual([
+      "Engaged",
+    ]);
+    expect(activeAbilities(bowmen, {}, "ranged")).toHaveLength(0);
+  });
+
+  it("prose-only abilities (no bonus) never apply to the calculator", () => {
+    const pikemen = UNITS_BY_UID["menOfHawkshold/communalPikemen"];
+    const charging = { chargingFourOrMoreDice: { on: true } };
+    // Spears is a DS bonus on the card — informational until the app models
+    // defender-side state
+    expect(activeAbilities(pikemen, charging, "melee")).toHaveLength(0);
   });
 });
