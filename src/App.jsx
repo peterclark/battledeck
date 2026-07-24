@@ -378,8 +378,9 @@ const App = () => {
   // Spears while Charging) — applied automatically and shown as their own
   // breakdown lines
   const attackerAbilities = useMemo(
-    () => (attacker ? activeAbilities(attacker, modifiers, attackMode) : []),
-    [attacker, modifiers, attackMode]
+    () =>
+      attacker ? activeAbilities(attacker, modifiers, attackMode, defender) : [],
+    [attacker, modifiers, attackMode, defender]
   );
 
   const [abilityDice, abilityOS, abilityOP] = useMemo(
@@ -471,12 +472,13 @@ const App = () => {
     });
 
   // One breakdown line per live attacker ability touching this column
+  // (index in the key: a keyword can contribute several same-named effects)
   const abilityLines = (column) =>
-    map(attackerAbilities, ({ name, code, bonus }) => {
+    map(attackerAbilities, ({ name, code, bonus }, index) => {
       const value = bonus[column];
       return (
         value !== 0 && (
-          <span key={`ability-${name}`}>
+          <span key={`ability-${name}-${index}`}>
             {value} {code ?? name}
           </span>
         )

@@ -1,5 +1,8 @@
-import { filter, flatMap, keyBy, map, some } from "lodash";
+import { filter, flatMap, includes, keyBy, map, some } from "lodash";
 import menOfHawkshold from "./factions/menOfHawkshold";
+import { KEYWORDS } from "./keywords";
+
+export { KEYWORDS };
 
 // All playable factions, in display order. Adding a faction = adding a file
 // under ./factions and listing it here.
@@ -24,17 +27,31 @@ export const UNITS_BY_UID = keyBy(UNITS, "uid");
 export const attackProfile = (unit, mode) =>
   (mode === "ranged" ? unit.ranged : unit.melee) ?? null;
 
-// Card abilities that adjust the current attack: only abilities with a
-// structured `bonus` triple participate. An ability with a `when` list is
-// live while any of those modifiers is on; one with a `stance` is live only
-// in that attack mode (e.g. the archers' Engaged penalty in melee). No
-// `when` and no `stance` means always live. Prose-only abilities are
-// informational and never returned here.
-export const activeAbilities = (unit, modifiers, attackMode) =>
+// A unit's full effect list: its own card-back abilities plus the
+// structured effects of its keywords, labeled with the keyword's name
+const unitEffects = (unit) => [
+  ...(unit?.abilities ?? []),
+  ...flatMap(unit?.keywords, (id) =>
+    map(KEYWORDS[id]?.effects, (effect) => ({
+      name: KEYWORDS[id].name,
+      ...effect,
+    }))
+  ),
+];
+
+// Effects that adjust the current attack: only ones with a structured
+// `bonus` triple participate. An effect with a `when` list is live while
+// any of those modifiers is on; `stance` limits it to an attack mode (the
+// archers' Engaged penalty in melee); `whenTarget` requires the selected
+// defender to carry one of the listed keywords (Spears vs Cavalry). All
+// gates must pass. Prose-only rules are informational and never returned.
+export const activeAbilities = (unit, modifiers, attackMode, target) =>
   filter(
-    unit?.abilities,
-    (ability) =>
-      ability.bonus &&
-      (!ability.stance || ability.stance === attackMode) &&
-      (!ability.when || some(ability.when, (id) => modifiers[id]?.on))
+    unitEffects(unit),
+    (effect) =>
+      effect.bonus &&
+      (!effect.stance || effect.stance === attackMode) &&
+      (!effect.when || some(effect.when, (id) => modifiers[id]?.on)) &&
+      (!effect.whenTarget ||
+        some(effect.whenTarget, (id) => includes(target?.keywords, id)))
   );

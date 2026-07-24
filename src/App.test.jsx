@@ -302,6 +302,20 @@ describe("Units", () => {
     expect(within(wound()).queryByText("1 CAV")).not.toBeInTheDocument();
   });
 
+  it("applies Spears automatically: +1 OS vs a Cavalry defender, -1 die charging", () => {
+    const utils = setup();
+    pickAttacker(utils); // Communal Pikemen
+    pickUnit(utils, "defender", "Lancers");
+    const { dice, hit, modifier } = utils;
+    // OS 6 - DS 2 + 1 SP (Lancers are Cavalry) = 5
+    expect(within(hit()).getByText("1 SP")).toBeInTheDocument();
+    expect(hit().querySelector(".text-6xl")).toHaveTextContent("5");
+    // charging: 7 base +2 CH -1 SP = 8 dice
+    fireEvent.click(modifier("chargingFourOrMoreDice"));
+    expect(within(dice()).getByText("-1 SP")).toBeInTheDocument();
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("8");
+  });
+
   it("applies the archers' Engaged penalty in melee but not at range", () => {
     const utils = setup();
     pickUnit(utils, "attacker", "Bowmen");

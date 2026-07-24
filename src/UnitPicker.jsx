@@ -3,7 +3,7 @@ import { capitalize, map, range } from "lodash";
 import classNames from "classnames";
 import { FaArrowLeft, FaTimes } from "react-icons/fa";
 import { GiBowArrow, GiCrossedSwords } from "react-icons/gi";
-import { FACTIONS } from "./data";
+import { FACTIONS, KEYWORDS } from "./data";
 import { buzz, playTick } from "./sounds";
 
 // The card's green/yellow/red damage track, one square per box
@@ -69,6 +69,12 @@ const UnitRow = ({ unit, selected, onSelect }) => (
         className="text-[10px] leading-snug text-bone-500"
       >
         <span className="font-bold text-bone-300">{name}.</span> {text}
+      </span>
+    ))}
+    {map(unit.keywords, (id) => (
+      <span key={id} className="text-[10px] leading-snug text-bone-500">
+        <span className="font-bold text-ember-500">{KEYWORDS[id].name}.</span>{" "}
+        {KEYWORDS[id].text}
       </span>
     ))}
   </button>
@@ -162,6 +168,17 @@ const UnitPicker = ({ role, selectedUid, onSelect, onClose }) => {
               <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-bone-500">
                 {faction.name}
               </div>
+              {map(faction.abilities, ({ name, text }) => (
+                <div
+                  key={name}
+                  className="FactionAbility border-l-2 border-ember-600 pl-2.5 text-[10px] leading-snug text-bone-500"
+                >
+                  <span className="font-bold text-ember-500">
+                    {name}.
+                  </span>{" "}
+                  {text}
+                </div>
+              ))}
               {map(faction.units, (unit) => {
                 const uid = `${faction.id}/${unit.id}`;
                 return (

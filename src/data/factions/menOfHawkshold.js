@@ -16,21 +16,27 @@
 //   defensiveSkill / defensivePower — DS and Toughness, applied whenever
 //     the unit is the target
 //   damage — count of green/yellow/red boxes on the card's damage track
-//   abilities — [{ name, code, text, bonus, when, stance }]; `bonus` is
-//     the [dice, OS, OP] triple used by MODIFIERS, `when` lists modifier
-//     ids that make it live (any one on), `stance` limits it to an attack
+//   keywords — ids into src/data/keywords.js (the Unit Keywords cards);
+//     shared rules text and structured effects live there
+//   abilities — this card's OWN extras from the card back, as
+//     [{ name, code, text, bonus, when, stance }]; `bonus` is the
+//     [dice, OS, OP] triple used by MODIFIERS, `when` lists modifier ids
+//     that make it live (any one on), `stance` limits it to an attack
 //     mode. Abilities without `bonus` are informational only (e.g. DS
-//     bonuses that apply when this unit is the target, or rulebook
-//     keywords like Felling Blow).
+//     bonuses that apply when this unit is the target).
+//
+// The faction's army-wide rules (the Hawk Army Abilities card) are the
+// faction-level `abilities` below.
 
-// Shared keyword rules printed on several cards
-const SPEARS = {
+// Card-back extra shared by the spear-armed cards: the shield-icon bonus
+// the Spears keyword card points to ("see the back of the unit card")
+const SPEARS_CHARGE_DS = {
   name: "Spears",
   text: "+1 DS while Charging (in addition to the normal Charging Bonus).",
 };
 
-// Scout Cavalry get the defensive half only; Knights and Lancers add +1 OP
-const CAVALRY_DS = {
+// Scout Cavalry's card back grants the defensive half only
+const CAVALRY_CHARGE_DS = {
   name: "Cavalry",
   text: "+1 DS while Charging (in addition to the normal Charging Bonus).",
 };
@@ -56,6 +62,17 @@ const ENGAGED = {
 export default {
   id: "menOfHawkshold",
   name: "Men of Hawkshold",
+  // Hawk Army Abilities card — army-wide rules, informational
+  abilities: [
+    {
+      name: "Bravery",
+      text:
+        "You may spend a Command Action to mark the Bravery box on one of " +
+        "your units. While it is marked, the unit gets Courage +3. If a " +
+        "unit with a marked box fails a Rout Check, or passes one it would " +
+        "have failed without the +3, erase the mark.",
+    },
+  ],
   units: [
     {
       id: "bowmen",
@@ -83,7 +100,8 @@ export default {
       courage: 13,
       move: 3.5,
       damage: { green: 5, yellow: 2, red: 3 },
-      abilities: [SPEARS],
+      keywords: ["spears"],
+      abilities: [SPEARS_CHARGE_DS],
     },
     {
       id: "dismountedKnights",
@@ -97,7 +115,8 @@ export default {
       courage: 13,
       move: 3.5,
       damage: { green: 3, yellow: 2, red: 3 },
-      abilities: [SPEARS],
+      keywords: ["spears"],
+      abilities: [SPEARS_CHARGE_DS],
     },
     {
       id: "greatSwordsmen",
@@ -124,6 +143,7 @@ export default {
       courage: 13,
       move: 5,
       damage: { green: 3, yellow: 2, red: 2 },
+      keywords: ["cavalry"],
       abilities: [CAVALRY_FULL],
     },
     {
@@ -138,6 +158,7 @@ export default {
       courage: 12,
       move: 6,
       damage: { green: 3, yellow: 2, red: 1 },
+      keywords: ["cavalry"],
       abilities: [CAVALRY_FULL],
     },
     {
@@ -192,7 +213,8 @@ export default {
       courage: 12,
       move: 7,
       damage: { green: 2, yellow: 2, red: 2 },
-      abilities: [CAVALRY_DS],
+      keywords: ["cavalry"],
+      abilities: [CAVALRY_CHARGE_DS],
     },
     {
       id: "sirSteaphensFreeCompany",
@@ -206,12 +228,7 @@ export default {
       courage: 13,
       move: 3.5,
       damage: { green: 6, yellow: 2, red: 3 },
-      abilities: [
-        {
-          name: "Felling Blow",
-          text: "Felling Blow — see the rulebook for this special rule.",
-        },
-      ],
+      keywords: ["fellingBlow", "unique"],
     },
     {
       id: "spearmen",
@@ -225,7 +242,8 @@ export default {
       courage: 12,
       move: 3.5,
       damage: { green: 5, yellow: 2, red: 3 },
-      abilities: [SPEARS],
+      keywords: ["spears"],
+      abilities: [SPEARS_CHARGE_DS],
     },
     {
       id: "swordsmen",
