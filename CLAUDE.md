@@ -8,12 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build` — production build to `dist/`
 - `npm run preview` — serve the built bundle locally
 - `npm run lint` — run ESLint over the repo
-
-There is no test runner configured.
+- `npm test` — run the Vitest suite once (`npm run test:watch` to watch)
 
 ## Architecture
 
-BattleDeck is a single-page React helper for the Battleground tabletop wargame (see `docs/battleground-manual.pdf` and `docs/battleground-quick-start-rules.pdf`). It is a tap-friendly tally sheet — no persistence, no routing, no backend. The tally UI lives in `src/App.jsx` and `src/constants.js`; the in-app rules help lives in `src/Help.jsx` and `src/helpContent.js`.
+BattleDeck is a single-page React helper for the Battleground tabletop wargame (see `docs/battleground-manual.pdf` and `docs/battleground-quick-start-rules.pdf`). It is a tap-friendly tally sheet — no routing, no backend; mid-game state persists to localStorage via `src/persistence.js` (dynamic modifier bits are re-hydrated onto the current `MODIFIERS` defaults so schema changes can't break the grid). The tally UI lives in `src/App.jsx` and `src/constants.js`; unit stat cards live in `src/data/`; the in-app rules help lives in `src/Help.jsx` and `src/helpContent.js`.
 
 The app computes three derived values from user taps:
 
@@ -38,6 +37,14 @@ Skill/Power counters wrap modulo `MAX_ROLL=10` — tapping them only increments;
 - `frightened` — special: when on, disables the Command Card buttons and clears command card state (per the rules, a Frightened unit can't have Command Cards played on it that turn)
 
 When adding a new modifier: give it a unique `position`, add it to any relevant `disabled` arrays on peers, and if it should suppress or be suppressed by others make sure both sides list each other.
+
+### Unit data (`src/data/`)
+
+Faction unit cards transcribed from the physical game cards, one file per faction under `src/data/factions/` (front of card: stat bar + green/yellow/red damage track; back: points, deck class, abilities). `src/data/index.js` flattens them into `UNITS`/`UNITS_BY_UID` — unit ids are unique per faction and the derived `uid` (`factionId/unitId`) is what selection state and persistence store. Add a faction by adding a file and listing it in `FACTIONS`; `src/data/data.test.js` validates every unit's schema (stat ranges, damage boxes, ability shape) so transcription typos fail the suite.
+
+A unit's `melee`/`ranged` attack profiles are `{ dice, offensiveSkill, offensivePower }` (ranged adds `range` in inches); `defensiveSkill`/`defensivePower` (DS/Toughness on the card) apply whenever the unit is the target. Abilities may carry a structured `bonus` (`[dice, OS, OP]` triple) plus a `when` list of modifier ids — while any listed modifier is on, the bonus is applied to the attacker's derived values and gets its own breakdown line (e.g. Pikemen `Spears` while charging). Prose-only abilities (no `bonus`) are informational. Don't transcribe card flavor text — stats and rule effects only.
+
+The battle screen's Units row (`UnitSlot` in `App.jsx` + `src/UnitPicker.jsx` overlay) selects an attacker and defender. Selection *prefills* dice/OS/OP (attacker, per current stance, switching stance if the unit can't attack in it) or DS/DP (defender) — every value stays hand-adjustable, and clearing a slot keeps the numbers. Switching melee/ranged re-applies the attacker's matching profile when it has one.
 
 ### Rules help (`src/Help.jsx` + `src/helpContent.js`)
 

@@ -1,5 +1,6 @@
 import { mapValues } from "lodash";
 import { COMMAND_CARD_MODIFIERS, MODIFIERS } from "./constants";
+import { UNITS_BY_UID } from "./data";
 import { MAX_DICE, MAX_ROLL } from "./derive";
 
 const CARD_IDS = new Set(COMMAND_CARD_MODIFIERS.map((card) => card.id));
@@ -15,6 +16,10 @@ const KEY = "battledeck-state-v1";
 const clampInt = (value, min, max, fallback) =>
   Number.isInteger(value) && value >= min && value <= max ? value : fallback;
 
+// Unit selections survive reloads only while the unit still exists in the
+// data files — a renamed or removed unit falls back to no selection
+const validUid = (uid) => (UNITS_BY_UID[uid] ? uid : null);
+
 export const DEFAULT_STATE = {
   attackMode: "melee",
   baseDice: 4,
@@ -22,6 +27,8 @@ export const DEFAULT_STATE = {
   offensivePower: 0,
   defensiveSkill: 0,
   defensivePower: 0,
+  attackerUid: null,
+  defenderUid: null,
   playedCards: [],
   modifiers: MODIFIERS,
 };
@@ -38,6 +45,8 @@ export const loadState = () => {
       offensivePower: clampInt(stored.offensivePower, 0, MAX_ROLL - 1, 0),
       defensiveSkill: clampInt(stored.defensiveSkill, 0, MAX_ROLL - 1, 0),
       defensivePower: clampInt(stored.defensivePower, 0, MAX_ROLL - 1, 0),
+      attackerUid: validUid(stored.attackerUid),
+      defenderUid: validUid(stored.defenderUid),
       playedCards: (Array.isArray(stored.playedCards) ? stored.playedCards : [])
         .filter((id) => CARD_IDS.has(id))
         .slice(0, MAX_PLAYED_CARDS),
@@ -68,6 +77,8 @@ export const saveState = (state) => {
         offensivePower: state.offensivePower,
         defensiveSkill: state.defensiveSkill,
         defensivePower: state.defensivePower,
+        attackerUid: state.attackerUid,
+        defenderUid: state.defenderUid,
         playedCards: state.playedCards,
         modifiers: mapValues(state.modifiers, ({ on, count }) =>
           count === undefined ? { on } : { on, count }

@@ -246,3 +246,92 @@ describe("App", () => {
     expect(within(dice()).getByText("-1 DI")).toBeInTheDocument();
   });
 });
+
+describe("Units", () => {
+  // The battle screen can already show the unit's name in a slot, so scope
+  // the row tap to the picker overlay
+  const pickUnit = (utils, role, unitName = "Communal Pikemen") => {
+    fireEvent.click(utils.getByLabelText(`Pick ${role} unit`));
+    const overlay = utils.container.querySelector(".UnitPicker");
+    fireEvent.click(within(overlay).getByText(unitName));
+  };
+
+  const pickAttacker = (utils) => pickUnit(utils, "attacker");
+  const pickDefender = (utils) => pickUnit(utils, "defender");
+
+  it("picking an attacker prefills dice, OS, and OP from its card", () => {
+    const utils = setup();
+    pickAttacker(utils);
+    const { container, dice, hit, wound } = utils;
+    expect(within(dice()).getByText("7 base")).toBeInTheDocument();
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("7");
+    expect(
+      within(container.querySelector(".OffensiveSkillRank")).getByText("6")
+    ).toBeInTheDocument();
+    // OS 6 vs DS 0 is an unclamped 6: shows 5 with one point of Overkill
+    expect(hit().querySelector(".text-6xl")).toHaveTextContent("5");
+    expect(within(hit()).getByText(/OK: 1/)).toBeInTheDocument();
+    expect(wound().querySelector(".text-6xl")).toHaveTextContent("2");
+  });
+
+  it("picking a defender prefills DS and Toughness", () => {
+    const utils = setup();
+    pickAttacker(utils);
+    pickDefender(utils);
+    const { container, hit, wound } = utils;
+    expect(
+      within(container.querySelector(".DefensiveSkillRank")).getByText("5")
+    ).toBeInTheDocument();
+    // OS 6 - DS 5 = 1 to hit; OP 2 - T 2 = 0 to wound, clamped up to 1
+    expect(within(hit()).getByText("1 base")).toBeInTheDocument();
+    expect(hit().querySelector(".text-6xl")).toHaveTextContent("1");
+    expect(within(wound()).getByText("0 base")).toBeInTheDocument();
+    expect(wound().querySelector(".text-6xl")).toHaveTextContent("1");
+  });
+
+  it("applies the Spears ability while Charging, with a breakdown line", () => {
+    const utils = setup();
+    pickAttacker(utils);
+    pickDefender(utils);
+    const { dice, hit, modifier } = utils;
+    fireEvent.click(modifier("chargingFourOrMoreDice"));
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("9"); // 7 +2 CH
+    expect(within(hit()).getByText("1 SP")).toBeInTheDocument();
+    expect(hit().querySelector(".text-6xl")).toHaveTextContent("2"); // 6-5 +1 SP
+    fireEvent.click(modifier("chargingFourOrMoreDice"));
+    expect(within(hit()).queryByText("1 SP")).not.toBeInTheDocument();
+  });
+
+  it("selecting a melee-only attacker while ranged switches back to melee", () => {
+    const utils = setup();
+    fireEvent.click(utils.getByText("Ranged"));
+    pickAttacker(utils);
+    expect(utils.getByText("Melee").closest("button")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(utils.modifier("flanking")).toBeInTheDocument();
+  });
+
+  it("clearing a slot keeps the prefilled numbers", () => {
+    const utils = setup();
+    pickAttacker(utils);
+    fireEvent.click(utils.getByLabelText("Clear attacker unit"));
+    expect(utils.getByLabelText("Pick attacker unit")).toBeInTheDocument();
+    expect(within(utils.dice()).getByText("7 base")).toBeInTheDocument();
+  });
+
+  it("unit selections persist across remounts", () => {
+    const first = setup();
+    pickAttacker(first);
+    pickDefender(first);
+    first.unmount();
+    const second = setup();
+    expect(
+      second.getByLabelText(/attacker: Communal Pikemen/)
+    ).toBeInTheDocument();
+    expect(
+      second.getByLabelText(/defender: Communal Pikemen/)
+    ).toBeInTheDocument();
+  });
+});

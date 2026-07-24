@@ -14,10 +14,13 @@ import {
 } from "lodash";
 import {
   GiBowArrow,
+  GiBroadsword,
   GiPerspectiveDiceOne,
   GiPerspectiveDiceSix,
   GiCrossedSwords,
+  GiRallyTheTroops,
   GiScrollUnfurled,
+  GiShield,
 } from "react-icons/gi";
 import {
   FaMinus,
@@ -38,8 +41,10 @@ import {
   sumTriples,
 } from "./derive";
 import { loadState, saveState } from "./persistence";
+import { UNITS_BY_UID, activeAbilities, attackProfile } from "./data";
 import { BannerArt } from "./Artwork";
 import Help from "./Help";
+import UnitPicker from "./UnitPicker";
 import { usePressable } from "./hooks";
 import {
   buzz,
@@ -132,6 +137,50 @@ const ConfirmResetButton = ({
   );
 };
 
+// One side of the engagement: shows the selected unit card (or a prompt),
+// opens the unit picker on tap, and clears via the small × button
+const UnitSlot = ({ role, icon: Icon, unit, onOpen, onClear }) => (
+  <div className={className("UnitSlot flex flex-1 items-stretch gap-1", role)}>
+    <button
+      className="plate flex flex-1 items-center gap-2 px-2.5 py-1.5 text-left"
+      onClick={onOpen}
+      aria-label={
+        unit
+          ? `${role}: ${unit.name}. Tap to change.`
+          : `Pick ${role} unit`
+      }
+    >
+      <Icon className="shrink-0 text-lg text-ember-600" aria-hidden />
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-bone-500">
+          {role}
+        </span>
+        {unit ? (
+          <>
+            <span className="truncate font-display text-xs tracking-wider text-bone-100">
+              {unit.name}
+            </span>
+            <span className="font-mono text-[9px] leading-tight text-bone-500">
+              Cg {unit.courage} · Mv {unit.move}″ · {unit.points} pts
+            </span>
+          </>
+        ) : (
+          <span className="text-xs text-bone-500">Pick a unit&hellip;</span>
+        )}
+      </span>
+    </button>
+    {unit && (
+      <button
+        className="plate flex w-8 shrink-0 items-center justify-center text-bone-500"
+        onClick={onClear}
+        aria-label={`Clear ${role} unit`}
+      >
+        <FaTimes className="text-[10px]" aria-hidden />
+      </button>
+    )}
+  </div>
+);
+
 const StatCard = ({ title, value, tone, lines }) => (
   <div className="flex items-start justify-center gap-1.5 pt-1">
     <AnimatedNumber
@@ -160,8 +209,17 @@ const App = () => {
   const [playedCards, setPlayedCards] = useState(initial.playedCards);
   const [modifiers, setModifiers] = useState(initial.modifiers);
   const [attackMode, setAttackMode] = useState(initial.attackMode);
+  // Selected unit cards for each side of the engagement (uids into the
+  // faction data files); selection prefills the calculator but never locks
+  // it — every value stays hand-adjustable afterwards
+  const [attackerUid, setAttackerUid] = useState(initial.attackerUid);
+  const [defenderUid, setDefenderUid] = useState(initial.defenderUid);
+  const [unitPicker, setUnitPicker] = useState(null); // "attacker" | "defender" | null
   const [muted, setMutedState] = useState(isMuted());
   const [showHelp, setShowHelp] = useState(false);
+
+  const attacker = attackerUid ? UNITS_BY_UID[attackerUid] : null;
+  const defender = defenderUid ? UNITS_BY_UID[defenderUid] : null;
 
   const { frightened } = modifiers || {};
 
@@ -204,9 +262,60 @@ const App = () => {
     );
   };
 
+  // Prefill dice/OS/OP from a unit card's attack profile. If the unit can't
+  // attack in the requested stance, switch to the one it can.
+  const applyAttackerProfile = (unit, mode) => {
+    const usableMode = attackProfile(unit, mode)
+      ? mode
+      : unit.melee
+        ? "melee"
+        : "ranged";
+    if (usableMode !== attackMode) setStance(usableMode);
+    const profile = attackProfile(unit, usableMode);
+    setBaseDice(min([profile.dice, MAX_DICE]));
+    setOffensiveSkill(profile.offensiveSkill % MAX_ROLL);
+    setOffensivePower(profile.offensivePower % MAX_ROLL);
+  };
+
   const switchAttackMode = (mode) => {
     if (mode === attackMode) return;
     setStance(mode);
+    // A selected attacker with a profile for the new stance re-applies it;
+    // without one (e.g. pikemen switched to ranged) the numbers are left
+    // for the player to set by hand
+    if (attacker && attackProfile(attacker, mode)) {
+      applyAttackerProfile(attacker, mode);
+    }
+    playTick();
+    buzz();
+  };
+
+  const selectUnit = (uid) => {
+    const unit = UNITS_BY_UID[uid];
+    if (unitPicker === "attacker") {
+      setAttackerUid(uid);
+      applyAttackerProfile(unit, attackMode);
+    } else {
+      setDefenderUid(uid);
+      setDefensiveSkill(unit.defensiveSkill % MAX_ROLL);
+      setDefensivePower(unit.defensivePower % MAX_ROLL);
+    }
+    setUnitPicker(null);
+    playBonus();
+    buzz();
+  };
+
+  // Clearing a slot keeps the numbers it filled in — they've become the
+  // player's manual values
+  const clearUnit = (role) => {
+    if (role === "attacker") setAttackerUid(null);
+    else setDefenderUid(null);
+    playTick();
+    buzz();
+  };
+
+  const openUnitPicker = (role) => {
+    setUnitPicker(role);
     playTick();
     buzz();
   };
@@ -265,25 +374,58 @@ const App = () => {
     [playedCards]
   );
 
+  // The selected attacker's card abilities that are live right now (e.g.
+  // Spears while Charging) — applied automatically and shown as their own
+  // breakdown lines
+  const attackerAbilities = useMemo(
+    () => (attacker ? activeAbilities(attacker, modifiers) : []),
+    [attacker, modifiers]
+  );
+
+  const [abilityDice, abilityOS, abilityOP] = useMemo(
+    () => sumTriples(map(attackerAbilities, "bonus")),
+    [attackerAbilities]
+  );
+
   const diceToRoll = useMemo(
-    () => deriveDice(baseDice, ccDice, diceModifier),
-    [baseDice, ccDice, diceModifier]
+    () => deriveDice(baseDice, ccDice, diceModifier + abilityDice),
+    [baseDice, ccDice, diceModifier, abilityDice]
   );
 
   const { value: rollToHit, overkill: hitOverkill } = useMemo(
     () =>
       deriveRoll(
-        offensiveSkill - defensiveSkill + ccOffensiveSkill + offensiveSkillModifier
+        offensiveSkill -
+          defensiveSkill +
+          ccOffensiveSkill +
+          offensiveSkillModifier +
+          abilityOS
       ),
-    [offensiveSkill, defensiveSkill, ccOffensiveSkill, offensiveSkillModifier]
+    [
+      offensiveSkill,
+      defensiveSkill,
+      ccOffensiveSkill,
+      offensiveSkillModifier,
+      abilityOS,
+    ]
   );
 
   const { value: rollToWound, overkill: woundOverkill } = useMemo(
     () =>
       deriveRoll(
-        offensivePower - defensivePower + ccOffensivePower + offensivePowerModifier
+        offensivePower -
+          defensivePower +
+          ccOffensivePower +
+          offensivePowerModifier +
+          abilityOP
       ),
-    [offensivePower, defensivePower, ccOffensivePower, offensivePowerModifier]
+    [
+      offensivePower,
+      defensivePower,
+      ccOffensivePower,
+      offensivePowerModifier,
+      abilityOP,
+    ]
   );
 
   // A Frightened unit can't have Command Cards played on it
@@ -300,6 +442,8 @@ const App = () => {
       offensivePower,
       defensiveSkill,
       defensivePower,
+      attackerUid,
+      defenderUid,
       playedCards,
       modifiers,
     });
@@ -310,6 +454,8 @@ const App = () => {
     offensivePower,
     defensiveSkill,
     defensivePower,
+    attackerUid,
+    defenderUid,
     playedCards,
     modifiers,
   ]);
@@ -321,6 +467,19 @@ const App = () => {
       const value = CARDS_BY_ID[id].mod[column];
       return (
         value !== 0 && <span key={`cc-${index}`}>{value} CC</span>
+      );
+    });
+
+  // One breakdown line per live attacker ability touching this column
+  const abilityLines = (column) =>
+    map(attackerAbilities, ({ name, code, bonus }) => {
+      const value = bonus[column];
+      return (
+        value !== 0 && (
+          <span key={`ability-${name}`}>
+            {value} {code ?? name}
+          </span>
+        )
       );
     });
 
@@ -450,6 +609,15 @@ const App = () => {
         />
       )}
 
+      {unitPicker && (
+        <UnitPicker
+          role={unitPicker}
+          selectedUid={unitPicker === "attacker" ? attackerUid : defenderUid}
+          onSelect={selectUnit}
+          onClose={() => setUnitPicker(null)}
+        />
+      )}
+
       <div className="sticky top-0 z-20 border-b border-iron-500 bg-iron-900/95 px-3 pb-2 pt-1 backdrop-blur-sm">
         <div className="Roll grid grid-cols-3 gap-1.5">
           <div className="Dice flex flex-col gap-1">
@@ -461,6 +629,7 @@ const App = () => {
                 <>
                   <span>{baseDice} base</span>
                   {ccLines(0)}
+                  {abilityLines(0)}
                   {map(onModifiersForDice, ({ id, modifier, count, code }) => (
                     <span key={id}>
                       {modifier[0] * (count ?? 1)} {code}
@@ -497,6 +666,7 @@ const App = () => {
                 <>
                   <span>{offensiveSkill - defensiveSkill} base</span>
                   {ccLines(1)}
+                  {abilityLines(1)}
                   {map(onModifiersForSkill, ({ id, modifier, count, code }) => (
                     <span key={id}>
                       {modifier[1] * (count ?? 1)} {code}
@@ -536,6 +706,7 @@ const App = () => {
                 <>
                   <span>{offensivePower - defensivePower} base</span>
                   {ccLines(2)}
+                  {abilityLines(2)}
                   {map(onModifiersForPower, ({ id, modifier, count, code }) => (
                     <span key={id}>
                       {modifier[2] * (count ?? 1)} {code}
@@ -565,6 +736,29 @@ const App = () => {
               />
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2 px-3 pt-3">
+        <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-bone-500">
+          <GiRallyTheTroops className="text-lg text-ember-600" aria-hidden />
+          Units
+        </div>
+        <div className="Units flex gap-1">
+          <UnitSlot
+            role="attacker"
+            icon={GiBroadsword}
+            unit={attacker}
+            onOpen={() => openUnitPicker("attacker")}
+            onClear={() => clearUnit("attacker")}
+          />
+          <UnitSlot
+            role="defender"
+            icon={GiShield}
+            unit={defender}
+            onOpen={() => openUnitPicker("defender")}
+            onClear={() => clearUnit("defender")}
+          />
         </div>
       </div>
 
