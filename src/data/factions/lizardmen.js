@@ -93,6 +93,30 @@ export default {
       abilities: [BLOOD_FRENZY],
     },
     {
+      id: "tyrannosaurusRex",
+      name: "Tyrannosaurus Rex",
+      points: 507,
+      class: "elite",
+      melee: { dice: 5, offensiveSkill: 6, offensivePower: 8 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 4,
+      courage: 12,
+      move: 5,
+      damage: { green: 7, yellow: 2, red: 5 },
+      keywords: ["colossal", "terrifying"],
+      abilities: [
+        {
+          name: "Notes",
+          text:
+            "Always has the Close Standing Order and may not be given a " +
+            "Standing Order Modifier or Fury. To play Command Cards on " +
+            "Tyrannosaurus Rex you must first discard two other Command " +
+            "Cards. Requires two Command Actions to Rally.",
+        },
+      ],
+    },
+    {
       id: "tyrantSpearmen",
       name: "Tyrant Spearmen",
       points: 375,
