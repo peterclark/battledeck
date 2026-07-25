@@ -9,6 +9,41 @@ export default {
   name: "Monsters & Mercenaries",
   units: [
     {
+      id: "hydra",
+      name: "Hydra",
+      points: 600,
+      class: "elite",
+      melee: { dice: 6, offensiveSkill: 6, offensivePower: 7 },
+      ranged: null,
+      // no courage stat — the card passes all Courage Checks
+      defensiveSkill: 1,
+      defensivePower: 3,
+      move: 5,
+      damage: { green: 6, yellow: 4, red: 6 },
+      keywords: ["colossal", "terrifying"],
+      abilities: [
+        {
+          name: "Fearless",
+          text: "Passes all Courage Checks.",
+        },
+        {
+          name: "Regeneration",
+          text:
+            "At the start of your Movement and Command Phase, Hydra heals " +
+            "one damage. Each time it heals this way it gains (+1) +0/+0 " +
+            "permanently.",
+        },
+        {
+          name: "Notes",
+          text:
+            "Always has the Close Standing Order and may not be given a " +
+            "Standing Order Modifier or be Directly Controlled. To play a " +
+            "Command Card on Hydra you must first discard two other " +
+            "Command Cards.",
+        },
+      ],
+    },
+    {
       id: "ancientBlueDragon",
       name: "Ancient Blue Dragon",
       points: 868,

@@ -80,7 +80,7 @@ const UnitRow = ({ unit, copy = null, copies = 0, marked = 0, selected, onSelect
       <span>
         DS {unit.defensiveSkill} · T {unit.defensivePower}
       </span>
-      <span>Cg {unit.courage}</span>
+      <span>Cg {unit.courage ?? "—"}</span>
       <span>Mv {unit.move}″</span>
       {unit.fly && <span>Fly {unit.fly}″</span>}
     </span>
