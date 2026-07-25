@@ -66,7 +66,7 @@ Custom palette lives in `tailwind.config.js` (`iron`, `ember`, `blood`, `steel`,
 
 ### Interaction: sounds, haptics, gestures
 
-- `src/sounds.js` — Web Audio-synthesized taps (no assets): `playDrum` (dice/reset), `playBonus` (sword-ring), `playPenalty` (clank), `playTick` (off/rank taps); mute persists to localStorage; `buzz()` wraps `navigator.vibrate`.
+- `src/sounds.js` — Web Audio-synthesized taps (no assets): `playDrum` (dice/reset), `playBonus` (sword-ring), `playPenalty` (clank), `playTick` (off/rank taps); mute persists to localStorage; `buzz()` wraps `navigator.vibrate` (a no-op on iOS, which doesn't implement the Vibration API). iOS also silences Web Audio whenever the ringer switch is set to silent, so playing a sound claims a `navigator.audioSession.type = "playback"` session (Safari 16.4+) and muting hands it back — a playback session interrupts other apps' audio, so it is only held while the app is actually making noise. `unlockAudio()` primes the suspended AudioContext with a silent buffer; `App.jsx` calls it from a one-shot `pointerdown` listener so the first tap's own sound isn't swallowed.
 - `src/hooks.js` — `usePressable({ onTap, onHold, repeat })` pointer-gesture hook. Rank buttons: tap = +1, hold = −1 (rank handlers use `(x + mod + MAX_ROLL) % MAX_ROLL` so decrement wraps correctly). Dice ±: hold to auto-repeat.
 - `src/Artwork.jsx` — original hand-drawn SVG banner art. `scripts/generate-art.mjs` generates painted replacements via the OpenAI Images API (`OPENAI_API_KEY`); prompts intentionally avoid Battleground/Your Move Games trade dress.
 

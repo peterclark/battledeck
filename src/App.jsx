@@ -62,6 +62,7 @@ import {
   playPenalty,
   playTick,
   setMuted,
+  unlockAudio,
 } from "./sounds";
 
 const CARDS_BY_ID = keyBy(COMMAND_CARD_MODIFIERS, "id");
@@ -549,6 +550,13 @@ const App = () => {
       abilityOP,
     ]
   );
+
+  // Prime audio on the very first press so that press's own sound plays
+  // (iOS keeps a fresh AudioContext suspended until a gesture resumes it)
+  useEffect(() => {
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    return () => window.removeEventListener("pointerdown", unlockAudio);
+  }, []);
 
   // A Frightened unit can't have Command Cards played on it, and some
   // special attacks are immune to Command Cards outright
