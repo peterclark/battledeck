@@ -75,11 +75,16 @@ export const KEYWORDS = {
     name: "Fearsome",
     text: "Causes Fear Checks — see the rulebook's fear rules.",
   },
+  // The Undead Army Ability card spells out what these classifications
+  // do; until it is transcribed the keywords just label the units.
   lesserUndead: {
     id: "lesserUndead",
     name: "Lesser Undead",
-    // The Undead Army Ability card spells out what this classification
-    // does; until it is transcribed the keyword just labels the unit.
+    text: "An Undead classification (see the Undead army abilities).",
+  },
+  greaterUndead: {
+    id: "greaterUndead",
+    name: "Greater Undead",
     text: "An Undead classification (see the Undead army abilities).",
   },
   stupid: {

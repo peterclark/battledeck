@@ -27,6 +27,20 @@ export default {
       abilities: [FEARLESS],
     },
     {
+      id: "giantCatapult",
+      name: "Giant Catapult",
+      points: 510,
+      melee: { dice: 4, offensiveSkill: 5, offensivePower: 7 },
+      // one printed stat line, thrown as well as swung
+      ranged: { dice: 4, offensiveSkill: 5, offensivePower: 7, range: 17.5 },
+      defensiveSkill: 1,
+      defensivePower: 4,
+      move: 3.5,
+      damage: { green: 3, yellow: 3, red: 3 },
+      keywords: ["greaterUndead", "large", "fearsome"],
+      abilities: [FEARLESS],
+    },
+    {
       id: "zombies",
       name: "Zombies",
       points: 90,
