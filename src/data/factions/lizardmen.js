@@ -93,6 +93,22 @@ export default {
       abilities: [BLOOD_FRENZY],
     },
     {
+      id: "tyrantSpearmen",
+      name: "Tyrant Spearmen",
+      points: 375,
+      class: "core",
+      melee: { dice: 6, offensiveSkill: 5, offensivePower: 6 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 3,
+      courage: 12,
+      move: 3.5,
+      damage: { green: 4, yellow: 4, red: 3 },
+      // the card back prints the full Spears keyword rules
+      keywords: ["spears"],
+      abilities: [BLOOD_FRENZY],
+    },
+    {
       id: "tyrantWarriors",
       name: "Tyrant Warriors",
       points: 338,
