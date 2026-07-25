@@ -9,6 +9,37 @@ export default {
   name: "Monsters & Mercenaries",
   units: [
     {
+      id: "ancientRedDragon",
+      name: "Ancient Red Dragon",
+      points: 900,
+      class: "elite",
+      melee: { dice: 6, offensiveSkill: 6, offensivePower: 8 },
+      // Fire breath: twice per battle, its attack at 7" Line of Sight
+      ranged: { dice: 6, offensiveSkill: 6, offensivePower: 8, range: 7, ammo: 2 },
+      defensiveSkill: 2,
+      defensivePower: 4,
+      courage: 14,
+      move: 5,
+      fly: 10.5,
+      damage: { green: 7, yellow: 2, red: 5 },
+      keywords: ["colossal", "terrifying", "flying"],
+      abilities: [
+        {
+          name: "Fire Breath",
+          text:
+            "May breathe fire twice during a battle: mark off a fire icon " +
+            "to give Ancient Red Dragon a 7″ (Line of Sight) ranged attack " +
+            "this turn.",
+        },
+        {
+          name: "Notes",
+          text:
+            "To play a Command Card on Ancient Red Dragon you must first " +
+            "discard two other Command Cards.",
+        },
+      ],
+    },
+    {
       id: "hydra",
       name: "Hydra",
       points: 600,
