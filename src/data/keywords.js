@@ -75,6 +75,23 @@ export const KEYWORDS = {
     name: "Fearsome",
     text: "Causes Fear Checks — see the rulebook's fear rules.",
   },
+  // The Undead classifications set what it costs to Reanimate the unit —
+  // see the Undead army ability
+  lesserUndead: {
+    id: "lesserUndead",
+    name: "Lesser Undead",
+    text: "Costs 1 Command Action to Reanimate.",
+  },
+  majorUndead: {
+    id: "majorUndead",
+    name: "Major Undead",
+    text: "Costs 2 Command Actions to Reanimate.",
+  },
+  greaterUndead: {
+    id: "greaterUndead",
+    name: "Greater Undead",
+    text: "Costs 3 Command Actions to Reanimate.",
+  },
   stupid: {
     id: "stupid",
     name: "Stupid",

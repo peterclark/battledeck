@@ -2,6 +2,7 @@ import { filter, flatMap, includes, keyBy, map, some } from "lodash";
 import dwarvesOfRunegard from "./factions/dwarvesOfRunegard";
 import menOfHawkshold from "./factions/menOfHawkshold";
 import monstersAndMercenaries from "./factions/monstersAndMercenaries";
+import undeadArmy from "./factions/undeadArmy";
 import { KEYWORDS } from "./keywords";
 
 export { KEYWORDS };
@@ -12,6 +13,7 @@ export const FACTIONS = [
   dwarvesOfRunegard,
   menOfHawkshold,
   monstersAndMercenaries,
+  undeadArmy,
 ];
 
 // Units flattened across factions. Unit ids only need to be unique within
