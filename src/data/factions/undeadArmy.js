@@ -37,6 +37,22 @@ export default {
       abilities: [FEARLESS],
     },
     {
+      id: "deathKnights",
+      name: "Death Knights",
+      points: 516,
+      melee: { dice: 6, offensiveSkill: 6, offensivePower: 6 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 4,
+      // intelligent enough to break: the card prints a courage value and
+      // omits the Fearless line
+      courage: 13,
+      move: 5,
+      damage: { green: 3, yellow: 2, red: 2 },
+      keywords: ["greaterUndead", "cavalry"],
+      abilities: [CAVALRY_CHARGE],
+    },
+    {
       id: "ghoulPack",
       name: "Ghoul Pack",
       points: 130,
