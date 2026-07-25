@@ -252,7 +252,10 @@ describe("Units", () => {
   // The battle screen can already show the unit's name in a slot, so scope
   // the row tap to the picker overlay
   const pickUnit = (utils, role, unitName = "Communal Pikemen") => {
-    fireEvent.click(utils.getByLabelText(`Pick ${role} unit`));
+    // the slot's label changes once a unit is selected, so target the slot
+    fireEvent.click(
+      utils.container.querySelector(`.UnitSlot.${role} button`)
+    );
     const overlay = utils.container.querySelector(".UnitPicker");
     fireEvent.click(within(overlay).getByText(unitName));
   };
@@ -357,10 +360,11 @@ describe("Units", () => {
     const utils = setup();
     fireEvent.click(utils.getByLabelText("Pick attacker unit"));
     const overlay = utils.container.querySelector(".UnitPicker");
-    expect(within(overlay).getByText("Swordsmen")).toBeInTheDocument();
+    // multiple copies list one row each, with their own damage state
+    expect(within(overlay).getByText("Swordsmen #1")).toBeInTheDocument();
+    expect(within(overlay).getByText("Swordsmen #2")).toBeInTheDocument();
     expect(within(overlay).getByText("Lancers")).toBeInTheDocument();
     expect(within(overlay).queryByText("Militia")).not.toBeInTheDocument();
-    expect(within(overlay).getByText(/×2/)).toBeInTheDocument();
     // the toggle covers enemy defenders outside the player's roster
     fireEvent.click(within(overlay).getByText("Show all units"));
     expect(within(overlay).getByText("Militia")).toBeInTheDocument();
@@ -376,6 +380,44 @@ describe("Units", () => {
     expect(
       within(overlay).queryByText("Show all units")
     ).not.toBeInTheDocument();
+  });
+
+  it("an army copy's damage prefills In the Yellow / In the Red", () => {
+    saveArmy({
+      budget: 2000,
+      counts: { "menOfHawkshold/swordsmen": 2 },
+      marks: { "menOfHawkshold/swordsmen": [5, 7] }, // 5/2/3 track
+    });
+    const utils = setup();
+    pickUnit(utils, "attacker", "Swordsmen #1"); // 5 marked: yellow
+    expect(utils.modifier("inTheYellow")).toHaveClass("plate-on-blood");
+    expect(within(utils.dice()).getByText("-1 IY")).toBeInTheDocument();
+    pickUnit(utils, "attacker", "Swordsmen #2"); // 7 marked: red
+    expect(utils.modifier("inTheYellow")).not.toHaveClass("plate-on-blood");
+    expect(utils.modifier("inTheRed")).toHaveClass("plate-on-blood");
+    expect(within(utils.dice()).getByText("-2 IR")).toBeInTheDocument();
+    // the slot shows the copy and its damage state
+    expect(
+      utils.getByLabelText(/attacker: Swordsmen/)
+    ).toHaveTextContent("7/10 dmg · In the Red");
+  });
+
+  it("marking damage in the army builder updates the selected attacker", () => {
+    saveArmy({
+      budget: 2000,
+      counts: { "menOfHawkshold/swordsmen": 1 },
+      marks: { "menOfHawkshold/swordsmen": [0] },
+    });
+    const utils = setup();
+    pickUnit(utils, "attacker", "Swordsmen");
+    expect(utils.modifier("inTheYellow")).not.toHaveClass("plate-on-blood");
+    fireEvent.click(utils.getByLabelText("Build your army"));
+    fireEvent.click(utils.getByLabelText("Swordsmen damage box 5"));
+    fireEvent.click(utils.getByLabelText("Close army builder"));
+    expect(utils.modifier("inTheYellow")).toHaveClass("plate-on-blood");
+    expect(
+      utils.getByLabelText(/attacker: Swordsmen/)
+    ).toHaveTextContent("5/10 dmg · In the Yellow");
   });
 
   it("the header army button opens the army builder", () => {
