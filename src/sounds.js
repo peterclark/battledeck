@@ -14,10 +14,43 @@ const context = () => {
   return ctx;
 };
 
+// iOS silences Web Audio whenever the ringer switch is set to silent,
+// which mutes the whole app at a game table. Declaring a playback audio
+// session (Safari 16.4+) opts out of that. The trade-off is that a
+// playback session interrupts other apps' audio, so the session is only
+// claimed while we are actually making noise and is handed back on mute.
+const setSession = (type) => {
+  try {
+    if (navigator.audioSession) navigator.audioSession.type = type;
+  } catch {
+    // audio session unsupported — the ringer switch stays in charge
+  }
+};
+
+// iOS leaves a fresh AudioContext suspended until it is resumed inside a
+// user gesture, and can swallow the first sound while it unlocks. Priming
+// it on the first pointer down means that tap's own sound is audible.
+export const unlockAudio = () => {
+  if (muted) return;
+  try {
+    const c = context();
+    if (!c) return;
+    setSession("playback");
+    const primer = c.createBufferSource();
+    primer.buffer = c.createBuffer(1, 1, c.sampleRate);
+    primer.connect(c.destination);
+    primer.start(0);
+  } catch {
+    // audio unavailable — taps just stay silent
+  }
+};
+
 export const isMuted = () => muted;
 
 export const setMuted = (value) => {
   muted = value;
+  // Muting hands the playback session back so other apps' audio resumes
+  if (value) setSession("auto");
   try {
     localStorage.setItem("battledeck-muted", value ? "1" : "0");
   } catch {
@@ -63,7 +96,9 @@ const play = (fn) => {
   if (muted) return;
   try {
     const c = context();
-    if (c) fn(c);
+    if (!c) return;
+    setSession("playback");
+    fn(c);
   } catch {
     // audio unavailable — taps just stay silent
   }
@@ -103,6 +138,8 @@ export const playTick = () =>
     noise(c, { dur: 0.03, gain: 0.12, freq: 2200, q: 3 });
   });
 
+// Haptics are Android-only in practice: iOS Safari does not implement the
+// Vibration API at all, so this is a no-op on iPhone and iPad.
 export const buzz = (ms = 8) => {
   try {
     navigator.vibrate?.(ms);
