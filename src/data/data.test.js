@@ -7,6 +7,7 @@ import {
   UNITS_BY_UID,
   activeAbilities,
   attackProfile,
+  reanimateCost,
 } from "./index";
 import { MODIFIERS } from "../constants";
 import { MAX_DICE, MAX_ROLL } from "../derive";
@@ -165,6 +166,18 @@ describe("faction data", () => {
       "Engaged",
     ]);
     expect(activeAbilities(bowmen, {}, "ranged")).toHaveLength(0);
+  });
+
+  it("reanimateCost follows the Undead classification tiers", () => {
+    const cost = (uid) => reanimateCost(UNITS_BY_UID[uid]);
+    expect(cost("undeadArmy/zombies")).toBe(1); // Lesser
+    expect(cost("undeadArmy/zombieTrolls")).toBe(2); // Major
+    expect(cost("undeadArmy/deathKnights")).toBe(3); // Greater
+    // no classification line on its card, so it can never be Reanimated
+    expect(cost("undeadArmy/swarmOfRats")).toBeNull();
+    // and neither can anything outside the Undead
+    expect(cost("menOfHawkshold/swordsmen")).toBeNull();
+    expect(reanimateCost(null)).toBeNull();
   });
 
   it("keywords work across factions (Spears vs Dwarven allied cavalry)", () => {

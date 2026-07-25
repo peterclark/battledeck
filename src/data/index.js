@@ -1,4 +1,4 @@
-import { filter, flatMap, includes, keyBy, map, some } from "lodash";
+import { filter, find, flatMap, includes, keyBy, map, some } from "lodash";
 import dwarvesOfRunegard from "./factions/dwarvesOfRunegard";
 import menOfHawkshold from "./factions/menOfHawkshold";
 import monstersAndMercenaries from "./factions/monstersAndMercenaries";
@@ -37,6 +37,21 @@ export const attackProfile = (unit, mode) =>
 
 export const damageBoxes = (unit) =>
   unit.damage.green + unit.damage.yellow + unit.damage.red;
+
+// What it costs in Command Actions to Reanimate a unit (heal one damage),
+// set by its Undead classification. Units without one — every non-Undead
+// unit, plus the Swarm of Rats — can't be Reanimated at all, so they get
+// null rather than a cost.
+const REANIMATE_COST = {
+  lesserUndead: 1,
+  majorUndead: 2,
+  greaterUndead: 3,
+};
+
+export const reanimateCost = (unit) => {
+  const classification = find(unit?.keywords, (id) => REANIMATE_COST[id]);
+  return classification ? REANIMATE_COST[classification] : null;
+};
 
 // Damage state per the rules: all Green boxes marked = In the Yellow, all
 // Green and Yellow marked = In the Red, all boxes marked = destroyed
