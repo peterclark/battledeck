@@ -3,20 +3,24 @@
 //
 // Blood Frenzy is the faction's recurring rule: a bonus that turns on
 // while the unit is Engaged with an enemy that is already damaged ("not
-// in the green"). The calculator has no state for the defender's damage —
-// its In the Yellow / In the Red toggles describe the attacker — so
-// Blood Frenzy is kept as prose for now.
+// in the green"). The battle screen's Foe Damaged toggle carries that
+// state, so the extra die applies automatically; the Courage half stays
+// prose, since the app doesn't compute courage.
 //
 // On these cards the ovals in the damage track are the dividers between
 // the green/yellow/red bands (a card with no yellow boxes shows just one),
 // and the clawed box at the foot of the stat bar is the Fury box the army
 // ability marks.
 
-// Every Lizardmen card carries the same Blood Frenzy line
+// Every Lizardmen card except the two wild beasts carries this line
 const BLOOD_FRENZY = {
   name: "Blood Frenzy",
+  code: "BF",
   text:
     "(+1) +0/+0 and Courage +2 while Engaged with a unit not in the green.",
+  bonus: [1, 0, 0],
+  when: ["targetDamaged"],
+  stance: "melee",
 };
 
 export default {

@@ -320,6 +320,26 @@ describe("Units", () => {
     expect(dice().querySelector(".text-6xl")).toHaveTextContent("8");
   });
 
+  it("Foe Damaged drives Blood Frenzy without adding dice on its own", () => {
+    const utils = setup();
+    const { dice, modifier, getByText } = utils;
+    // on its own the toggle is inert — it is a state flag, not a modifier
+    fireEvent.click(modifier("targetDamaged"));
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("4");
+    // a Lizardmen attacker turns it into a die, with its own breakdown line
+    pickUnit(utils, "attacker", "Trog Warriors");
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("6"); // 5 +1 BF
+    expect(within(dice()).getByText("1 BF")).toBeInTheDocument();
+    fireEvent.click(modifier("targetDamaged"));
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("5");
+    // and it is melee-only: switching stance drops it
+    fireEvent.click(modifier("targetDamaged"));
+    fireEvent.click(getByText("Ranged"));
+    expect(within(dice()).queryByText("1 BF")).not.toBeInTheDocument();
+    fireEvent.click(getByText("Melee"));
+    expect(modifier("targetDamaged")).not.toHaveClass("plate-on-ember");
+  });
+
   it("applies the archers' Engaged penalty in melee but not at range", () => {
     const utils = setup();
     pickUnit(utils, "attacker", "Bowmen");

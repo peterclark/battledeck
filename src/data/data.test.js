@@ -180,6 +180,22 @@ describe("faction data", () => {
     expect(reanimateCost(null)).toBeNull();
   });
 
+  it("Blood Frenzy needs a damaged foe and a melee stance", () => {
+    const trogs = UNITS_BY_UID["lizardmen/trogWarriors"];
+    const on = { targetDamaged: { on: true } };
+    expect(map(activeAbilities(trogs, on, "melee"), "bonus")).toEqual([
+      [1, 0, 0],
+    ]);
+    // foe still in the green, or the attack is at range: no frenzy
+    expect(activeAbilities(trogs, { targetDamaged: { on: false } }, "melee"))
+      .toHaveLength(0);
+    expect(activeAbilities(trogs, on, "ranged")).toHaveLength(0);
+    // the wild beasts never had it
+    expect(
+      activeAbilities(UNITS_BY_UID["lizardmen/tyrannosaurusRex"], on, "melee")
+    ).toHaveLength(0);
+  });
+
   it("keywords work across factions (Spears vs Dwarven allied cavalry)", () => {
     const pikemen = UNITS_BY_UID["menOfHawkshold/communalPikemen"];
     const horsemen = UNITS_BY_UID["dwarvesOfRunegard/antonianHorsemen"];

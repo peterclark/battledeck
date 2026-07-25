@@ -230,8 +230,21 @@ export const MODIFIERS = {
     disabled: ["colossalTarget"],
     code: "LG",
   },
-  fastMovingTarget: {
+  // A state flag rather than a modifier in its own right: it carries no
+  // triple, and exists so unit abilities that key off a wounded defender
+  // (the Lizardmen's Blood Frenzy) have something to gate on.
+  targetDamaged: {
     position: 15,
+    id: "targetDamaged",
+    category: "melee",
+    name: "Foe\nDamaged",
+    on: false,
+    color: "bg-green-400",
+    modifier: [0, 0, 0],
+    code: "FD",
+  },
+  fastMovingTarget: {
+    position: 16,
     id: "fastMovingTarget",
     category: "ranged",
     name: "Fast\nTarget",
@@ -251,7 +264,7 @@ export const MODIFIERS = {
     code: "FAST",
   },
   extremeRange: {
-    position: 16,
+    position: 17,
     id: "extremeRange",
     category: "ranged",
     name: "Extreme\nRange\n15+",
@@ -272,7 +285,7 @@ export const MODIFIERS = {
     code: "ER",
   },
   longRange: {
-    position: 17,
+    position: 18,
     id: "longRange",
     category: "ranged",
     name: "Long\nRange\n7-14",
@@ -293,7 +306,7 @@ export const MODIFIERS = {
     code: "LR",
   },
   moveAndShoot: {
-    position: 18,
+    position: 19,
     id: "moveAndShoot",
     category: "ranged",
     name: "Move &\nShoot",
@@ -313,7 +326,7 @@ export const MODIFIERS = {
     code: "M&S",
   },
   notClosestTarget: {
-    position: 19,
+    position: 20,
     id: "notClosestTarget",
     category: "ranged",
     name: "Not\nClosest",
@@ -333,7 +346,7 @@ export const MODIFIERS = {
     code: "NC",
   },
   targetHighGround: {
-    position: 20,
+    position: 21,
     id: "targetHighGround",
     category: "melee",
     name: "High\nGround",
@@ -350,7 +363,7 @@ export const MODIFIERS = {
     code: "HG",
   },
   softCover: {
-    position: 21,
+    position: 22,
     id: "softCover",
     category: "ranged",
     name: "Soft\nCover",
@@ -370,7 +383,7 @@ export const MODIFIERS = {
     code: "SC",
   },
   hardCover: {
-    position: 22,
+    position: 23,
     id: "hardCover",
     category: "ranged",
     name: "Hard\nCover",
@@ -390,7 +403,7 @@ export const MODIFIERS = {
     code: "HC",
   },
   reset: {
-    position: 23,
+    position: 24,
     id: "reset",
     name: "Reset",
     on: true,
