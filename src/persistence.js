@@ -31,9 +31,20 @@ export const DEFAULT_STATE = {
   defenderUid: null,
   attackerCopy: null,
   defenderCopy: null,
+  ammoSpent: {},
   playedCards: [],
   modifiers: MODIFIERS,
 };
+
+// Ammo tallies are keyed by `${uid}#${copy}` — keep only entries whose
+// unit still exists and whose count is a sane positive integer
+const validAmmoSpent = (stored) =>
+  Object.fromEntries(
+    Object.entries(stored ?? {}).filter(([key, n]) => {
+      const uid = key.split("#")[0];
+      return UNITS_BY_UID[uid] && Number.isInteger(n) && n > 0 && n <= 20;
+    })
+  );
 
 // A slot's army copy index is only meaningful while that unit is still in
 // the army with at least copy+1 fielded
@@ -59,6 +70,7 @@ export const loadState = () => {
       defenderUid: validUid(stored.defenderUid),
       attackerCopy: validCopy(validUid(stored.attackerUid), stored.attackerCopy),
       defenderCopy: validCopy(validUid(stored.defenderUid), stored.defenderCopy),
+      ammoSpent: validAmmoSpent(stored.ammoSpent),
       playedCards: (Array.isArray(stored.playedCards) ? stored.playedCards : [])
         .filter((id) => CARD_IDS.has(id))
         .slice(0, MAX_PLAYED_CARDS),
@@ -93,6 +105,7 @@ export const saveState = (state) => {
         defenderUid: state.defenderUid,
         attackerCopy: state.attackerCopy,
         defenderCopy: state.defenderCopy,
+        ammoSpent: state.ammoSpent,
         playedCards: state.playedCards,
         modifiers: mapValues(state.modifiers, ({ on, count }) =>
           count === undefined ? { on } : { on, count }

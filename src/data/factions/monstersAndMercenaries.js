@@ -96,8 +96,17 @@ export default {
       points: 868,
       class: "elite",
       melee: { dice: 6, offensiveSkill: 7, offensivePower: 7 },
-      // Lightning breath: three uses per battle, dice count locked at 3
-      ranged: { dice: 3, offensiveSkill: 7, offensivePower: 7, range: 10.5, ammo: 3 },
+      // Lightning breath: three uses per battle; per the card it ignores
+      // Command Cards and nothing can change its 3 attack dice
+      ranged: {
+        dice: 3,
+        offensiveSkill: 7,
+        offensivePower: 7,
+        range: 10.5,
+        ammo: 3,
+        noCommandCards: true,
+        lockedDice: true,
+      },
       defensiveSkill: 3,
       defensivePower: 3,
       courage: 14,

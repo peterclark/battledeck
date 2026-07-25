@@ -428,6 +428,47 @@ describe("Units", () => {
     expect(container.querySelector(".ArmyBuilder")).not.toBeInTheDocument();
   });
 
+  it("a locked-dice special attack pins the pool and blocks Command Cards", () => {
+    const utils = setup();
+    pickUnit(utils, "attacker", "Ancient Blue Dragon");
+    pickUnit(utils, "defender", "Communal Pikemen");
+    const { container, dice, hit, getByText, getByLabelText, modifier } = utils;
+    // melee first: cards playable, dice adjustable
+    fireEvent.click(container.querySelector(".PlusOneDice"));
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("7"); // 6 +1 CC
+    // lightning breath: (3) 7/7, dice locked, Command Cards void
+    fireEvent.click(getByText("Ranged"));
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("3");
+    expect(within(dice()).getByText("locked")).toBeInTheDocument();
+    expect(container.querySelectorAll(".PlayedCard")).toHaveLength(0); // cleared
+    expect(container.querySelector(".PlusOneDice")).toBeDisabled();
+    expect(getByLabelText(/Add one die/)).toBeDisabled();
+    // modifiers still hit OS but never the pool
+    fireEvent.click(modifier("disrupted"));
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("3");
+    expect(hit().querySelector(".text-6xl")).toHaveTextContent("4"); // 7-2 -1 DI
+    // back in melee everything unlocks
+    fireEvent.click(getByText("Melee"));
+    expect(container.querySelector(".PlusOneDice")).toBeEnabled();
+    expect(getByLabelText(/Add one die/)).toBeEnabled();
+  });
+
+  it("tracks special-attack ammo with tap-down pips", () => {
+    const first = setup();
+    pickUnit(first, "attacker", "Ancient Blue Dragon");
+    expect(first.container.querySelector(".AmmoRow")).not.toBeInTheDocument();
+    fireEvent.click(first.getByText("Ranged"));
+    expect(first.getByText("3 left")).toBeInTheDocument();
+    fireEvent.click(first.getByLabelText("Ancient Blue Dragon shot 2"));
+    expect(first.getByText("1 left")).toBeInTheDocument();
+    // tapping the last spent pip recovers it
+    fireEvent.click(first.getByLabelText("Ancient Blue Dragon shot 2"));
+    expect(first.getByText("2 left")).toBeInTheDocument();
+    first.unmount();
+    const second = setup();
+    expect(second.getByText("2 left")).toBeInTheDocument();
+  });
+
   it("unit selections persist across remounts", () => {
     const first = setup();
     pickAttacker(first);
