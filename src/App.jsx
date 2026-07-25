@@ -176,7 +176,7 @@ const UnitSlot = ({ role, icon: Icon, unit, copyLabel, damage, onOpen, onClear }
               {copyLabel}
             </span>
             <span className="font-mono text-[9px] leading-tight text-bone-500">
-              Cg {unit.courage} · Mv {unit.move}″ · {unit.points} pts
+              Cg {unit.courage ?? "—"} · Mv {unit.move}″ · {unit.points} pts
             </span>
             {damage && (
               <span

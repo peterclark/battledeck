@@ -66,8 +66,14 @@ describe("faction data", () => {
 
       expect(isRank(unit.defensiveSkill), `${unit.id} DS`).toBe(true);
       expect(isRank(unit.defensivePower), `${unit.id} T`).toBe(true);
-      expect(unit.courage).toBeGreaterThan(0);
+      // courage is optional — some monsters auto-pass all Courage Checks
+      if (unit.courage !== undefined) expect(unit.courage).toBeGreaterThan(0);
       expect(unit.move).toBeGreaterThan(0);
+      if (unit.fly !== undefined) expect(unit.fly).toBeGreaterThan(0);
+      if (unit.spoils !== undefined) {
+        expect(isInteger(unit.spoils), `${unit.id} spoils`).toBe(true);
+        expect(unit.spoils).toBeGreaterThan(0);
+      }
 
       each(["green", "yellow", "red"], (band) => {
         const boxes = unit.damage[band];
