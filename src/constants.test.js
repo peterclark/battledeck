@@ -55,6 +55,7 @@ describe("MODIFIERS invariants", () => {
       "flanking",
       "pinching",
       "rearAttacking",
+      "targetDamaged",
       "targetHighGround",
     ]);
     expect(byCategory.ranged.sort()).toEqual([
