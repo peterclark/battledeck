@@ -73,6 +73,20 @@ export default {
       ],
     },
     {
+      id: "skeletonSpearmen",
+      name: "Skeleton Spearmen",
+      points: 167,
+      melee: { dice: 6, offensiveSkill: 5, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 1,
+      move: 3.5,
+      damage: { green: 2, yellow: 2, red: 2 },
+      // the card back prints the full Spears keyword rules
+      keywords: ["lesserUndead", "spears"],
+      abilities: [FEARLESS],
+    },
+    {
       id: "skeletonCavalry",
       name: "Skeleton Cavalry",
       points: 219,
