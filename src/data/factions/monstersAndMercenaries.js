@@ -107,6 +107,34 @@ export default {
       ],
     },
     {
+      id: "earthElemental",
+      name: "Earth Elemental",
+      points: 345,
+      class: "elite",
+      melee: { dice: 5, offensiveSkill: 4, offensivePower: 8 },
+      ranged: null,
+      // no courage stat — the card passes all Courage Checks
+      defensiveSkill: 1,
+      defensivePower: 4,
+      move: 5,
+      damage: { green: 5, yellow: 4, red: 4 },
+      keywords: ["large", "fearsome"],
+      abilities: [
+        {
+          name: "Fearless",
+          text: "Passes all Courage Checks.",
+        },
+        {
+          name: "Notes",
+          text:
+            "Always has the Close Standing Order and may not be given a " +
+            "Standing Order Modifier or be Directly Controlled. To play a " +
+            "Command Card on Earth Elemental you must first discard two " +
+            "other Command Cards.",
+        },
+      ],
+    },
+    {
       id: "hillGiant",
       name: "Hill Giant",
       points: 500,
@@ -134,6 +162,20 @@ export default {
             "two other Command Cards.",
         },
       ],
+    },
+    {
+      id: "ogres",
+      name: "Ogres",
+      points: 295,
+      class: "core",
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 6 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 3,
+      courage: 12,
+      move: 5,
+      damage: { green: 4, yellow: 4, red: 4 },
+      keywords: ["large", "fearsome", "stupid"],
     },
     {
       id: "redDragon",
