@@ -92,7 +92,8 @@ const UnitRow = ({ unit, count, marks, onAdd, onRemove, onMark }) => {
             {unit.name}
           </span>
           <span className="font-mono text-[9px] text-bone-500">
-            {unit.points} pts · {capitalize(unit.class)}
+            {unit.points} pts
+            {unit.class ? ` · ${capitalize(unit.class)}` : ""}
             {isUnique(unit) ? " · max 1" : ""}
           </span>
         </span>

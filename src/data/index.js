@@ -1,4 +1,5 @@
 import { filter, flatMap, includes, keyBy, map, some } from "lodash";
+import dwarvesOfRunegard from "./factions/dwarvesOfRunegard";
 import menOfHawkshold from "./factions/menOfHawkshold";
 import { KEYWORDS } from "./keywords";
 
@@ -6,7 +7,7 @@ export { KEYWORDS };
 
 // All playable factions, in display order. Adding a faction = adding a file
 // under ./factions and listing it here.
-export const FACTIONS = [menOfHawkshold];
+export const FACTIONS = [dwarvesOfRunegard, menOfHawkshold];
 
 // Units flattened across factions. Unit ids only need to be unique within
 // their faction; the derived uid is globally unique and is what selection

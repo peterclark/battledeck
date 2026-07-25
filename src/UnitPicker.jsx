@@ -70,7 +70,8 @@ const UnitRow = ({ unit, copy = null, copies = 0, marked = 0, selected, onSelect
         {copies > 1 ? ` #${copy + 1}` : ""}
       </span>
       <span className="shrink-0 font-mono text-[10px] text-bone-500">
-        {unit.points} pts · {capitalize(unit.class)}
+        {unit.points} pts
+        {unit.class ? ` · ${capitalize(unit.class)}` : ""}
       </span>
     </span>
     <span className="flex w-full flex-wrap gap-x-3 gap-y-0.5 font-mono text-[10px] leading-tight text-bone-300">
