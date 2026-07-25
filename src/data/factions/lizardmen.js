@@ -53,6 +53,19 @@ export default {
       abilities: [BLOOD_FRENZY],
     },
     {
+      id: "hatchlings",
+      name: "Hatchlings",
+      points: 91,
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 3 },
+      ranged: null,
+      defensiveSkill: 1,
+      defensivePower: 1,
+      courage: 11,
+      move: 5,
+      damage: { green: 3, yellow: 3, red: 3 },
+      abilities: [BLOOD_FRENZY],
+    },
+    {
       id: "raptorPack",
       name: "Raptor Pack",
       points: 290,
@@ -106,6 +119,36 @@ export default {
       move: 3.5,
       damage: { green: 4, yellow: 4, red: 3 },
       abilities: [BLOOD_FRENZY],
+    },
+    {
+      id: "triceratopsHerd",
+      name: "Triceratops Herd",
+      points: 322,
+      class: "elite",
+      // Command Cards are allowed but taxed a discard, not forbidden, so
+      // no noCommandCards lock here — the cost stays prose
+      melee: { dice: 4, offensiveSkill: 5, offensivePower: 6 },
+      ranged: null,
+      defensiveSkill: 1,
+      defensivePower: 4,
+      courage: 12,
+      move: 3.5,
+      damage: { green: 4, yellow: 4, red: 4 },
+      keywords: ["large", "fearsome"],
+      abilities: [
+        {
+          name: "Impact Hits",
+          text: "Three Impact Hits.",
+        },
+        {
+          name: "Notes",
+          text:
+            "May not be directly controlled. May not be given a Standing " +
+            "Order Modifier or Fury. To play Command Cards on Triceratops " +
+            "Herd you must first discard one other Command Card. Moves 5″ " +
+            "when Routing or Final Rushing.",
+        },
+      ],
     },
     {
       id: "trogBowmen",
