@@ -8,6 +8,7 @@ import {
   max,
   min,
   pick,
+  range,
   some,
   transform,
   values,
@@ -252,6 +253,8 @@ const App = () => {
   // picked outside the army) — copies carry their own damage tallies
   const [attackerCopy, setAttackerCopy] = useState(initial.attackerCopy);
   const [defenderCopy, setDefenderCopy] = useState(initial.defenderCopy);
+  // Shots spent per unit copy (breath weapons, arrows) — keyed uid#copy
+  const [ammoSpent, setAmmoSpent] = useState(initial.ammoSpent);
   const [unitPicker, setUnitPicker] = useState(null); // "attacker" | "defender" | null
   const [muted, setMutedState] = useState(isMuted());
   const [showHelp, setShowHelp] = useState(false);
@@ -264,6 +267,13 @@ const App = () => {
   const defender = defenderUid ? UNITS_BY_UID[defenderUid] : null;
 
   const { frightened } = modifiers || {};
+
+  // The attacker's profile for the current stance drives the special-attack
+  // locks: some cards forbid Command Cards or fix their dice count (e.g.
+  // the Ancient Blue Dragon's lightning breath)
+  const activeProfile = attacker ? attackProfile(attacker, attackMode) : null;
+  const ccLocked = frightened.on || Boolean(activeProfile?.noCommandCards);
+  const diceLocked = Boolean(activeProfile?.lockedDice);
 
   const handleIncDice = (mod) => {
     setBaseDice((dice) => min([max([dice + mod, 0]), MAX_DICE]));
@@ -412,6 +422,20 @@ const App = () => {
     buzz();
   };
 
+  // Ammo pips for the attacker's current-stance profile (breath weapons,
+  // arrows): tap pip N to spend shots through it, tap the last spent pip
+  // to recover it. Tallies are per unit copy and survive reloads.
+  const ammoKey = attacker ? `${attacker.uid}#${attackerCopy ?? "-"}` : null;
+  const ammoTotal = activeProfile?.ammo ?? 0;
+  const shotsSpent = min([ammoSpent[ammoKey] ?? 0, ammoTotal]);
+
+  const spendAmmo = (value) => {
+    setAmmoSpent((spent) => ({ ...spent, [ammoKey]: value }));
+    if (value < shotsSpent) playTick();
+    else playDrum();
+    buzz();
+  };
+
   // Toggles coming from the rules help can reference a modifier from the
   // other stance — switch stance first so the toggle is legal and visible
   // on the battle screen.
@@ -480,9 +504,14 @@ const App = () => {
     [attackerAbilities]
   );
 
+  // A locked-dice special attack pins the pool at its printed count —
+  // nothing (cards, modifiers, abilities) can change it
   const diceToRoll = useMemo(
-    () => deriveDice(baseDice, ccDice, diceModifier + abilityDice),
-    [baseDice, ccDice, diceModifier, abilityDice]
+    () =>
+      diceLocked
+        ? baseDice
+        : deriveDice(baseDice, ccDice, diceModifier + abilityDice),
+    [diceLocked, baseDice, ccDice, diceModifier, abilityDice]
   );
 
   const { value: rollToHit, overkill: hitOverkill } = useMemo(
@@ -521,10 +550,11 @@ const App = () => {
     ]
   );
 
-  // A Frightened unit can't have Command Cards played on it
+  // A Frightened unit can't have Command Cards played on it, and some
+  // special attacks are immune to Command Cards outright
   useEffect(() => {
-    if (frightened.on) setPlayedCards([]);
-  }, [frightened.on]);
+    if (ccLocked) setPlayedCards([]);
+  }, [ccLocked]);
 
   // Persist the calculator so a reload or tab eviction doesn't lose the game
   useEffect(() => {
@@ -539,6 +569,7 @@ const App = () => {
       defenderUid,
       attackerCopy,
       defenderCopy,
+      ammoSpent,
       playedCards,
       modifiers,
     });
@@ -553,6 +584,7 @@ const App = () => {
     defenderUid,
     attackerCopy,
     defenderCopy,
+    ammoSpent,
     playedCards,
     modifiers,
   ]);
@@ -740,14 +772,23 @@ const App = () => {
               lines={
                 <>
                   <span>{baseDice} base</span>
-                  {ccLines(0)}
-                  {abilityLines(0)}
-                  {map(onModifiersForDice, ({ id, modifier, count, code }) => (
-                    <span key={id}>
-                      {modifier[0] * (count ?? 1)} {code}
-                    </span>
-                  ))}
-                  {frightened.on && <span>{frightened.code}</span>}
+                  {diceLocked ? (
+                    <span className="text-ember-500">locked</span>
+                  ) : (
+                    <>
+                      {ccLines(0)}
+                      {abilityLines(0)}
+                      {map(
+                        onModifiersForDice,
+                        ({ id, modifier, count, code }) => (
+                          <span key={id}>
+                            {modifier[0] * (count ?? 1)} {code}
+                          </span>
+                        )
+                      )}
+                      {frightened.on && <span>{frightened.code}</span>}
+                    </>
+                  )}
                 </>
               }
             />
@@ -755,6 +796,7 @@ const App = () => {
               <button
                 className="plate plate-danger flex h-12 flex-1 items-center justify-center text-xl"
                 aria-label="Remove one die. Hold to repeat."
+                disabled={diceLocked}
                 {...diceDown}
               >
                 <FaMinus />
@@ -762,6 +804,7 @@ const App = () => {
               <button
                 className="plate plate-boon flex h-12 flex-1 items-center justify-center text-xl"
                 aria-label="Add one die. Hold to repeat."
+                disabled={diceLocked}
                 {...diceUp}
               >
                 <FaPlus />
@@ -876,12 +919,37 @@ const App = () => {
             onClear={() => clearUnit("defender")}
           />
         </div>
+        {ammoTotal > 0 && (
+          <div className="AmmoRow flex items-center justify-center gap-1.5">
+            <GiBowArrow className="text-sm text-ember-600" aria-hidden />
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-bone-500">
+              Ammo
+            </span>
+            {map(range(ammoTotal), (shot) => (
+              <button
+                key={shot}
+                className={className(
+                  "plate h-6 w-6 rounded-[3px]",
+                  shot >= shotsSpent && "plate-on-ember"
+                )}
+                aria-label={`${attacker.name} shot ${shot + 1}`}
+                aria-pressed={shot < shotsSpent}
+                onClick={() =>
+                  spendAmmo(shot + 1 === shotsSpent ? shot : shot + 1)
+                }
+              />
+            ))}
+            <span className="font-mono text-[9px] text-bone-500">
+              {ammoTotal - shotsSpent} left
+            </span>
+          </div>
+        )}
       </div>
 
       <div
         className={className(
           "flex flex-col gap-2 px-3 pt-3 transition-opacity duration-300",
-          frightened.on && "opacity-40 saturate-50"
+          ccLocked && "opacity-40 saturate-50"
         )}
       >
         <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-bone-500">
@@ -897,7 +965,7 @@ const App = () => {
                 id,
                 color === "bg-green-400" ? "plate-boon" : "plate-danger"
               )}
-              disabled={frightened.on}
+              disabled={ccLocked}
               onClick={() => handleCommandCard({ id, color })}
             >
               <span className="whitespace-pre-line">{name}</span>
@@ -916,7 +984,7 @@ const App = () => {
                     card.color === "bg-green-400" ? "plate-boon" : "plate-danger"
                   )}
                   aria-label={`Played ${flatCardName(card.name)}. Tap to remove.`}
-                  disabled={frightened.on}
+                  disabled={ccLocked}
                   onClick={() => removePlayedCard(index)}
                 >
                   {flatCardName(card.name)}
@@ -928,7 +996,7 @@ const App = () => {
         )}
         <ConfirmResetButton
           className="ClearCommandCardModifiers plate plate-on-gold h-10 text-sm tracking-widest"
-          disabled={frightened.on}
+          disabled={ccLocked}
           armLabel="Tap again to reset"
           onReset={() => {
             setPlayedCards([]);
