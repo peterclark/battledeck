@@ -1,12 +1,28 @@
-// Monsters & Mercenaries unit cards, transcribed from the physical cards
-// (2017 printing). This faction carries the size keywords (large/colossal)
-// plus terrifying and flying. Dragons are double-height cards; their
-// breath weapons are the ranged profile, with the card's breath icons as
-// `ammo`, and a `fly` field holds the Flying movement value.
+// Monsters & Mercenaries unit cards, transcribed from the physical cards.
+// This faction carries the size keywords (large/colossal) plus terrifying,
+// flying, and stupid. Dragons are double-height cards; their breath
+// weapons are the ranged profile, with the card's breath icons as `ammo`,
+// and a `fly` field holds the Flying movement value. The gem icons on the
+// stat bars are Spoils boxes (`spoils`) for the Mercenary Army Ability.
 
 export default {
   id: "monstersAndMercenaries",
   name: "Monsters & Mercenaries",
+  // Mercenary Army Ability card — army-wide rules, informational
+  abilities: [
+    {
+      name: "Spoils",
+      text:
+        "You may pay one Command Action to mark a Spoils box on a " +
+        "Non-Routing unit (two Command Actions if the unit is hired as a " +
+        "mercenary in another faction). After that unit rolls a courage " +
+        "check, you may erase a mark to lower the roll by two (more than " +
+        "one mark may be erased on a single roll). You may also erase a " +
+        "mark to Rally the unit at the beginning of any Movement and " +
+        "Command Phase, before Final Rushes are declared; a Rallied unit " +
+        "may not Move, Shoot, or receive a new Standing Order that turn.",
+    },
+  ],
   units: [
     {
       id: "ancientRedDragon",
@@ -146,6 +162,7 @@ export default {
       defensiveSkill: 2,
       defensivePower: 2,
       courage: 11,
+      spoils: 2,
       move: 3.5,
       damage: { green: 3, yellow: 2, red: 1 },
       abilities: [
@@ -169,6 +186,7 @@ export default {
       defensiveSkill: 2,
       defensivePower: 3,
       courage: 11,
+      spoils: 2,
       move: 3.5,
       damage: { green: 4, yellow: 2, red: 4 },
       keywords: ["spears"],
@@ -183,6 +201,7 @@ export default {
       defensiveSkill: 2,
       defensivePower: 3,
       courage: 11,
+      spoils: 2,
       move: 3.5,
       damage: { green: 4, yellow: 2, red: 4 },
     },
@@ -195,6 +214,7 @@ export default {
       defensiveSkill: 1,
       defensivePower: 2,
       courage: 11,
+      spoils: 2,
       move: 3.5,
       damage: { green: 3, yellow: 3, red: 2 },
       abilities: [
@@ -249,6 +269,7 @@ export default {
       defensiveSkill: 2,
       defensivePower: 3,
       courage: 12,
+      spoils: 1,
       move: 5,
       damage: { green: 4, yellow: 4, red: 4 },
       keywords: ["large", "fearsome", "stupid"],
@@ -263,6 +284,7 @@ export default {
       defensiveSkill: 1,
       defensivePower: 1,
       courage: 11,
+      spoils: 2,
       move: 3.5,
       damage: { green: 3, yellow: 2, red: 3 },
       abilities: [
@@ -285,6 +307,7 @@ export default {
       defensiveSkill: 2,
       defensivePower: 1,
       courage: 11,
+      spoils: 2,
       move: 3.5,
       damage: { green: 4, yellow: 2, red: 4 },
     },
@@ -297,6 +320,7 @@ export default {
       defensiveSkill: 2,
       defensivePower: 1,
       courage: 11,
+      spoils: 2,
       move: 6,
       damage: { green: 2, yellow: 2, red: 2 },
       keywords: ["cavalry"],

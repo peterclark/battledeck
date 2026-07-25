@@ -70,6 +70,10 @@ describe("faction data", () => {
       if (unit.courage !== undefined) expect(unit.courage).toBeGreaterThan(0);
       expect(unit.move).toBeGreaterThan(0);
       if (unit.fly !== undefined) expect(unit.fly).toBeGreaterThan(0);
+      if (unit.spoils !== undefined) {
+        expect(isInteger(unit.spoils), `${unit.id} spoils`).toBe(true);
+        expect(unit.spoils).toBeGreaterThan(0);
+      }
 
       each(["green", "yellow", "red"], (band) => {
         const boxes = unit.damage[band];
