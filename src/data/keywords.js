@@ -70,6 +70,11 @@ export const KEYWORDS = {
       "A unit charged by a Terrifying unit takes -1 Courage on its checks " +
       "(see the rulebook's fear rules).",
   },
+  fearsome: {
+    id: "fearsome",
+    name: "Fearsome",
+    text: "Causes Fear Checks — see the rulebook's fear rules.",
+  },
   flying: {
     id: "flying",
     name: "Flying",
