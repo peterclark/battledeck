@@ -4,10 +4,10 @@
 // tagged with the matching keyword ids here). Several backs list no deck
 // class — those units simply omit `class`.
 //
-// Army-wide notes: many cards reference the Rune of Uruz (a Dwarven army
-// ability card not yet transcribed) — its mentions are kept in the unit
-// prose. Every card moves 3.5″ when Routing or Final Rushing despite the
-// 2.5″ movement stat, so that note is shared below.
+// Army-wide notes: many cards reference the Rune of Uruz (see the faction
+// abilities below) — its per-card mentions are kept in the unit prose.
+// Every card moves 3.5″ when Routing or Final Rushing despite the 2.5″
+// movement stat, so that note is shared below.
 
 const ROUTING_35 = {
   name: "Routing",
@@ -90,7 +90,7 @@ export default {
       defensivePower: 3,
       courage: 12,
       move: 2.5,
-      damage: { green: 5, yellow: 4, red: 4 },
+      damage: { green: 4, yellow: 4, red: 4 },
       abilities: [ROUTING_35],
     },
     {
@@ -168,7 +168,7 @@ export default {
       defensivePower: 3,
       courage: 12,
       move: 2.5,
-      damage: { green: 3, yellow: 3, red: 3 },
+      damage: { green: 4, yellow: 4, red: 4 },
       abilities: [
         {
           // Unusually, crossbowmen fight BETTER hand-to-hand than their
@@ -212,7 +212,7 @@ export default {
       defensivePower: 2,
       courage: 12,
       move: 2.5,
-      damage: { green: 5, yellow: 4, red: 4 },
+      damage: { green: 4, yellow: 4, red: 4 },
       abilities: [ROUTING_35],
     },
     {
@@ -225,7 +225,7 @@ export default {
       defensivePower: 2,
       courage: 12,
       move: 2.5,
-      damage: { green: 4, yellow: 4, red: 3 },
+      damage: { green: 4, yellow: 4, red: 4 },
       abilities: [ROUTING_35],
     },
     {
@@ -275,7 +275,7 @@ export default {
       defensivePower: 2,
       courage: 11,
       move: 2.5,
-      damage: { green: 3, yellow: 3, red: 3 },
+      damage: { green: 3, yellow: 4, red: 3 },
       abilities: [ROUTING_35],
     },
   ],
