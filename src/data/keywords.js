@@ -63,8 +63,22 @@ export const KEYWORDS = {
       "(multiple different Unique units are fine). In all other ways " +
       "Unique units are treated as Elite units.",
   },
-  // Size keywords referenced by Spears' whenTarget — no Hawkshold unit
-  // carries them, but monster-faction units will
+  terrifying: {
+    id: "terrifying",
+    name: "Terrifying",
+    text:
+      "A unit charged by a Terrifying unit takes -1 Courage on its checks " +
+      "(see the rulebook's fear rules).",
+  },
+  flying: {
+    id: "flying",
+    name: "Flying",
+    text:
+      "Moves by flight using its Flying movement value (see the rulebook's " +
+      "flying rules).",
+  },
+  // Size keywords referenced by Spears' whenTarget — carried by the
+  // Monsters & Mercenaries units
   large: {
     id: "large",
     name: "Large",

@@ -68,6 +68,7 @@ describe("faction data", () => {
       expect(isRank(unit.defensivePower), `${unit.id} T`).toBe(true);
       expect(unit.courage).toBeGreaterThan(0);
       expect(unit.move).toBeGreaterThan(0);
+      if (unit.fly !== undefined) expect(unit.fly).toBeGreaterThan(0);
 
       each(["green", "yellow", "red"], (band) => {
         const boxes = unit.damage[band];
