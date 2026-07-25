@@ -93,7 +93,7 @@ describe("ArmyBuilder", () => {
     ).toBeInTheDocument();
   });
 
-  it("loadArmy drops unknown units and clamps stored counts", () => {
+  it("loadArmy drops unknown units and clamps stored counts and marks", () => {
     localStorage.setItem(
       "battledeck-army-v1",
       JSON.stringify({
@@ -104,6 +104,12 @@ describe("ArmyBuilder", () => {
           "menOfHawkshold/retiredUnit": 2, // gone from the data: drop
           "menOfHawkshold/militia": "many", // not a number: drop
         },
+        marks: {
+          // lancers have 6 boxes: 99 clamps down, -2 clamps up, missing
+          // copies fill with 0
+          "menOfHawkshold/lancers": [99, -2],
+          "menOfHawkshold/retiredUnit": [1],
+        },
       })
     );
     expect(loadArmy()).toEqual({
@@ -112,6 +118,58 @@ describe("ArmyBuilder", () => {
         "menOfHawkshold/lancers": 3,
         "menOfHawkshold/sirSteaphensFreeCompany": 1,
       },
+      marks: {
+        "menOfHawkshold/lancers": [6, 0, 0],
+        "menOfHawkshold/sirSteaphensFreeCompany": [0],
+      },
     });
+  });
+
+  it("marking damage walks the copy through yellow, red, and destroyed", () => {
+    const { add, getByLabelText, queryByText, getByText } = setup();
+    add("Swordsmen"); // 5/2/3 damage track
+    expect(queryByText("In the Yellow")).not.toBeInTheDocument();
+    fireEvent.click(getByLabelText("Swordsmen damage box 5"));
+    expect(getByText("In the Yellow")).toBeInTheDocument();
+    fireEvent.click(getByLabelText("Swordsmen damage box 7"));
+    expect(getByText("In the Red")).toBeInTheDocument();
+    fireEvent.click(getByLabelText("Swordsmen damage box 10"));
+    expect(getByText("Destroyed")).toBeInTheDocument();
+    // tapping the last marked box heals it back off
+    fireEvent.click(getByLabelText("Swordsmen damage box 10"));
+    expect(getByText("In the Red")).toBeInTheDocument();
+  });
+
+  it("each fielded copy tracks damage separately and persists", () => {
+    const first = setup();
+    first.add("Lancers");
+    first.add("Lancers");
+    fireEvent.click(first.getByLabelText("Lancers #2 damage box 3"));
+    expect(first.getByText("In the Yellow")).toBeInTheDocument(); // 3/2/1 track
+    first.unmount();
+    const second = setup();
+    // copy #1 untouched, copy #2 still in the yellow
+    expect(second.getByLabelText("Lancers #1 damage box 3")).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    );
+    expect(second.getByLabelText("Lancers #2 damage box 3")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+  });
+
+  it("removing a copy drops its damage track", () => {
+    const { add, remove, getByLabelText, queryByLabelText } = setup();
+    add("Lancers");
+    add("Lancers");
+    fireEvent.click(getByLabelText("Lancers #2 damage box 1"));
+    remove("Lancers");
+    expect(queryByLabelText(/Lancers #2/)).not.toBeInTheDocument();
+    // the remaining copy is the unmarked first one
+    expect(getByLabelText("Lancers damage box 1")).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    );
   });
 });

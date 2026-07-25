@@ -1,4 +1,5 @@
 import { filter, flatMap, includes, keyBy, map, some } from "lodash";
+import dwarvesOfRunegard from "./factions/dwarvesOfRunegard";
 import menOfHawkshold from "./factions/menOfHawkshold";
 import { KEYWORDS } from "./keywords";
 
@@ -6,7 +7,7 @@ export { KEYWORDS };
 
 // All playable factions, in display order. Adding a faction = adding a file
 // under ./factions and listing it here.
-export const FACTIONS = [menOfHawkshold];
+export const FACTIONS = [dwarvesOfRunegard, menOfHawkshold];
 
 // Units flattened across factions. Unit ids only need to be unique within
 // their faction; the derived uid is globally unique and is what selection
@@ -26,6 +27,19 @@ export const UNITS_BY_UID = keyBy(UNITS, "uid");
 // has no attack of that kind
 export const attackProfile = (unit, mode) =>
   (mode === "ranged" ? unit.ranged : unit.melee) ?? null;
+
+export const damageBoxes = (unit) =>
+  unit.damage.green + unit.damage.yellow + unit.damage.red;
+
+// Damage state per the rules: all Green boxes marked = In the Yellow, all
+// Green and Yellow marked = In the Red, all boxes marked = destroyed
+export const damageStatus = (unit, marked) => {
+  const { green, yellow } = unit.damage;
+  if (marked >= damageBoxes(unit)) return "destroyed";
+  if (marked >= green + yellow) return "red";
+  if (marked >= green) return "yellow";
+  return "fresh";
+};
 
 // A unit's full effect list: its own card-back abilities plus the
 // structured effects of its keywords, labeled with the keyword's name

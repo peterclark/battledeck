@@ -3,25 +3,46 @@ import { capitalize, filter, map, range, some } from "lodash";
 import classNames from "classnames";
 import { FaArrowLeft, FaTimes } from "react-icons/fa";
 import { GiBowArrow, GiCrossedSwords } from "react-icons/gi";
-import { FACTIONS, KEYWORDS } from "./data";
+import { FACTIONS, KEYWORDS, damageStatus } from "./data";
 import { useModalOverlay } from "./hooks";
 import { loadArmy } from "./persistence";
 import { buzz, playTick } from "./sounds";
 
-// The card's green/yellow/red damage track, one square per box
-const DamageTrack = ({ damage }) => (
-  <span className="flex items-center gap-0.5" aria-hidden>
-    {map(range(damage.green), (i) => (
-      <span key={`g${i}`} className="h-2 w-2 rounded-[2px] bg-moss-500" />
-    ))}
-    {map(range(damage.yellow), (i) => (
-      <span key={`y${i}`} className="h-2 w-2 rounded-[2px] bg-ember-500" />
-    ))}
-    {map(range(damage.red), (i) => (
-      <span key={`r${i}`} className="h-2 w-2 rounded-[2px] bg-blood-500" />
-    ))}
-  </span>
-);
+const STATUS_LABEL = {
+  yellow: "In the Yellow",
+  red: "In the Red",
+  destroyed: "Destroyed",
+};
+
+const STATUS_TONE = {
+  yellow: "text-ember-400",
+  red: "text-blood-400",
+  destroyed: "text-blood-500",
+};
+
+// The card's green/yellow/red damage track, one square per box; boxes
+// under `marked` render dimmed (damage already taken)
+const DamageTrack = ({ damage, marked = 0 }) => {
+  const bands = [
+    ...map(range(damage.green), () => "bg-moss-500"),
+    ...map(range(damage.yellow), () => "bg-ember-500"),
+    ...map(range(damage.red), () => "bg-blood-500"),
+  ];
+  return (
+    <span className="flex items-center gap-0.5" aria-hidden>
+      {map(bands, (tone, box) => (
+        <span
+          key={box}
+          className={classNames(
+            "h-2 w-2 rounded-[2px]",
+            tone,
+            box < marked && "opacity-25"
+          )}
+        />
+      ))}
+    </span>
+  );
+};
 
 const Profile = ({ icon: Icon, profile }) => (
   <span className="flex items-center gap-1">
@@ -32,7 +53,9 @@ const Profile = ({ icon: Icon, profile }) => (
   </span>
 );
 
-const UnitRow = ({ unit, inArmy, selected, onSelect }) => (
+const UnitRow = ({ unit, copy = null, copies = 0, marked = 0, selected, onSelect }) => {
+  const status = copy === null ? null : damageStatus(unit, marked);
+  return (
   <button
     className={classNames(
       "UnitRow plate flex w-full flex-col gap-1 px-3 py-2 text-left",
@@ -44,10 +67,11 @@ const UnitRow = ({ unit, inArmy, selected, onSelect }) => (
     <span className="flex w-full items-baseline justify-between gap-2">
       <span className="font-display text-sm tracking-wider text-bone-100">
         {unit.name}
+        {copies > 1 ? ` #${copy + 1}` : ""}
       </span>
       <span className="shrink-0 font-mono text-[10px] text-bone-500">
-        {unit.points} pts · {capitalize(unit.class)}
-        {inArmy > 0 ? ` · ×${inArmy}` : ""}
+        {unit.points} pts
+        {unit.class ? ` · ${capitalize(unit.class)}` : ""}
       </span>
     </span>
     <span className="flex w-full flex-wrap gap-x-3 gap-y-0.5 font-mono text-[10px] leading-tight text-bone-300">
@@ -60,10 +84,17 @@ const UnitRow = ({ unit, inArmy, selected, onSelect }) => (
       <span>Mv {unit.move}″</span>
     </span>
     <span className="flex w-full items-center justify-between gap-2">
-      <DamageTrack damage={unit.damage} />
+      <DamageTrack damage={unit.damage} marked={marked} />
+      {status && STATUS_LABEL[status] && (
+        <span
+          className={classNames("font-mono text-[9px]", STATUS_TONE[status])}
+        >
+          {STATUS_LABEL[status]}
+        </span>
+      )}
       <span className="sr-only">
         Damage boxes: {unit.damage.green} green, {unit.damage.yellow} yellow,{" "}
-        {unit.damage.red} red
+        {unit.damage.red} red{copy !== null ? `, ${marked} marked` : ""}
       </span>
     </span>
     {map(unit.abilities, ({ name, text }) => (
@@ -81,16 +112,18 @@ const UnitRow = ({ unit, inArmy, selected, onSelect }) => (
       </span>
     ))}
   </button>
-);
+  );
+};
 
 // Full-screen unit picker, one section per faction. Same modal conventions
 // as the rules help: focus moves in on open, the page behind is locked,
 // Escape closes, Tab is trapped.
-const UnitPicker = ({ role, selectedUid, onSelect, onClose }) => {
+const UnitPicker = ({ role, selectedUid, selectedCopy, onSelect, onClose }) => {
   // A built army narrows the picker to its own units by default; with no
   // army yet, everything shows. "Show all" covers picking an enemy
   // defender that isn't in the player's roster.
-  const [armyCounts] = useState(() => loadArmy().counts);
+  const [army] = useState(loadArmy);
+  const armyCounts = army.counts;
   const hasArmy = some(armyCounts, (count) => count > 0);
   const [showAll, setShowAll] = useState(!hasArmy);
 
@@ -177,15 +210,34 @@ const UnitPicker = ({ role, selectedUid, onSelect, onClose }) => {
                 ))}
                 {map(units, (unit) => {
                   const uid = `${faction.id}/${unit.id}`;
-                  return (
+                  const copies = armyCounts[uid] ?? 0;
+                  // fielded units list one row per copy, each with its own
+                  // damage state; everything else is a plain row
+                  if (!copies) {
+                    return (
+                      <UnitRow
+                        key={uid}
+                        unit={unit}
+                        selected={
+                          uid === selectedUid && selectedCopy === null
+                        }
+                        onSelect={() => onSelect(uid, null)}
+                      />
+                    );
+                  }
+                  return map(range(copies), (copy) => (
                     <UnitRow
-                      key={uid}
+                      key={`${uid}#${copy}`}
                       unit={unit}
-                      inArmy={armyCounts[uid] ?? 0}
-                      selected={uid === selectedUid}
-                      onSelect={() => onSelect(uid)}
+                      copy={copy}
+                      copies={copies}
+                      marked={army.marks[uid]?.[copy] ?? 0}
+                      selected={
+                        uid === selectedUid && copy === selectedCopy
+                      }
+                      onSelect={() => onSelect(uid, copy)}
                     />
-                  );
+                  ));
                 })}
               </div>
             );

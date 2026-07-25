@@ -1,6 +1,6 @@
 import { mapValues } from "lodash";
 import { COMMAND_CARD_MODIFIERS, MODIFIERS } from "./constants";
-import { UNITS_BY_UID } from "./data";
+import { UNITS_BY_UID, damageBoxes } from "./data";
 import { MAX_DICE, MAX_ROLL } from "./derive";
 
 const CARD_IDS = new Set(COMMAND_CARD_MODIFIERS.map((card) => card.id));
@@ -29,8 +29,18 @@ export const DEFAULT_STATE = {
   defensivePower: 0,
   attackerUid: null,
   defenderUid: null,
+  attackerCopy: null,
+  defenderCopy: null,
   playedCards: [],
   modifiers: MODIFIERS,
+};
+
+// A slot's army copy index is only meaningful while that unit is still in
+// the army with at least copy+1 fielded
+const validCopy = (uid, copy) => {
+  if (uid === null || !Number.isInteger(copy) || copy < 0) return null;
+  const counts = loadArmy().counts;
+  return copy < (counts[uid] ?? 0) ? copy : null;
 };
 
 export const loadState = () => {
@@ -47,6 +57,8 @@ export const loadState = () => {
       defensivePower: clampInt(stored.defensivePower, 0, MAX_ROLL - 1, 0),
       attackerUid: validUid(stored.attackerUid),
       defenderUid: validUid(stored.defenderUid),
+      attackerCopy: validCopy(validUid(stored.attackerUid), stored.attackerCopy),
+      defenderCopy: validCopy(validUid(stored.defenderUid), stored.defenderCopy),
       playedCards: (Array.isArray(stored.playedCards) ? stored.playedCards : [])
         .filter((id) => CARD_IDS.has(id))
         .slice(0, MAX_PLAYED_CARDS),
@@ -79,6 +91,8 @@ export const saveState = (state) => {
         defensivePower: state.defensivePower,
         attackerUid: state.attackerUid,
         defenderUid: state.defenderUid,
+        attackerCopy: state.attackerCopy,
+        defenderCopy: state.defenderCopy,
         playedCards: state.playedCards,
         modifiers: mapValues(state.modifiers, ({ on, count }) =>
           count === undefined ? { on } : { on, count }
@@ -109,7 +123,7 @@ export const MAX_COPIES = 9;
 export const BUDGET_MIN = 500;
 export const BUDGET_MAX = 5000;
 
-export const DEFAULT_ARMY = { budget: 2000, counts: {} };
+export const DEFAULT_ARMY = { budget: 2000, counts: {}, marks: {} };
 
 const maxCopies = (unit) =>
   unit.keywords?.includes("unique") ? 1 : MAX_COPIES;
@@ -121,14 +135,23 @@ export const loadArmy = () => {
     const stored = JSON.parse(raw);
     // keep only counts for units that still exist, clamped to their cap
     const counts = {};
+    const marks = {};
     for (const [uid, n] of Object.entries(stored.counts ?? {})) {
       const unit = UNITS_BY_UID[uid];
       if (!unit || !Number.isInteger(n) || n < 1) continue;
       counts[uid] = Math.min(n, maxCopies(unit));
+      // one damage tally per fielded copy, clamped to the card's boxes
+      const saved = Array.isArray(stored.marks?.[uid]) ? stored.marks[uid] : [];
+      marks[uid] = Array.from({ length: counts[uid] }, (_, copy) =>
+        Number.isInteger(saved[copy])
+          ? Math.min(Math.max(saved[copy], 0), damageBoxes(unit))
+          : 0
+      );
     }
     return {
       budget: clampInt(stored.budget, BUDGET_MIN, BUDGET_MAX, 2000),
       counts,
+      marks,
     };
   } catch {
     return DEFAULT_ARMY;

@@ -40,8 +40,14 @@ import {
   sumModifiers,
   sumTriples,
 } from "./derive";
-import { loadState, saveState } from "./persistence";
-import { UNITS_BY_UID, activeAbilities, attackProfile } from "./data";
+import { loadArmy, loadState, saveState } from "./persistence";
+import {
+  UNITS_BY_UID,
+  activeAbilities,
+  attackProfile,
+  damageBoxes,
+  damageStatus,
+} from "./data";
 import { BannerArt } from "./Artwork";
 import ArmyBuilder from "./ArmyBuilder";
 import Help from "./Help";
@@ -138,9 +144,16 @@ const ConfirmResetButton = ({
   );
 };
 
+const SLOT_DAMAGE_TONE = {
+  fresh: "text-moss-500",
+  yellow: "text-ember-400",
+  red: "text-blood-400",
+  destroyed: "text-blood-500",
+};
+
 // One side of the engagement: shows the selected unit card (or a prompt),
 // opens the unit picker on tap, and clears via the small × button
-const UnitSlot = ({ role, icon: Icon, unit, onOpen, onClear }) => (
+const UnitSlot = ({ role, icon: Icon, unit, copyLabel, damage, onOpen, onClear }) => (
   <div className={className("UnitSlot flex flex-1 items-stretch gap-1", role)}>
     <button
       className="plate flex flex-1 items-center gap-2 px-2.5 py-1.5 text-left"
@@ -160,10 +173,30 @@ const UnitSlot = ({ role, icon: Icon, unit, onOpen, onClear }) => (
           <>
             <span className="truncate font-display text-xs tracking-wider text-bone-100">
               {unit.name}
+              {copyLabel}
             </span>
             <span className="font-mono text-[9px] leading-tight text-bone-500">
               Cg {unit.courage} · Mv {unit.move}″ · {unit.points} pts
             </span>
+            {damage && (
+              <span
+                className={className(
+                  "font-mono text-[9px] leading-tight",
+                  SLOT_DAMAGE_TONE[damage.status]
+                )}
+              >
+                {damage.marked}/{damage.total} dmg
+                {damage.status !== "fresh"
+                  ? ` · ${
+                      damage.status === "destroyed"
+                        ? "Destroyed"
+                        : damage.status === "red"
+                          ? "In the Red"
+                          : "In the Yellow"
+                    }`
+                  : ""}
+              </span>
+            )}
           </>
         ) : (
           <span className="text-xs text-bone-500">Pick a unit&hellip;</span>
@@ -215,10 +248,17 @@ const App = () => {
   // it — every value stays hand-adjustable afterwards
   const [attackerUid, setAttackerUid] = useState(initial.attackerUid);
   const [defenderUid, setDefenderUid] = useState(initial.defenderUid);
+  // Which fielded copy of the army unit each slot holds (null for units
+  // picked outside the army) — copies carry their own damage tallies
+  const [attackerCopy, setAttackerCopy] = useState(initial.attackerCopy);
+  const [defenderCopy, setDefenderCopy] = useState(initial.defenderCopy);
   const [unitPicker, setUnitPicker] = useState(null); // "attacker" | "defender" | null
   const [muted, setMutedState] = useState(isMuted());
   const [showHelp, setShowHelp] = useState(false);
   const [showArmy, setShowArmy] = useState(false);
+  // Snapshot of the saved army (marks feed the slots' damage readouts);
+  // refreshed whenever the army builder closes
+  const [army, setArmy] = useState(loadArmy);
 
   const attacker = attackerUid ? UNITS_BY_UID[attackerUid] : null;
   const defender = defenderUid ? UNITS_BY_UID[defenderUid] : null;
@@ -292,13 +332,32 @@ const App = () => {
     buzz();
   };
 
-  const selectUnit = (uid) => {
+  // An army copy's damage state prefills In the Yellow / In the Red — same
+  // philosophy as the stat prefill: set on selection, hand-adjustable after
+  const applyDamageState = (unit, copy, armyState) => {
+    if (copy === null || copy === undefined) return;
+    const marked = armyState.marks[unit.uid]?.[copy] ?? 0;
+    const status = damageStatus(unit, marked);
+    setModifiers((mods) => ({
+      ...mods,
+      inTheYellow: { ...mods.inTheYellow, on: status === "yellow" },
+      inTheRed: {
+        ...mods.inTheRed,
+        on: status === "red" || status === "destroyed",
+      },
+    }));
+  };
+
+  const selectUnit = (uid, copy = null) => {
     const unit = UNITS_BY_UID[uid];
     if (unitPicker === "attacker") {
       setAttackerUid(uid);
+      setAttackerCopy(copy);
       applyAttackerProfile(unit, attackMode);
+      applyDamageState(unit, copy, army);
     } else {
       setDefenderUid(uid);
+      setDefenderCopy(copy);
       setDefensiveSkill(unit.defensiveSkill % MAX_ROLL);
       setDefensivePower(unit.defensivePower % MAX_ROLL);
     }
@@ -310,11 +369,42 @@ const App = () => {
   // Clearing a slot keeps the numbers it filled in — they've become the
   // player's manual values
   const clearUnit = (role) => {
-    if (role === "attacker") setAttackerUid(null);
-    else setDefenderUid(null);
+    if (role === "attacker") {
+      setAttackerUid(null);
+      setAttackerCopy(null);
+    } else {
+      setDefenderUid(null);
+      setDefenderCopy(null);
+    }
     playTick();
     buzz();
   };
+
+  // Damage marked in the army builder flows back: refresh the snapshot and
+  // re-prefill the attacker's Yellow/Red state from its copy's new tally
+  const closeArmy = () => {
+    setShowArmy(false);
+    const refreshed = loadArmy();
+    setArmy(refreshed);
+    if (attacker && attackerCopy !== null) {
+      applyDamageState(attacker, attackerCopy, refreshed);
+    }
+  };
+
+  const slotDamage = (unit, copy) => {
+    if (!unit || copy === null) return null;
+    const marked = army.marks[unit.uid]?.[copy] ?? 0;
+    return {
+      marked,
+      total: damageBoxes(unit),
+      status: damageStatus(unit, marked),
+    };
+  };
+
+  const copyLabel = (unit, copy) =>
+    unit && copy !== null && (army.counts[unit.uid] ?? 0) > 1
+      ? ` #${copy + 1}`
+      : "";
 
   const openUnitPicker = (role) => {
     setUnitPicker(role);
@@ -447,6 +537,8 @@ const App = () => {
       defensivePower,
       attackerUid,
       defenderUid,
+      attackerCopy,
+      defenderCopy,
       playedCards,
       modifiers,
     });
@@ -459,6 +551,8 @@ const App = () => {
     defensivePower,
     attackerUid,
     defenderUid,
+    attackerCopy,
+    defenderCopy,
     playedCards,
     modifiers,
   ]);
@@ -624,12 +718,13 @@ const App = () => {
         />
       )}
 
-      {showArmy && <ArmyBuilder onClose={() => setShowArmy(false)} />}
+      {showArmy && <ArmyBuilder onClose={closeArmy} />}
 
       {unitPicker && (
         <UnitPicker
           role={unitPicker}
           selectedUid={unitPicker === "attacker" ? attackerUid : defenderUid}
+          selectedCopy={unitPicker === "attacker" ? attackerCopy : defenderCopy}
           onSelect={selectUnit}
           onClose={() => setUnitPicker(null)}
         />
@@ -766,6 +861,8 @@ const App = () => {
             role="attacker"
             icon={GiBroadsword}
             unit={attacker}
+            copyLabel={copyLabel(attacker, attackerCopy)}
+            damage={slotDamage(attacker, attackerCopy)}
             onOpen={() => openUnitPicker("attacker")}
             onClear={() => clearUnit("attacker")}
           />
@@ -773,6 +870,8 @@ const App = () => {
             role="defender"
             icon={GiShield}
             unit={defender}
+            copyLabel={copyLabel(defender, defenderCopy)}
+            damage={slotDamage(defender, defenderCopy)}
             onOpen={() => openUnitPicker("defender")}
             onClear={() => clearUnit("defender")}
           />

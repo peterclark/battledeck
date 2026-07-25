@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { capitalize, map, sum } from "lodash";
+import { capitalize, map, range, sum } from "lodash";
 import classNames from "classnames";
 import { FaArrowLeft, FaMinus, FaPlus, FaTimes } from "react-icons/fa";
 import { GiRallyTheTroops, GiScrollUnfurled } from "react-icons/gi";
-import { FACTIONS, UNITS_BY_UID } from "./data";
+import { FACTIONS, UNITS_BY_UID, damageStatus } from "./data";
 import {
   BUDGET_MAX,
   BUDGET_MIN,
@@ -21,46 +21,119 @@ const commandActions = (budget) => Math.floor(budget / 500);
 
 const isUnique = (unit) => unit.keywords?.includes("unique");
 
-const UnitRow = ({ unit, count, onAdd, onRemove }) => {
+const STATUS_LABEL = {
+  fresh: "",
+  yellow: "In the Yellow",
+  red: "In the Red",
+  destroyed: "Destroyed",
+};
+
+const STATUS_TONE = {
+  yellow: "text-ember-400",
+  red: "text-blood-400",
+  destroyed: "text-blood-500",
+};
+
+// One fielded copy's damage track: tapping box i marks damage up to it,
+// tapping the last marked box heals it back off
+const DamageRow = ({ unit, copy, copies, marked, onMark }) => {
+  const status = damageStatus(unit, marked);
+  const bands = [
+    ...map(range(unit.damage.green), () => "bg-moss-500"),
+    ...map(range(unit.damage.yellow), () => "bg-ember-500"),
+    ...map(range(unit.damage.red), () => "bg-blood-500"),
+  ];
+  return (
+    <div className="DamageRow flex items-center gap-2">
+      {copies > 1 && (
+        <span className="w-5 shrink-0 font-mono text-[9px] text-bone-500">
+          #{copy + 1}
+        </span>
+      )}
+      <span className="flex flex-1 flex-wrap gap-0.5">
+        {map(bands, (tone, box) => (
+          <button
+            key={box}
+            className={classNames(
+              "h-5 w-5 rounded-[3px] border border-iron-900/60",
+              tone,
+              box < marked && "opacity-25"
+            )}
+            aria-label={`${unit.name}${copies > 1 ? ` #${copy + 1}` : ""} damage box ${box + 1}`}
+            aria-pressed={box < marked}
+            onClick={() => onMark(box + 1 === marked ? box : box + 1)}
+          />
+        ))}
+      </span>
+      <span
+        className={classNames(
+          "shrink-0 font-mono text-[9px]",
+          STATUS_TONE[status] ?? "text-bone-500"
+        )}
+      >
+        {STATUS_LABEL[status]}
+      </span>
+    </div>
+  );
+};
+
+const UnitRow = ({ unit, count, marks, onAdd, onRemove, onMark }) => {
   const cap = isUnique(unit) ? 1 : MAX_COPIES;
   return (
     <div
       className={classNames(
-        "ArmyUnit plate flex w-full items-center gap-2 px-2.5 py-1.5",
+        "ArmyUnit plate flex w-full flex-col gap-1.5 px-2.5 py-1.5",
         count > 0 && "plate-on-ember"
       )}
     >
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-display text-xs tracking-wider text-bone-100">
-          {unit.name}
+      <div className="flex w-full items-center gap-2">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate font-display text-xs tracking-wider text-bone-100">
+            {unit.name}
+          </span>
+          <span className="font-mono text-[9px] text-bone-500">
+            {unit.points} pts
+            {unit.class ? ` · ${capitalize(unit.class)}` : ""}
+            {isUnique(unit) ? " · max 1" : ""}
+          </span>
         </span>
-        <span className="font-mono text-[9px] text-bone-500">
-          {unit.points} pts · {capitalize(unit.class)}
-          {isUnique(unit) ? " · max 1" : ""}
+        <button
+          className="plate flex h-9 w-9 shrink-0 items-center justify-center"
+          aria-label={`Remove one ${unit.name}`}
+          disabled={count === 0}
+          onClick={onRemove}
+        >
+          <FaMinus className="text-[10px]" aria-hidden />
+        </button>
+        <span
+          className="w-5 text-center font-display text-lg"
+          aria-label={`${count} ${unit.name} in army`}
+        >
+          {count}
         </span>
-      </span>
-      <button
-        className="plate flex h-9 w-9 shrink-0 items-center justify-center"
-        aria-label={`Remove one ${unit.name}`}
-        disabled={count === 0}
-        onClick={onRemove}
-      >
-        <FaMinus className="text-[10px]" aria-hidden />
-      </button>
-      <span
-        className="w-5 text-center font-display text-lg"
-        aria-label={`${count} ${unit.name} in army`}
-      >
-        {count}
-      </span>
-      <button
-        className="plate flex h-9 w-9 shrink-0 items-center justify-center"
-        aria-label={`Add one ${unit.name}`}
-        disabled={count >= cap}
-        onClick={onAdd}
-      >
-        <FaPlus className="text-[10px]" aria-hidden />
-      </button>
+        <button
+          className="plate flex h-9 w-9 shrink-0 items-center justify-center"
+          aria-label={`Add one ${unit.name}`}
+          disabled={count >= cap}
+          onClick={onAdd}
+        >
+          <FaPlus className="text-[10px]" aria-hidden />
+        </button>
+      </div>
+      {count > 0 && (
+        <div className="flex w-full flex-col gap-1">
+          {map(range(count), (copy) => (
+            <DamageRow
+              key={copy}
+              unit={unit}
+              copy={copy}
+              copies={count}
+              marked={marks?.[copy] ?? 0}
+              onMark={(value) => onMark(copy, value)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -72,6 +145,7 @@ const ArmyBuilder = ({ onClose }) => {
   const [initial] = useState(loadArmy);
   const [budget, setBudget] = useState(initial.budget);
   const [counts, setCounts] = useState(initial.counts);
+  const [marks, setMarks] = useState(initial.marks);
   const [clearArmed, setClearArmed] = useState(false);
   const clearTimer = useRef(null);
   useEffect(() => () => clearTimeout(clearTimer.current), []);
@@ -86,8 +160,8 @@ const ArmyBuilder = ({ onClose }) => {
 
   // The roster outlives the battle screen — persist on every change
   useEffect(() => {
-    saveArmy({ budget, counts });
-  }, [budget, counts]);
+    saveArmy({ budget, counts, marks });
+  }, [budget, counts, marks]);
 
   const total = sum(
     map(counts, (count, uid) => UNITS_BY_UID[uid].points * count)
@@ -102,6 +176,8 @@ const ArmyBuilder = ({ onClose }) => {
 
   const addUnit = (unit) => {
     setCounts((c) => ({ ...c, [unit.uid]: (c[unit.uid] ?? 0) + 1 }));
+    // a fresh copy joins with an unmarked damage track
+    setMarks((m) => ({ ...m, [unit.uid]: [...(m[unit.uid] ?? []), 0] }));
     if (total + unit.points > budget) playPenalty();
     else playBonus();
     buzz();
@@ -114,7 +190,25 @@ const ArmyBuilder = ({ onClose }) => {
       else delete next[unit.uid];
       return next;
     });
+    // the last-listed copy leaves, taking its damage with it
+    setMarks((m) => {
+      const next = { ...m, [unit.uid]: (m[unit.uid] ?? []).slice(0, -1) };
+      if (!next[unit.uid].length) delete next[unit.uid];
+      return next;
+    });
     playTick();
+    buzz();
+  };
+
+  const markDamage = (unit, copy, value) => {
+    setMarks((m) => {
+      const track = [...(m[unit.uid] ?? [])];
+      track[copy] = value;
+      return { ...m, [unit.uid]: track };
+    });
+    const healed = value < (marks[unit.uid]?.[copy] ?? 0);
+    if (healed) playTick();
+    else playPenalty();
     buzz();
   };
 
@@ -122,6 +216,7 @@ const ArmyBuilder = ({ onClose }) => {
     clearTimeout(clearTimer.current);
     if (clearArmed) {
       setCounts({});
+      setMarks({});
       setClearArmed(false);
       playDrum();
       buzz(16);
@@ -243,8 +338,12 @@ const ArmyBuilder = ({ onClose }) => {
                     key={uid}
                     unit={UNITS_BY_UID[uid]}
                     count={counts[uid] ?? 0}
+                    marks={marks[uid]}
                     onAdd={() => addUnit(UNITS_BY_UID[uid])}
                     onRemove={() => removeUnit(UNITS_BY_UID[uid])}
+                    onMark={(copy, value) =>
+                      markDamage(UNITS_BY_UID[uid], copy, value)
+                    }
                   />
                 );
               })}

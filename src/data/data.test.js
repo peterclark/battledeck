@@ -47,7 +47,10 @@ describe("faction data", () => {
       expect(unit.name).toBeTruthy();
       expect(isInteger(unit.points), `${unit.id} points`).toBe(true);
       expect(unit.points).toBeGreaterThan(0);
-      expect(["core", "standard", "elite", "unique"]).toContain(unit.class);
+      // some early-print cards carry no deck class
+      if (unit.class !== undefined) {
+        expect(["core", "standard", "elite", "unique"]).toContain(unit.class);
+      }
 
       // at least one way to attack, each profile fully specified
       expect(unit.melee || unit.ranged, `${unit.id} profile`).toBeTruthy();
@@ -156,6 +159,14 @@ describe("faction data", () => {
       "Engaged",
     ]);
     expect(activeAbilities(bowmen, {}, "ranged")).toHaveLength(0);
+  });
+
+  it("keywords work across factions (Spears vs Dwarven allied cavalry)", () => {
+    const pikemen = UNITS_BY_UID["menOfHawkshold/communalPikemen"];
+    const horsemen = UNITS_BY_UID["dwarvesOfRunegard/antonianHorsemen"];
+    expect(
+      map(activeAbilities(pikemen, {}, "melee", horsemen), "bonus")
+    ).toEqual([[0, 1, 0]]);
   });
 
   it("Spears: -1 die while Charging, +1 OS against Cavalry targets", () => {
