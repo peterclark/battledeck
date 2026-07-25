@@ -176,6 +176,42 @@ export default {
       abilities: [FEARLESS],
     },
     {
+      id: "swarmOfRats",
+      name: "Swarm of Rats",
+      points: 109,
+      // no Command Cards while it attacks: the battle screen disables and
+      // clears the card log whenever the rats are the attacker
+      melee: {
+        dice: 8,
+        offensiveSkill: 5,
+        offensivePower: 3,
+        noCommandCards: true,
+      },
+      ranged: null,
+      defensiveSkill: 0,
+      defensivePower: 0,
+      move: 5,
+      damage: { green: 3, yellow: 3, red: 3 },
+      // the one Undead card with no classification line at all
+      abilities: [
+        FEARLESS,
+        {
+          name: "No Command Cards",
+          text:
+            "You may not play Command Cards while Swarm of Rats is " +
+            "attacking or defending. (The battle screen enforces this " +
+            "while the rats are the attacker.)",
+        },
+        {
+          name: "Notes",
+          text:
+            "Always has the Close Standing Order and may not be given an " +
+            "Objective. Is unaffected by your Command Cards and may not be " +
+            "Reanimated.",
+        },
+      ],
+    },
+    {
       id: "zombies",
       name: "Zombies",
       points: 90,
