@@ -160,6 +160,57 @@ export default {
       ],
     },
     {
+      id: "halfOrcSpearmen",
+      name: "Half-Orc Spearmen",
+      points: 242,
+      class: "core",
+      melee: { dice: 6, offensiveSkill: 5, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 3,
+      courage: 11,
+      move: 3.5,
+      damage: { green: 4, yellow: 2, red: 4 },
+      keywords: ["spears"],
+    },
+    {
+      id: "halfOrcSwordsmen",
+      name: "Half-Orc Swordsmen",
+      points: 216,
+      class: "core",
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 3,
+      courage: 11,
+      move: 3.5,
+      damage: { green: 4, yellow: 2, red: 4 },
+    },
+    {
+      id: "healerMages",
+      name: "Healer Mages",
+      points: 200,
+      melee: { dice: 3, offensiveSkill: 4, offensivePower: 3 },
+      ranged: null,
+      defensiveSkill: 1,
+      defensivePower: 2,
+      courage: 11,
+      move: 3.5,
+      damage: { green: 3, yellow: 3, red: 2 },
+      abilities: [
+        {
+          name: "Spells",
+          text:
+            "During your turn, while Unengaged, may cast one spell at 7″ " +
+            "range: Aura Cleanse (Blessing/Healing) — put an Aura Cleanse " +
+            "marker on a friendly unit; or Heal (Healing) — remove one " +
+            "damage from a friendly unit (zero if it is Large or Cavalry); " +
+            "if the unit has an Aura Cleanse marker you may remove the " +
+            "marker to heal one additional damage.",
+        },
+      ],
+    },
+    {
       id: "hillGiant",
       name: "Hill Giant",
       points: 500,
