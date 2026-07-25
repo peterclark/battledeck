@@ -6,6 +6,18 @@
 // in the green"). The calculator has no state for the defender's damage —
 // its In the Yellow / In the Red toggles describe the attacker — so
 // Blood Frenzy is kept as prose for now.
+//
+// On these cards the ovals in the damage track are the dividers between
+// the green/yellow/red bands (a card with no yellow boxes shows just one),
+// and the clawed box at the foot of the stat bar is the Fury box the army
+// ability marks.
+
+// Every Lizardmen card carries the same Blood Frenzy line
+const BLOOD_FRENZY = {
+  name: "Blood Frenzy",
+  text:
+    "(+1) +0/+0 and Courage +2 while Engaged with a unit not in the green.",
+};
 
 export default {
   id: "lizardmen",
@@ -34,15 +46,44 @@ export default {
       defensivePower: 4,
       courage: 12,
       move: 5,
-      // UNCONFIRMED: read as six green and seven red with no yellow band
+      // no yellow band — its track shows a single band divider, where the
+      // cards below show two. Exact box counts still worth a check.
       damage: { green: 6, yellow: 0, red: 7 },
       keywords: ["large", "fearsome"],
+      abilities: [BLOOD_FRENZY],
+    },
+    {
+      id: "raptorPack",
+      name: "Raptor Pack",
+      points: 290,
+      melee: { dice: 5, offensiveSkill: 6, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 2,
+      courage: 11,
+      move: 6,
+      damage: { green: 4, yellow: 4, red: 3 },
+      abilities: [BLOOD_FRENZY],
+    },
+    {
+      id: "trogBowmen",
+      name: "Trog Bowmen",
+      points: 176,
+      melee: { dice: 4, offensiveSkill: 5, offensivePower: 5 },
+      ranged: { dice: 4, offensiveSkill: 5, offensivePower: 5, range: 14 },
+      defensiveSkill: 1,
+      defensivePower: 2,
+      courage: 12,
+      move: 3.5,
+      damage: { green: 3, yellow: 3, red: 2 },
       abilities: [
+        BLOOD_FRENZY,
         {
-          name: "Blood Frenzy",
-          text:
-            "(+1) +0/+0 and Courage +2 while Engaged with a unit not in " +
-            "the green.",
+          name: "Engaged",
+          code: "ENG",
+          text: "(-0) -2/-2 while Engaged.",
+          bonus: [0, -2, -2],
+          stance: "melee",
         },
       ],
     },
