@@ -75,6 +75,13 @@ export const KEYWORDS = {
     name: "Fearsome",
     text: "Causes Fear Checks — see the rulebook's fear rules.",
   },
+  stupid: {
+    id: "stupid",
+    name: "Stupid",
+    text:
+      "Changing Standing Orders, taking Direct Control, or Rallying this " +
+      "unit costs two Command Actions rather than one.",
+  },
   flying: {
     id: "flying",
     name: "Flying",

@@ -107,6 +107,35 @@ export default {
       ],
     },
     {
+      id: "hillGiant",
+      name: "Hill Giant",
+      points: 500,
+      class: "elite",
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 8 },
+      // Rock throw: costs two Command Actions, so no ammo cap
+      ranged: { dice: 5, offensiveSkill: 5, offensivePower: 8, range: 21 },
+      defensiveSkill: 1,
+      defensivePower: 4,
+      courage: 13,
+      move: 6,
+      damage: { green: 8, yellow: 2, red: 5 },
+      keywords: ["large", "fearsome", "stupid"],
+      abilities: [
+        {
+          name: "Rock Throw",
+          text:
+            "You may spend two Command Actions to have Hill Giant gain a " +
+            "21″ ranged attack this turn.",
+        },
+        {
+          name: "Notes",
+          text:
+            "To play a Command Card on Hill Giant you must first discard " +
+            "two other Command Cards.",
+        },
+      ],
+    },
+    {
       id: "redDragon",
       name: "Red Dragon",
       points: 691,
