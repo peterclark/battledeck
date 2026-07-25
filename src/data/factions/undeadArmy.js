@@ -73,6 +73,21 @@ export default {
       ],
     },
     {
+      id: "skeletonTrolls",
+      name: "Skeleton Trolls",
+      points: 323,
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 7 },
+      ranged: null,
+      defensiveSkill: 1,
+      defensivePower: 3,
+      move: 5,
+      // same unusual no-yellow track as the Zombie Trolls — two troll
+      // cards reading alike, but still worth confirming
+      damage: { green: 5, yellow: 0, red: 5 },
+      keywords: ["majorUndead", "large", "fearsome"],
+      abilities: [FEARLESS],
+    },
+    {
       id: "skeletonSpearmen",
       name: "Skeleton Spearmen",
       points: 167,
