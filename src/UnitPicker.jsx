@@ -1,9 +1,11 @@
-import { useEffect, useRef } from "react";
-import { capitalize, map, range } from "lodash";
+import { useState } from "react";
+import { capitalize, filter, map, range, some } from "lodash";
 import classNames from "classnames";
 import { FaArrowLeft, FaTimes } from "react-icons/fa";
 import { GiBowArrow, GiCrossedSwords } from "react-icons/gi";
 import { FACTIONS, KEYWORDS } from "./data";
+import { useModalOverlay } from "./hooks";
+import { loadArmy } from "./persistence";
 import { buzz, playTick } from "./sounds";
 
 // The card's green/yellow/red damage track, one square per box
@@ -30,7 +32,7 @@ const Profile = ({ icon: Icon, profile }) => (
   </span>
 );
 
-const UnitRow = ({ unit, selected, onSelect }) => (
+const UnitRow = ({ unit, inArmy, selected, onSelect }) => (
   <button
     className={classNames(
       "UnitRow plate flex w-full flex-col gap-1 px-3 py-2 text-left",
@@ -45,6 +47,7 @@ const UnitRow = ({ unit, selected, onSelect }) => (
       </span>
       <span className="shrink-0 font-mono text-[10px] text-bone-500">
         {unit.points} pts · {capitalize(unit.class)}
+        {inArmy > 0 ? ` · ×${inArmy}` : ""}
       </span>
     </span>
     <span className="flex w-full flex-wrap gap-x-3 gap-y-0.5 font-mono text-[10px] leading-tight text-bone-300">
@@ -84,18 +87,24 @@ const UnitRow = ({ unit, selected, onSelect }) => (
 // as the rules help: focus moves in on open, the page behind is locked,
 // Escape closes, Tab is trapped.
 const UnitPicker = ({ role, selectedUid, onSelect, onClose }) => {
-  const overlayRef = useRef(null);
+  // A built army narrows the picker to its own units by default; with no
+  // army yet, everything shows. "Show all" covers picking an enemy
+  // defender that isn't in the player's roster.
+  const [armyCounts] = useState(() => loadArmy().counts);
+  const hasArmy = some(armyCounts, (count) => count > 0);
+  const [showAll, setShowAll] = useState(!hasArmy);
 
-  useEffect(() => {
-    const previous = document.activeElement;
-    overlayRef.current?.focus();
-    const bodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = bodyOverflow;
-      if (previous instanceof HTMLElement) previous.focus();
-    };
-  }, []);
+  const visibleUnits = (faction) =>
+    filter(
+      faction.units,
+      (unit) => showAll || armyCounts[`${faction.id}/${unit.id}`] > 0
+    );
+
+  const toggleShowAll = () => {
+    setShowAll((all) => !all);
+    playTick();
+    buzz();
+  };
 
   const close = () => {
     onClose();
@@ -103,37 +112,12 @@ const UnitPicker = ({ role, selectedUid, onSelect, onClose }) => {
     buzz();
   };
 
-  const onKeyDown = (e) => {
-    if (e.key === "Escape") {
-      close();
-      return;
-    }
-    if (e.key !== "Tab") return;
-    const focusables = overlayRef.current?.querySelectorAll(
-      "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"
-    );
-    if (!focusables?.length) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (
-      e.shiftKey &&
-      (document.activeElement === first ||
-        document.activeElement === overlayRef.current)
-    ) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
+  const { overlayProps } = useModalOverlay(close);
 
   return (
     <div
       className="UnitPicker fixed inset-0 z-30 overflow-y-auto overscroll-contain bg-iron-900"
-      ref={overlayRef}
-      tabIndex={-1}
-      onKeyDown={onKeyDown}
+      {...overlayProps}
       role="dialog"
       aria-modal="true"
       aria-label={`Pick ${role} unit`}
@@ -163,35 +147,49 @@ const UnitPicker = ({ role, selectedUid, onSelect, onClose }) => {
         </div>
 
         <div className="flex flex-col gap-3 px-3 pb-6 pt-3">
-          {map(FACTIONS, (faction) => (
-            <div key={faction.id} className="flex flex-col gap-1.5">
-              <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-bone-500">
-                {faction.name}
-              </div>
-              {map(faction.abilities, ({ name, text }) => (
-                <div
-                  key={name}
-                  className="FactionAbility border-l-2 border-ember-600 pl-2.5 text-[10px] leading-snug text-bone-500"
-                >
-                  <span className="font-bold text-ember-500">
-                    {name}.
-                  </span>{" "}
-                  {text}
+          {hasArmy && (
+            <button
+              className="ShowAllUnits plate h-9 text-[11px] font-bold uppercase tracking-[0.25em] text-bone-300"
+              aria-pressed={showAll}
+              onClick={toggleShowAll}
+            >
+              {showAll ? "Show only my army" : "Show all units"}
+            </button>
+          )}
+          {map(FACTIONS, (faction) => {
+            const units = visibleUnits(faction);
+            if (!units.length) return null;
+            return (
+              <div key={faction.id} className="flex flex-col gap-1.5">
+                <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-bone-500">
+                  {faction.name}
                 </div>
-              ))}
-              {map(faction.units, (unit) => {
-                const uid = `${faction.id}/${unit.id}`;
-                return (
-                  <UnitRow
-                    key={uid}
-                    unit={unit}
-                    selected={uid === selectedUid}
-                    onSelect={() => onSelect(uid)}
-                  />
-                );
-              })}
-            </div>
-          ))}
+                {map(faction.abilities, ({ name, text }) => (
+                  <div
+                    key={name}
+                    className="FactionAbility border-l-2 border-ember-600 pl-2.5 text-[10px] leading-snug text-bone-500"
+                  >
+                    <span className="font-bold text-ember-500">
+                      {name}.
+                    </span>{" "}
+                    {text}
+                  </div>
+                ))}
+                {map(units, (unit) => {
+                  const uid = `${faction.id}/${unit.id}`;
+                  return (
+                    <UnitRow
+                      key={uid}
+                      unit={unit}
+                      inArmy={armyCounts[uid] ?? 0}
+                      selected={uid === selectedUid}
+                      onSelect={() => onSelect(uid)}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })}
           <p className="text-center text-[10px] italic leading-snug text-bone-500">
             More factions and units are added as their cards are transcribed.
           </p>

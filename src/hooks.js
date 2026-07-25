@@ -1,4 +1,55 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
+
+// Modal conventions shared by the full-screen overlays (rules help, unit
+// picker, army builder): focus moves into the overlay on open, the page
+// behind is scroll-locked, focus returns to the opener on close, Tab is
+// trapped inside, and Escape calls onEscape (which may pop a level or
+// close). Spread `overlayProps` onto the overlay root; `overlayRef` is
+// exposed for callers that need to scroll it.
+export function useModalOverlay(onEscape) {
+  const overlayRef = useRef(null);
+
+  useEffect(() => {
+    const previous = document.activeElement;
+    overlayRef.current?.focus();
+    const bodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = bodyOverflow;
+      if (previous instanceof HTMLElement) previous.focus();
+    };
+  }, []);
+
+  const onKeyDown = (e) => {
+    if (e.key === "Escape") {
+      onEscape();
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const focusables = overlayRef.current?.querySelectorAll(
+      "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"
+    );
+    if (!focusables?.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (
+      e.shiftKey &&
+      (document.activeElement === first ||
+        document.activeElement === overlayRef.current)
+    ) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
+  return {
+    overlayRef,
+    overlayProps: { ref: overlayRef, tabIndex: -1, onKeyDown },
+  };
+}
 
 // Pointer-based press gesture: quick press fires onTap on release; holding
 // past holdDelay fires onHold instead (repeating every `repeat` ms if set).

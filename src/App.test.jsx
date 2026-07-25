@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, within } from "@testing-library/react";
 import App from "./App";
+import { saveArmy } from "./persistence";
 
 // Buttons built on usePressable (ranks, dice, reset) tap on pointer up;
 // plain buttons (modifiers, command cards) use click.
@@ -346,6 +347,43 @@ describe("Units", () => {
     fireEvent.click(utils.getByLabelText("Clear attacker unit"));
     expect(utils.getByLabelText("Pick attacker unit")).toBeInTheDocument();
     expect(within(utils.dice()).getByText("7 base")).toBeInTheDocument();
+  });
+
+  it("the picker narrows to army units, with a toggle for the rest", () => {
+    saveArmy({
+      budget: 2000,
+      counts: { "menOfHawkshold/swordsmen": 2, "menOfHawkshold/lancers": 1 },
+    });
+    const utils = setup();
+    fireEvent.click(utils.getByLabelText("Pick attacker unit"));
+    const overlay = utils.container.querySelector(".UnitPicker");
+    expect(within(overlay).getByText("Swordsmen")).toBeInTheDocument();
+    expect(within(overlay).getByText("Lancers")).toBeInTheDocument();
+    expect(within(overlay).queryByText("Militia")).not.toBeInTheDocument();
+    expect(within(overlay).getByText(/×2/)).toBeInTheDocument();
+    // the toggle covers enemy defenders outside the player's roster
+    fireEvent.click(within(overlay).getByText("Show all units"));
+    expect(within(overlay).getByText("Militia")).toBeInTheDocument();
+    fireEvent.click(within(overlay).getByText("Show only my army"));
+    expect(within(overlay).queryByText("Militia")).not.toBeInTheDocument();
+  });
+
+  it("with no army built the picker shows every unit and no toggle", () => {
+    const utils = setup();
+    fireEvent.click(utils.getByLabelText("Pick attacker unit"));
+    const overlay = utils.container.querySelector(".UnitPicker");
+    expect(within(overlay).getByText("Militia")).toBeInTheDocument();
+    expect(
+      within(overlay).queryByText("Show all units")
+    ).not.toBeInTheDocument();
+  });
+
+  it("the header army button opens the army builder", () => {
+    const { getByLabelText, container } = setup();
+    fireEvent.click(getByLabelText("Build your army"));
+    expect(container.querySelector(".ArmyBuilder")).toBeInTheDocument();
+    fireEvent.click(getByLabelText("Close army builder"));
+    expect(container.querySelector(".ArmyBuilder")).not.toBeInTheDocument();
   });
 
   it("unit selections persist across remounts", () => {
