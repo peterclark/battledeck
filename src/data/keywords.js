@@ -87,6 +87,11 @@ export const KEYWORDS = {
     name: "Greater Undead",
     text: "An Undead classification (see the Undead army abilities).",
   },
+  majorUndead: {
+    id: "majorUndead",
+    name: "Major Undead",
+    text: "An Undead classification (see the Undead army abilities).",
+  },
   stupid: {
     id: "stupid",
     name: "Stupid",

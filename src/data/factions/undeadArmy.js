@@ -100,6 +100,21 @@ export default {
       abilities: [FEARLESS, CAVALRY_CHARGE],
     },
     {
+      id: "zombieTrolls",
+      name: "Zombie Trolls",
+      points: 232,
+      melee: { dice: 4, offensiveSkill: 4, offensivePower: 6 },
+      ranged: null,
+      defensiveSkill: 1,
+      defensivePower: 4,
+      move: 3.5,
+      // NOTE: read off the card as five green and five red with no yellow
+      // band — unusual, so worth confirming against the physical card
+      damage: { green: 5, yellow: 0, red: 5 },
+      keywords: ["majorUndead", "large", "fearsome"],
+      abilities: [FEARLESS],
+    },
+    {
       id: "zombies",
       name: "Zombies",
       points: 90,
