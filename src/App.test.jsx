@@ -348,6 +348,14 @@ describe("Units", () => {
     expect(within(utils.dice()).getByText("7 base")).toBeInTheDocument();
   });
 
+  it("the header army button opens the army builder", () => {
+    const { getByLabelText, container } = setup();
+    fireEvent.click(getByLabelText("Build your army"));
+    expect(container.querySelector(".ArmyBuilder")).toBeInTheDocument();
+    fireEvent.click(getByLabelText("Close army builder"));
+    expect(container.querySelector(".ArmyBuilder")).not.toBeInTheDocument();
+  });
+
   it("unit selections persist across remounts", () => {
     const first = setup();
     pickAttacker(first);

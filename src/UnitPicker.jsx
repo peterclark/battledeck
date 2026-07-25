@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
 import { capitalize, map, range } from "lodash";
 import classNames from "classnames";
 import { FaArrowLeft, FaTimes } from "react-icons/fa";
 import { GiBowArrow, GiCrossedSwords } from "react-icons/gi";
 import { FACTIONS, KEYWORDS } from "./data";
+import { useModalOverlay } from "./hooks";
 import { buzz, playTick } from "./sounds";
 
 // The card's green/yellow/red damage track, one square per box
@@ -84,56 +84,18 @@ const UnitRow = ({ unit, selected, onSelect }) => (
 // as the rules help: focus moves in on open, the page behind is locked,
 // Escape closes, Tab is trapped.
 const UnitPicker = ({ role, selectedUid, onSelect, onClose }) => {
-  const overlayRef = useRef(null);
-
-  useEffect(() => {
-    const previous = document.activeElement;
-    overlayRef.current?.focus();
-    const bodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = bodyOverflow;
-      if (previous instanceof HTMLElement) previous.focus();
-    };
-  }, []);
-
   const close = () => {
     onClose();
     playTick();
     buzz();
   };
 
-  const onKeyDown = (e) => {
-    if (e.key === "Escape") {
-      close();
-      return;
-    }
-    if (e.key !== "Tab") return;
-    const focusables = overlayRef.current?.querySelectorAll(
-      "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"
-    );
-    if (!focusables?.length) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (
-      e.shiftKey &&
-      (document.activeElement === first ||
-        document.activeElement === overlayRef.current)
-    ) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
+  const { overlayProps } = useModalOverlay(close);
 
   return (
     <div
       className="UnitPicker fixed inset-0 z-30 overflow-y-auto overscroll-contain bg-iron-900"
-      ref={overlayRef}
-      tabIndex={-1}
-      onKeyDown={onKeyDown}
+      {...overlayProps}
       role="dialog"
       aria-modal="true"
       aria-label={`Pick ${role} unit`}

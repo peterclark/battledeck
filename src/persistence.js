@@ -97,3 +97,48 @@ export const clearState = () => {
     // storage unavailable — nothing to clear
   }
 };
+
+// ---- Army roster ----
+// The army lives under its own key: it outlives battles, so the calculator
+// reset must never touch it.
+const ARMY_KEY = "battledeck-army-v1";
+
+// Copies of one unit an army can field (UI sanity cap; Unique units are
+// further capped at 1 per the Unique keyword)
+export const MAX_COPIES = 9;
+export const BUDGET_MIN = 500;
+export const BUDGET_MAX = 5000;
+
+export const DEFAULT_ARMY = { budget: 2000, counts: {} };
+
+const maxCopies = (unit) =>
+  unit.keywords?.includes("unique") ? 1 : MAX_COPIES;
+
+export const loadArmy = () => {
+  try {
+    const raw = localStorage.getItem(ARMY_KEY);
+    if (!raw) return DEFAULT_ARMY;
+    const stored = JSON.parse(raw);
+    // keep only counts for units that still exist, clamped to their cap
+    const counts = {};
+    for (const [uid, n] of Object.entries(stored.counts ?? {})) {
+      const unit = UNITS_BY_UID[uid];
+      if (!unit || !Number.isInteger(n) || n < 1) continue;
+      counts[uid] = Math.min(n, maxCopies(unit));
+    }
+    return {
+      budget: clampInt(stored.budget, BUDGET_MIN, BUDGET_MAX, 2000),
+      counts,
+    };
+  } catch {
+    return DEFAULT_ARMY;
+  }
+};
+
+export const saveArmy = (army) => {
+  try {
+    localStorage.setItem(ARMY_KEY, JSON.stringify(army));
+  } catch {
+    // storage unavailable — the roster just won't persist
+  }
+};

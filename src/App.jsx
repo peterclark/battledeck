@@ -43,6 +43,7 @@ import {
 import { loadState, saveState } from "./persistence";
 import { UNITS_BY_UID, activeAbilities, attackProfile } from "./data";
 import { BannerArt } from "./Artwork";
+import ArmyBuilder from "./ArmyBuilder";
 import Help from "./Help";
 import UnitPicker from "./UnitPicker";
 import { usePressable } from "./hooks";
@@ -217,6 +218,7 @@ const App = () => {
   const [unitPicker, setUnitPicker] = useState(null); // "attacker" | "defender" | null
   const [muted, setMutedState] = useState(isMuted());
   const [showHelp, setShowHelp] = useState(false);
+  const [showArmy, setShowArmy] = useState(false);
 
   const attacker = attackerUid ? UNITS_BY_UID[attackerUid] : null;
   const defender = defenderUid ? UNITS_BY_UID[defenderUid] : null;
@@ -600,6 +602,17 @@ const App = () => {
         >
           <FaQuestion />
         </button>
+        <button
+          className="ArmyLink plate absolute left-12 top-2 flex h-9 w-9 items-center justify-center text-bone-300"
+          onClick={() => {
+            setShowArmy(true);
+            playTick();
+            buzz();
+          }}
+          aria-label="Build your army"
+        >
+          <GiRallyTheTroops className="text-lg" />
+        </button>
       </header>
 
       {showHelp && (
@@ -610,6 +623,8 @@ const App = () => {
           onToggleModifier={activateModifier}
         />
       )}
+
+      {showArmy && <ArmyBuilder onClose={() => setShowArmy(false)} />}
 
       {unitPicker && (
         <UnitPicker

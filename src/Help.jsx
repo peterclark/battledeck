@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { map } from "lodash";
 import classNames from "classnames";
 import { FaArrowLeft, FaTimes } from "react-icons/fa";
 import { PLATE_ON } from "./constants";
 import { HELP_PAGES, HELP_ROOT } from "./helpContent";
+import { useModalOverlay } from "./hooks";
 import { buzz, playTick } from "./sounds";
 
 // "Disrupt\n-ed" -> "Disrupted", "In the\nYellow" -> "In the Yellow"
@@ -59,7 +60,6 @@ const LinkCard = ({ to, note, index, numbered, onOpen }) => {
 // root page closes the overlay.
 const Help = ({ onClose, modifiers, disabledModifiers, onToggleModifier }) => {
   const [stack, setStack] = useState([HELP_ROOT]);
-  const overlayRef = useRef(null);
 
   const pageId = stack[stack.length - 1];
   const page = HELP_PAGES[pageId];
@@ -79,56 +79,17 @@ const Help = ({ onClose, modifiers, disabledModifiers, onToggleModifier }) => {
     buzz();
   };
 
+  // Escape pops one level (closing from the root, like the back button)
+  const { overlayRef, overlayProps } = useModalOverlay(back);
+
   useEffect(() => {
     overlayRef.current?.scrollTo(0, 0);
-  }, [pageId]);
-
-  // Modal focus management: move focus into the overlay on open, lock the
-  // page behind, and hand focus back to the opener on close.
-  useEffect(() => {
-    const previous = document.activeElement;
-    overlayRef.current?.focus();
-    const bodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = bodyOverflow;
-      if (previous instanceof HTMLElement) previous.focus();
-    };
-  }, []);
-
-  // Escape pops one level (closing from the root, like the back button);
-  // Tab is trapped inside the overlay.
-  const onKeyDown = (e) => {
-    if (e.key === "Escape") {
-      back();
-      return;
-    }
-    if (e.key !== "Tab") return;
-    const focusables = overlayRef.current?.querySelectorAll(
-      "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"
-    );
-    if (!focusables?.length) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (
-      e.shiftKey &&
-      (document.activeElement === first ||
-        document.activeElement === overlayRef.current)
-    ) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
+  }, [overlayRef, pageId]);
 
   return (
     <div
       className="Help fixed inset-0 z-30 overflow-y-auto overscroll-contain bg-iron-900"
-      ref={overlayRef}
-      tabIndex={-1}
-      onKeyDown={onKeyDown}
+      {...overlayProps}
       role="dialog"
       aria-modal="true"
       aria-label={`Rules help: ${page.title}`}

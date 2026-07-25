@@ -46,6 +46,10 @@ A unit's `melee`/`ranged` attack profiles are `{ dice, offensiveSkill, offensive
 
 The battle screen's Units row (`UnitSlot` in `App.jsx` + `src/UnitPicker.jsx` overlay) selects an attacker and defender. Selection *prefills* dice/OS/OP (attacker, per current stance, switching stance if the unit can't attack in it) or DS/DP (defender) — every value stays hand-adjustable, and clearing a slot keeps the numbers. Switching melee/ranged re-applies the attacker's matching profile when it has one.
 
+### Army builder (`src/ArmyBuilder.jsx`)
+
+The header banner button opens a full-screen roster: a point budget (250-point steps, clamped `[BUDGET_MIN, BUDGET_MAX]`), per-unit −/count/+ rows, the running total/remaining, and the Command Actions per turn (`⌊budget / 500⌋`, per the rules). The Unique keyword caps a unit at one copy (`MAX_COPIES` otherwise). The roster persists under its own localStorage key (`loadArmy`/`saveArmy` in `persistence.js`, validated on load) so battle-screen resets never touch it. The full-screen overlays (help, unit picker, army builder) share modal behavior via `useModalOverlay` in `src/hooks.js`.
+
 ### Rules help (`src/Help.jsx` + `src/helpContent.js`)
 
 The header `?` button opens a full-screen help overlay covering the turn sequence. Since there is no router, `Help.jsx` navigates a page-id stack (link cards push, back links pop; backing out of the root closes the overlay). `helpContent.js` holds the page tree — condensed from `docs/battleground-rules-summary.md` / `docs/battleground-quick-start-summary.md` — rooted at `HELP_ROOT`; a page's `links` reference deeper pages by id and render cards using the target page's `title`/`icon`, so keep those fields on every page. Content edits should stay consistent with the rules summaries in `docs/`.
