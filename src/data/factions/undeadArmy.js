@@ -9,6 +9,16 @@ const FEARLESS = {
   text: "Passes all Courage Checks.",
 };
 
+// Same card-back Cavalry extra as the Hawkshold Knights and the Dwarven
+// Antonian Horsemen: "(+0) +0/+1 and +1/+0 while Charging"
+const CAVALRY_CHARGE = {
+  name: "Cavalry",
+  code: "CAV",
+  text: "+1 OP and +1 DS while Charging (in addition to the normal Charging Bonus).",
+  bonus: [0, 0, 1],
+  when: ["chargingFourOrMoreDice", "chargingThreeOrLessDice"],
+};
+
 export default {
   id: "undeadArmy",
   name: "Undead Army",
@@ -39,6 +49,19 @@ export default {
       damage: { green: 3, yellow: 3, red: 3 },
       keywords: ["greaterUndead", "large", "fearsome"],
       abilities: [FEARLESS],
+    },
+    {
+      id: "skeletonCavalry",
+      name: "Skeleton Cavalry",
+      points: 219,
+      melee: { dice: 6, offensiveSkill: 5, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 1,
+      move: 6,
+      damage: { green: 2, yellow: 2, red: 1 },
+      keywords: ["lesserUndead", "cavalry"],
+      abilities: [FEARLESS, CAVALRY_CHARGE],
     },
     {
       id: "zombies",
