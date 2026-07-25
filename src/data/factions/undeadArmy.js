@@ -1,7 +1,10 @@
 // Undead Army unit cards, transcribed from the physical cards (2005
 // printing). Undead units are typically immune to Courage Checks, so most
 // print no courage stat — the schema leaves `courage` optional and the UI
-// renders "Cg —". Unit classifications (Lesser Undead, …) are keywords.
+// renders "Cg —". The Lesser/Major/Greater Undead keywords set what it
+// costs to Reanimate the unit (1/2/3 Command Actions, see the faction
+// abilities); the Swarm of Rats has no classification and so cannot be
+// Reanimated at all.
 
 // Printed on the cards that ignore morale entirely
 const FEARLESS = {
@@ -22,6 +25,19 @@ const CAVALRY_CHARGE = {
 export default {
   id: "undeadArmy",
   name: "Undead Army",
+  // Undead Army Ability card — army-wide rules, informational
+  abilities: [
+    {
+      name: "Reanimate",
+      text:
+        "You may spend Command Actions to Reanimate one of your damaged " +
+        "Undead units, healing one damage. Each unit may only be " +
+        "Reanimated once per turn, and a destroyed unit may not be " +
+        "Reanimated. The cost is set by the unit's classification: 1 " +
+        "Command Action for Lesser Undead, 2 for Major Undead, 3 for " +
+        "Greater Undead.",
+    },
+  ],
   units: [
     {
       id: "abomination",
