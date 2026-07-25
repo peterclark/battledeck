@@ -135,6 +135,31 @@ export default {
       ],
     },
     {
+      id: "elementalist",
+      name: "Elementalist",
+      points: 360,
+      class: "elite",
+      melee: { dice: 3, offensiveSkill: 6, offensivePower: 5 },
+      // Lightning Strike is the prefilled spell; Fireball is (4) 6/6 at
+      // 10.5" — hand-adjust the calculator when casting it instead
+      ranged: { dice: 2, offensiveSkill: 7, offensivePower: 7, range: 17.5 },
+      defensiveSkill: 2,
+      defensivePower: 2,
+      courage: 11,
+      move: 3.5,
+      damage: { green: 3, yellow: 2, red: 1 },
+      abilities: [
+        {
+          name: "Spells",
+          text:
+            "During your turn, while Unengaged, may cast one spell: " +
+            "Lightning Strike (Attack) (2) 7/7, range 17.5″, unaffected " +
+            "by Command Cards from either player; or Fireball (Attack) " +
+            "(4) 6/6, range 10.5″.",
+        },
+      ],
+    },
+    {
       id: "hillGiant",
       name: "Hill Giant",
       points: 500,
@@ -176,6 +201,34 @@ export default {
       move: 5,
       damage: { green: 4, yellow: 4, red: 4 },
       keywords: ["large", "fearsome", "stupid"],
+    },
+    {
+      id: "wildmenHorseArchers",
+      name: "Wildmen Horse Archers",
+      points: 214,
+      melee: { dice: 4, offensiveSkill: 5, offensivePower: 5 },
+      ranged: { dice: 4, offensiveSkill: 5, offensivePower: 5, range: 10.5 },
+      defensiveSkill: 2,
+      defensivePower: 1,
+      courage: 11,
+      move: 6,
+      damage: { green: 2, yellow: 2, red: 2 },
+      keywords: ["cavalry"],
+      abilities: [
+        {
+          name: "Cavalry",
+          text: "+1 DS while Charging (in addition to the normal Charging Bonus).",
+        },
+        {
+          // exactly cancels the Move & Shoot modifier's -1 OS
+          name: "Move & Shoot",
+          code: "M&S+",
+          text: "No penalty for Move and Shoot.",
+          bonus: [0, 1, 0],
+          when: ["moveAndShoot"],
+          stance: "ranged",
+        },
+      ],
     },
     {
       id: "redDragon",
