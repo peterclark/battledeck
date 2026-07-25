@@ -51,6 +51,28 @@ export default {
       abilities: [FEARLESS],
     },
     {
+      id: "skeletonBowmen",
+      name: "Skeleton Bowmen",
+      points: 150,
+      melee: { dice: 4, offensiveSkill: 5, offensivePower: 5 },
+      ranged: { dice: 4, offensiveSkill: 5, offensivePower: 5, range: 14 },
+      defensiveSkill: 1,
+      defensivePower: 0,
+      move: 3.5,
+      damage: { green: 2, yellow: 2, red: 1 },
+      keywords: ["lesserUndead"],
+      abilities: [
+        FEARLESS,
+        {
+          name: "Engaged",
+          code: "ENG",
+          text: "(-0) -2/-2 while Engaged.",
+          bonus: [0, -2, -2],
+          stance: "melee",
+        },
+      ],
+    },
+    {
       id: "skeletonCavalry",
       name: "Skeleton Cavalry",
       points: 219,
