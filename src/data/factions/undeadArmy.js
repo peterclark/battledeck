@@ -64,8 +64,8 @@ export default {
       // its card prints a value and omits the Fearless line
       courage: 9,
       move: 5,
-      // UNCONFIRMED: the photo's colour bands are hard to separate here;
-      // read as one green, eight yellow and one red. Needs a card check.
+      // a single green box, then a long yellow slog: the pack fights on
+      // In the Yellow for most of its life (checked against the card)
       damage: { green: 1, yellow: 8, red: 1 },
       keywords: ["lesserUndead"],
     },
@@ -114,8 +114,8 @@ export default {
       defensiveSkill: 1,
       defensivePower: 3,
       move: 5,
-      // same unusual no-yellow track as the Zombie Trolls — two troll
-      // cards reading alike, but still worth confirming
+      // same no-yellow track as the Zombie Trolls (checked against the
+      // card): straight from unhurt to In the Red
       damage: { green: 5, yellow: 0, red: 5 },
       keywords: ["majorUndead", "large", "fearsome"],
       abilities: [FEARLESS],
@@ -156,8 +156,8 @@ export default {
       defensiveSkill: 1,
       defensivePower: 4,
       move: 3.5,
-      // NOTE: read off the card as five green and five red with no yellow
-      // band — unusual, so worth confirming against the physical card
+      // no yellow band at all (checked against the card): the trolls go
+      // straight from unhurt to In the Red once the green boxes fill
       damage: { green: 5, yellow: 0, red: 5 },
       keywords: ["majorUndead", "large", "fearsome"],
       abilities: [FEARLESS],
