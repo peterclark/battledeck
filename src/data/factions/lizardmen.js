@@ -46,9 +46,9 @@ export default {
       defensivePower: 4,
       courage: 12,
       move: 5,
-      // no yellow band — its track shows a single band divider, where the
-      // cards below show two. Exact box counts still worth a check.
-      damage: { green: 6, yellow: 0, red: 7 },
+      // no yellow band — its track shows a single band divider, where
+      // the cards below show two (checked against the card)
+      damage: { green: 6, yellow: 0, red: 6 },
       keywords: ["large", "fearsome"],
       abilities: [BLOOD_FRENZY],
     },
@@ -89,7 +89,7 @@ export default {
       defensivePower: 1,
       courage: 11,
       move: 5,
-      damage: { green: 4, yellow: 4, red: 3 },
+      damage: { green: 4, yellow: 3, red: 3 },
       abilities: [BLOOD_FRENZY],
     },
     {
@@ -103,7 +103,7 @@ export default {
       defensivePower: 4,
       courage: 12,
       move: 5,
-      damage: { green: 7, yellow: 2, red: 5 },
+      damage: { green: 8, yellow: 2, red: 5 },
       keywords: ["colossal", "terrifying"],
       abilities: [
         {
@@ -127,7 +127,7 @@ export default {
       defensivePower: 3,
       courage: 12,
       move: 3.5,
-      damage: { green: 4, yellow: 4, red: 3 },
+      damage: { green: 5, yellow: 4, red: 3 },
       // the card back prints the full Spears keyword rules
       keywords: ["spears"],
       abilities: [BLOOD_FRENZY],
@@ -143,7 +143,7 @@ export default {
       defensivePower: 3,
       courage: 12,
       move: 3.5,
-      damage: { green: 4, yellow: 4, red: 3 },
+      damage: { green: 5, yellow: 4, red: 3 },
       abilities: [BLOOD_FRENZY],
     },
     {
@@ -211,7 +211,7 @@ export default {
       defensivePower: 4,
       courage: 12,
       move: 3.5,
-      damage: { green: 4, yellow: 4, red: 4 },
+      damage: { green: 5, yellow: 4, red: 4 },
       keywords: ["large", "fearsome"],
       abilities: [
         {
