@@ -136,7 +136,14 @@ export const MAX_COPIES = 9;
 export const BUDGET_MIN = 500;
 export const BUDGET_MAX = 5000;
 
-export const DEFAULT_ARMY = { budget: 2000, counts: {}, marks: {} };
+export const DEFAULT_ARMY = {
+  budget: 2000,
+  counts: {},
+  marks: {},
+  // which fielded copies have already been Reanimated this turn (a unit
+  // may only be Reanimated once per turn); cleared by the New turn button
+  reanimated: {},
+};
 
 const maxCopies = (unit) =>
   unit.keywords?.includes("unique") ? 1 : MAX_COPIES;
@@ -149,6 +156,7 @@ export const loadArmy = () => {
     // keep only counts for units that still exist, clamped to their cap
     const counts = {};
     const marks = {};
+    const reanimated = {};
     for (const [uid, n] of Object.entries(stored.counts ?? {})) {
       const unit = UNITS_BY_UID[uid];
       if (!unit || !Number.isInteger(n) || n < 1) continue;
@@ -160,11 +168,19 @@ export const loadArmy = () => {
           ? Math.min(Math.max(saved[copy], 0), damageBoxes(unit))
           : 0
       );
+      const savedTurn = Array.isArray(stored.reanimated?.[uid])
+        ? stored.reanimated[uid]
+        : [];
+      reanimated[uid] = Array.from(
+        { length: counts[uid] },
+        (_, copy) => savedTurn[copy] === true
+      );
     }
     return {
       budget: clampInt(stored.budget, BUDGET_MIN, BUDGET_MAX, 2000),
       counts,
       marks,
+      reanimated,
     };
   } catch {
     return DEFAULT_ARMY;

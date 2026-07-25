@@ -122,6 +122,11 @@ describe("ArmyBuilder", () => {
         "menOfHawkshold/lancers": [6, 0, 0],
         "menOfHawkshold/sirSteaphensFreeCompany": [0],
       },
+      // no stored per-turn state, so every fielded copy starts unraised
+      reanimated: {
+        "menOfHawkshold/lancers": [false, false, false],
+        "menOfHawkshold/sirSteaphensFreeCompany": [false],
+      },
     });
   });
 
@@ -157,6 +162,67 @@ describe("ArmyBuilder", () => {
       "aria-pressed",
       "true"
     );
+  });
+
+  it("reanimating heals one damage and locks the unit until the next turn", () => {
+    const utils = setup();
+    utils.add("Zombies"); // Lesser Undead: 1 CA, 2/2/2 track
+    const reanimate = () => utils.getByLabelText(/Reanimate Zombies/);
+    // nothing to heal yet
+    expect(utils.getByLabelText(/already Reanimated|Reanimate Zombies/))
+      .toBeDisabled();
+    fireEvent.click(utils.getByLabelText("Zombies damage box 4"));
+    expect(utils.getByText("In the Red")).toBeInTheDocument();
+
+    fireEvent.click(reanimate());
+    // one box healed: 3 marked leaves it In the Yellow
+    expect(utils.getByText("In the Yellow")).toBeInTheDocument();
+    // and the copy is locked for the rest of the turn
+    expect(
+      utils.getByLabelText("Zombies already Reanimated this turn")
+    ).toBeDisabled();
+    expect(
+      within(utils.container.querySelector(".ReanimateTally")).getByText("1 CA")
+    ).toBeInTheDocument();
+
+    fireEvent.click(utils.getByText("New turn"));
+    expect(utils.container.querySelector(".ReanimateTally")).not.toBeInTheDocument();
+    expect(reanimate()).toBeEnabled();
+  });
+
+  it("costs follow the classification and destroyed units can't be raised", () => {
+    const utils = setup();
+    utils.add("Death Knights"); // Greater Undead: 3 CA, 3/2/2 track
+    fireEvent.click(utils.getByLabelText("Death Knights damage box 3"));
+    expect(
+      utils.getByLabelText("Reanimate Death Knights for 3 Command Actions")
+    ).toBeEnabled();
+    // destroyed: every box marked, so it is beyond Reanimating
+    fireEvent.click(utils.getByLabelText("Death Knights damage box 7"));
+    expect(utils.getByText("Destroyed")).toBeInTheDocument();
+    expect(
+      utils.getByLabelText(/Reanimate Death Knights/)
+    ).toBeDisabled();
+  });
+
+  it("units without an Undead classification get no Reanimate button", () => {
+    const utils = setup();
+    utils.add("Swarm of Rats"); // Undead army, but no classification
+    utils.add("Swordsmen");
+    fireEvent.click(utils.getByLabelText("Swarm of Rats damage box 2"));
+    expect(utils.container.querySelectorAll(".Reanimate")).toHaveLength(0);
+  });
+
+  it("the once-per-turn lock survives a remount", () => {
+    const first = setup();
+    first.add("Zombies");
+    fireEvent.click(first.getByLabelText("Zombies damage box 2"));
+    fireEvent.click(first.getByLabelText(/Reanimate Zombies/));
+    first.unmount();
+    const second = setup();
+    expect(
+      second.getByLabelText("Zombies already Reanimated this turn")
+    ).toBeDisabled();
   });
 
   it("removing a copy drops its damage track", () => {

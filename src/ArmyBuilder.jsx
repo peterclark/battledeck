@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { capitalize, map, range, sum } from "lodash";
 import classNames from "classnames";
 import { FaArrowLeft, FaMinus, FaPlus, FaTimes } from "react-icons/fa";
-import { GiRallyTheTroops, GiScrollUnfurled } from "react-icons/gi";
-import { FACTIONS, UNITS_BY_UID, damageStatus } from "./data";
+import {
+  GiHealthIncrease,
+  GiRallyTheTroops,
+  GiScrollUnfurled,
+} from "react-icons/gi";
+import { FACTIONS, UNITS_BY_UID, damageStatus, reanimateCost } from "./data";
 import {
   BUDGET_MAX,
   BUDGET_MIN,
@@ -35,9 +39,24 @@ const STATUS_TONE = {
 };
 
 // One fielded copy's damage track: tapping box i marks damage up to it,
-// tapping the last marked box heals it back off
-const DamageRow = ({ unit, copy, copies, marked, onMark }) => {
+// tapping the last marked box heals it back off. Undead copies also get a
+// Reanimate button showing its Command Action cost.
+const DamageRow = ({
+  unit,
+  copy,
+  copies,
+  marked,
+  reanimated,
+  onMark,
+  onReanimate,
+}) => {
   const status = damageStatus(unit, marked);
+  const label = `${unit.name}${copies > 1 ? ` #${copy + 1}` : ""}`;
+  const cost = reanimateCost(unit);
+  // per the army ability: heals one damage, never on a destroyed unit,
+  // and only once per unit per turn
+  const canReanimate =
+    cost !== null && marked > 0 && status !== "destroyed" && !reanimated;
   const bands = [
     ...map(range(unit.damage.green), () => "bg-moss-500"),
     ...map(range(unit.damage.yellow), () => "bg-ember-500"),
@@ -59,7 +78,7 @@ const DamageRow = ({ unit, copy, copies, marked, onMark }) => {
               tone,
               box < marked && "opacity-25"
             )}
-            aria-label={`${unit.name}${copies > 1 ? ` #${copy + 1}` : ""} damage box ${box + 1}`}
+            aria-label={`${label} damage box ${box + 1}`}
             aria-pressed={box < marked}
             onClick={() => onMark(box + 1 === marked ? box : box + 1)}
           />
@@ -73,11 +92,35 @@ const DamageRow = ({ unit, copy, copies, marked, onMark }) => {
       >
         {STATUS_LABEL[status]}
       </span>
+      {cost !== null && (
+        <button
+          className="Reanimate plate flex h-6 shrink-0 items-center gap-1 px-1.5 font-mono text-[9px]"
+          aria-label={
+            reanimated
+              ? `${label} already Reanimated this turn`
+              : `Reanimate ${label} for ${cost} Command Action${cost > 1 ? "s" : ""}`
+          }
+          disabled={!canReanimate}
+          onClick={onReanimate}
+        >
+          <GiHealthIncrease className="text-[11px] text-moss-500" aria-hidden />
+          {cost}
+        </button>
+      )}
     </div>
   );
 };
 
-const UnitRow = ({ unit, count, marks, onAdd, onRemove, onMark }) => {
+const UnitRow = ({
+  unit,
+  count,
+  marks,
+  reanimated,
+  onAdd,
+  onRemove,
+  onMark,
+  onReanimate,
+}) => {
   const cap = isUnique(unit) ? 1 : MAX_COPIES;
   return (
     <div
@@ -129,7 +172,9 @@ const UnitRow = ({ unit, count, marks, onAdd, onRemove, onMark }) => {
               copy={copy}
               copies={count}
               marked={marks?.[copy] ?? 0}
+              reanimated={reanimated?.[copy] === true}
               onMark={(value) => onMark(copy, value)}
+              onReanimate={() => onReanimate(copy)}
             />
           ))}
         </div>
@@ -146,6 +191,7 @@ const ArmyBuilder = ({ onClose }) => {
   const [budget, setBudget] = useState(initial.budget);
   const [counts, setCounts] = useState(initial.counts);
   const [marks, setMarks] = useState(initial.marks);
+  const [reanimated, setReanimated] = useState(initial.reanimated);
   const [clearArmed, setClearArmed] = useState(false);
   const clearTimer = useRef(null);
   useEffect(() => () => clearTimeout(clearTimer.current), []);
@@ -160,8 +206,8 @@ const ArmyBuilder = ({ onClose }) => {
 
   // The roster outlives the battle screen — persist on every change
   useEffect(() => {
-    saveArmy({ budget, counts, marks });
-  }, [budget, counts, marks]);
+    saveArmy({ budget, counts, marks, reanimated });
+  }, [budget, counts, marks, reanimated]);
 
   const total = sum(
     map(counts, (count, uid) => UNITS_BY_UID[uid].points * count)
@@ -212,11 +258,42 @@ const ArmyBuilder = ({ onClose }) => {
     buzz();
   };
 
+  // Reanimate: heal one damage and lock this copy until the next turn
+  const reanimate = (unit, copy) => {
+    setMarks((m) => {
+      const track = [...(m[unit.uid] ?? [])];
+      track[copy] = Math.max((track[copy] ?? 0) - 1, 0);
+      return { ...m, [unit.uid]: track };
+    });
+    setReanimated((r) => {
+      const track = [...(r[unit.uid] ?? [])];
+      track[copy] = true;
+      return { ...r, [unit.uid]: track };
+    });
+    playBonus();
+    buzz();
+  };
+
+  // Command Actions spent Reanimating so far this turn, to compare against
+  // the budget's allowance above
+  const reanimateSpend = sum(
+    map(reanimated, (track, uid) =>
+      sum(map(track, (done) => (done ? reanimateCost(UNITS_BY_UID[uid]) : 0)))
+    )
+  );
+
+  const newTurn = () => {
+    setReanimated({});
+    playDrum();
+    buzz(16);
+  };
+
   const clearArmy = () => {
     clearTimeout(clearTimer.current);
     if (clearArmed) {
       setCounts({});
       setMarks({});
+      setReanimated({});
       setClearArmed(false);
       playDrum();
       buzz(16);
@@ -323,6 +400,33 @@ const ArmyBuilder = ({ onClose }) => {
               </span>
             </div>
           </div>
+
+          {reanimateSpend > 0 && (
+            <div className="ReanimateTally flex items-center justify-between gap-2 border-t border-iron-500 pt-1.5">
+              <span className="flex items-center gap-1.5 font-mono text-[10px] text-bone-500">
+                <GiHealthIncrease
+                  className="text-sm text-moss-500"
+                  aria-hidden
+                />
+                Reanimated this turn:{" "}
+                <span
+                  className={classNames(
+                    reanimateSpend > commandActions(budget)
+                      ? "text-blood-400"
+                      : "text-bone-300"
+                  )}
+                >
+                  {reanimateSpend} CA
+                </span>
+              </span>
+              <button
+                className="NewTurn plate h-7 px-2.5 text-[10px] uppercase tracking-widest text-bone-300"
+                onClick={newTurn}
+              >
+                New turn
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-3 px-3 pb-6 pt-3">
@@ -339,11 +443,13 @@ const ArmyBuilder = ({ onClose }) => {
                     unit={UNITS_BY_UID[uid]}
                     count={counts[uid] ?? 0}
                     marks={marks[uid]}
+                    reanimated={reanimated[uid]}
                     onAdd={() => addUnit(UNITS_BY_UID[uid])}
                     onRemove={() => removeUnit(UNITS_BY_UID[uid])}
                     onMark={(copy, value) =>
                       markDamage(UNITS_BY_UID[uid], copy, value)
                     }
+                    onReanimate={(copy) => reanimate(UNITS_BY_UID[uid], copy)}
                   />
                 );
               })}
