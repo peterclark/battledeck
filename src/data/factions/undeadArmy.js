@@ -37,6 +37,23 @@ export default {
       abilities: [FEARLESS],
     },
     {
+      id: "ghoulPack",
+      name: "Ghoul Pack",
+      points: 130,
+      melee: { dice: 6, offensiveSkill: 5, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 1,
+      // the only Undead unit so far that takes Courage Checks normally —
+      // its card prints a value and omits the Fearless line
+      courage: 9,
+      move: 5,
+      // UNCONFIRMED: the photo's colour bands are hard to separate here;
+      // read as one green, eight yellow and one red. Needs a card check.
+      damage: { green: 1, yellow: 8, red: 1 },
+      keywords: ["lesserUndead"],
+    },
+    {
       id: "giantCatapult",
       name: "Giant Catapult",
       points: 510,
