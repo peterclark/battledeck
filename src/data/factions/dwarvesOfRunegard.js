@@ -35,6 +35,28 @@ const ENGAGED_MINUS_2 = {
 export default {
   id: "dwarvesOfRunegard",
   name: "Dwarves of Runegard",
+  // Dwarves of Runegard Army Ability card — army-wide rules, informational
+  abilities: [
+    {
+      name: "Rune of Uruz",
+      text:
+        "You may spend a Command Action to empower one of your units with " +
+        "Uruz, Rune of Endurance (mark the Uruz box on the unit card). " +
+        "That unit gets a permanent (+1) +0/+0 while Engaged. The mark is " +
+        "erased and the bonus lost if the unit routs. Rune of Uruz gives " +
+        "no bonus to ranged attacks.",
+    },
+    {
+      name: "Sprint",
+      text:
+        "You may spend a Command Action to Sprint one of your units. That " +
+        "unit's base Movement becomes 3.5″ for the turn.",
+    },
+    {
+      name: "Hills",
+      text: "Dwarves get no movement penalty for moving up hill terrain.",
+    },
+  ],
   units: [
     {
       id: "antonianHorsemen",
