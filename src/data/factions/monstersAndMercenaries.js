@@ -37,7 +37,7 @@ export default {
       courage: 14,
       move: 5,
       fly: 10.5,
-      damage: { green: 7, yellow: 2, red: 5 },
+      damage: { green: 8, yellow: 2, red: 5 },
       keywords: ["colossal", "terrifying", "flying"],
       abilities: [
         {
@@ -66,7 +66,7 @@ export default {
       defensiveSkill: 1,
       defensivePower: 3,
       move: 5,
-      damage: { green: 6, yellow: 4, red: 6 },
+      damage: { green: 5, yellow: 4, red: 5 },
       keywords: ["colossal", "terrifying"],
       abilities: [
         {
@@ -133,7 +133,7 @@ export default {
       defensiveSkill: 1,
       defensivePower: 4,
       move: 5,
-      damage: { green: 5, yellow: 4, red: 4 },
+      damage: { green: 4, yellow: 4, red: 4 },
       keywords: ["large", "fearsome"],
       abilities: [
         {
@@ -242,7 +242,7 @@ export default {
       defensivePower: 4,
       courage: 13,
       move: 6,
-      damage: { green: 8, yellow: 2, red: 5 },
+      damage: { green: 7, yellow: 2, red: 5 },
       keywords: ["large", "fearsome", "stupid"],
       abilities: [
         {
@@ -353,7 +353,7 @@ export default {
       courage: 13,
       move: 5,
       fly: 10.5,
-      damage: { green: 5, yellow: 2, red: 4 },
+      damage: { green: 6, yellow: 2, red: 4 },
       keywords: ["large", "fearsome", "flying"],
       abilities: [
         {
