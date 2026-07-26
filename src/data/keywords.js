@@ -106,6 +106,15 @@ export const KEYWORDS = {
       "Moves by flight using its Flying movement value (see the rulebook's " +
       "flying rules).",
   },
+  wheeled: {
+    id: "wheeled",
+    name: "Wheeled",
+    text:
+      "A vehicle that relies on flat, unobstructed ground. Wheeled units " +
+      "take different movement modifiers from other units in most terrain " +
+      "— worse in rough going, better on roads.",
+    // Terrain and movement only, so nothing here feeds the attack math.
+  },
   // Size keywords referenced by Spears' whenTarget — carried by the
   // Monsters & Mercenaries units
   large: {
