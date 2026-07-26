@@ -29,6 +29,15 @@ const CHARIOT_CAVALRY_CHARGE = {
   when: ["chargingFourOrMoreDice", "chargingThreeOrLessDice"],
 };
 
+// Archer melee penalty, as printed: "(-0) -2/-2 while Engaged"
+const ENGAGED_MINUS_2 = {
+  name: "Engaged",
+  code: "ENG",
+  text: "(-0) -2/-2 while Engaged.",
+  bonus: [0, -2, -2],
+  stance: "melee",
+};
+
 export default {
   id: "highElves",
   name: "High Elves",
@@ -84,6 +93,20 @@ export default {
       damage: { green: 3, yellow: 3, red: 2 },
     },
     {
+      id: "highElfArchers",
+      name: "High Elf Archers",
+      points: 225,
+      class: "core",
+      melee: { dice: 4, offensiveSkill: 6, offensivePower: 5 },
+      ranged: { dice: 4, offensiveSkill: 6, offensivePower: 5, range: 14 },
+      defensiveSkill: 1,
+      defensivePower: 2,
+      courage: 13,
+      move: 3.5,
+      damage: { green: 3, yellow: 2, red: 2 },
+      abilities: [ENGAGED_MINUS_2],
+    },
+    {
       id: "highElfBattleSquad",
       name: "High Elf Battle Squad",
       points: 187,
@@ -95,6 +118,36 @@ export default {
       courage: 13,
       move: 3.5,
       damage: { green: 3, yellow: 3, red: 2 },
+    },
+    {
+      id: "highElfBowriders",
+      name: "High Elf Bowriders",
+      points: 292,
+      melee: { dice: 4, offensiveSkill: 6, offensivePower: 5 },
+      ranged: { dice: 4, offensiveSkill: 6, offensivePower: 5, range: 14 },
+      defensiveSkill: 2,
+      defensivePower: 1,
+      courage: 13,
+      move: 6,
+      damage: { green: 2, yellow: 2, red: 2 },
+      keywords: ["cavalry"],
+      abilities: [
+        // Unlike every other archer in the game, these horse archers gain
+        // a die in melee rather than taking the usual Engaged penalty
+        {
+          name: "Engaged",
+          code: "ENG",
+          text: "(+1) +0/+0 when Engaged.",
+          bonus: [1, 0, 0],
+          stance: "melee",
+        },
+        {
+          name: "Cavalry",
+          text:
+            "+1 DS while Charging (in addition to the normal Charging " +
+            "Bonus).",
+        },
+      ],
     },
     {
       id: "highElfChariots",
