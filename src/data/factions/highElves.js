@@ -45,6 +45,7 @@ export default {
   abilities: [
     {
       name: "Precision",
+      box: { cost: 1 },
       text:
         "You may spend one Command Action to empower one of your units " +
         "with Precision (mark the Precision box on the unit's stat bar). " +

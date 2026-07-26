@@ -30,6 +30,7 @@ export default {
   abilities: [
     {
       name: "Fury",
+      box: { cost: 1 },
       text:
         "You may spend one Command Action to empower one of your units " +
         "with Fury (mark the Fury box on the unit's stat bar). That unit " +

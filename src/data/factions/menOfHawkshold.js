@@ -66,6 +66,7 @@ export default {
   abilities: [
     {
       name: "Bravery",
+      box: { cost: 1 },
       text:
         "You may spend a Command Action to mark the Bravery box on one of " +
         "your units. While it is marked, the unit gets Courage +3. If a " +

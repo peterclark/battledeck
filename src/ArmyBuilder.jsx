@@ -5,9 +5,16 @@ import { FaArrowLeft, FaMinus, FaPlus, FaTimes } from "react-icons/fa";
 import {
   GiHealthIncrease,
   GiRallyTheTroops,
+  GiRuneStone,
   GiScrollUnfurled,
 } from "react-icons/gi";
-import { FACTIONS, UNITS_BY_UID, damageStatus, reanimateCost } from "./data";
+import {
+  FACTIONS,
+  UNITS_BY_UID,
+  damageStatus,
+  reanimateCost,
+  unitBox,
+} from "./data";
 import {
   BUDGET_MAX,
   BUDGET_MIN,
@@ -40,19 +47,31 @@ const STATUS_TONE = {
 
 // One fielded copy's damage track: tapping box i marks damage up to it,
 // tapping the last marked box heals it back off. Undead copies also get a
-// Reanimate button showing its Command Action cost.
+// Reanimate button showing its Command Action cost, and copies whose
+// faction has an army-ability box (Bravery, Fury, Rune of Uruz, Precision,
+// Spoils) get a button that cycles that box's marks.
 const DamageRow = ({
   unit,
   copy,
   copies,
   marked,
   reanimated,
+  boxed,
   onMark,
   onReanimate,
+  onBox,
 }) => {
   const status = damageStatus(unit, marked);
   const label = `${unit.name}${copies > 1 ? ` #${copy + 1}` : ""}`;
   const cost = reanimateCost(unit);
+  const box = unitBox(unit);
+  const boxLabel = box
+    ? boxed >= box.max
+      ? `Erase ${box.name} on ${label}`
+      : `Mark ${box.name} on ${label} for ${box.cost} Command Action${
+          box.cost > 1 ? "s" : ""
+        }`
+    : null;
   // per the army ability: heals one damage, never on a destroyed unit,
   // and only once per unit per turn
   const canReanimate =
@@ -107,6 +126,25 @@ const DamageRow = ({
           {cost}
         </button>
       )}
+      {box && (
+        <button
+          className={classNames(
+            "BoxMark plate flex h-6 shrink-0 items-center gap-1 px-1.5 font-mono text-[9px]",
+            boxed > 0 && "plate-on-ember"
+          )}
+          aria-label={boxLabel}
+          onClick={onBox}
+        >
+          <GiRuneStone
+            className={classNames(
+              "text-[11px]",
+              boxed > 0 ? "text-ember-300" : "text-bone-500"
+            )}
+            aria-hidden
+          />
+          {boxed}/{box.max}
+        </button>
+      )}
     </div>
   );
 };
@@ -116,10 +154,12 @@ const UnitRow = ({
   count,
   marks,
   reanimated,
+  boxes,
   onAdd,
   onRemove,
   onMark,
   onReanimate,
+  onBox,
 }) => {
   const cap = isUnique(unit) ? 1 : MAX_COPIES;
   return (
@@ -173,8 +213,10 @@ const UnitRow = ({
               copies={count}
               marked={marks?.[copy] ?? 0}
               reanimated={reanimated?.[copy] === true}
+              boxed={boxes?.[copy] ?? 0}
               onMark={(value) => onMark(copy, value)}
               onReanimate={() => onReanimate(copy)}
+              onBox={() => onBox(copy)}
             />
           ))}
         </div>
@@ -192,6 +234,8 @@ const ArmyBuilder = ({ onClose }) => {
   const [counts, setCounts] = useState(initial.counts);
   const [marks, setMarks] = useState(initial.marks);
   const [reanimated, setReanimated] = useState(initial.reanimated);
+  const [boxes, setBoxes] = useState(initial.boxes);
+  const [boxesThisTurn, setBoxesThisTurn] = useState(initial.boxesThisTurn);
   const [clearArmed, setClearArmed] = useState(false);
   const clearTimer = useRef(null);
   useEffect(() => () => clearTimeout(clearTimer.current), []);
@@ -206,8 +250,8 @@ const ArmyBuilder = ({ onClose }) => {
 
   // The roster outlives the battle screen — persist on every change
   useEffect(() => {
-    saveArmy({ budget, counts, marks, reanimated });
-  }, [budget, counts, marks, reanimated]);
+    saveArmy({ budget, counts, marks, reanimated, boxes, boxesThisTurn });
+  }, [budget, counts, marks, reanimated, boxes, boxesThisTurn]);
 
   const total = sum(
     map(counts, (count, uid) => UNITS_BY_UID[uid].points * count)
@@ -222,8 +266,10 @@ const ArmyBuilder = ({ onClose }) => {
 
   const addUnit = (unit) => {
     setCounts((c) => ({ ...c, [unit.uid]: (c[unit.uid] ?? 0) + 1 }));
-    // a fresh copy joins with an unmarked damage track
+    // a fresh copy joins with an unmarked damage track and no box marks
     setMarks((m) => ({ ...m, [unit.uid]: [...(m[unit.uid] ?? []), 0] }));
+    setBoxes((b) => ({ ...b, [unit.uid]: [...(b[unit.uid] ?? []), 0] }));
+    setBoxesThisTurn((b) => ({ ...b, [unit.uid]: [...(b[unit.uid] ?? []), 0] }));
     if (total + unit.points > budget) playPenalty();
     else playBonus();
     buzz();
@@ -236,12 +282,15 @@ const ArmyBuilder = ({ onClose }) => {
       else delete next[unit.uid];
       return next;
     });
-    // the last-listed copy leaves, taking its damage with it
-    setMarks((m) => {
-      const next = { ...m, [unit.uid]: (m[unit.uid] ?? []).slice(0, -1) };
+    // the last-listed copy leaves, taking its damage and box marks with it
+    const dropLast = (state) => {
+      const next = { ...state, [unit.uid]: (state[unit.uid] ?? []).slice(0, -1) };
       if (!next[unit.uid].length) delete next[unit.uid];
       return next;
-    });
+    };
+    setMarks(dropLast);
+    setBoxes(dropLast);
+    setBoxesThisTurn(dropLast);
     playTick();
     buzz();
   };
@@ -274,16 +323,51 @@ const ArmyBuilder = ({ onClose }) => {
     buzz();
   };
 
-  // Command Actions spent Reanimating so far this turn, to compare against
-  // the budget's allowance above
+  // Army-ability boxes: tapping cycles a copy's marks 0 → 1 → … → max → 0.
+  // Marking costs Command Actions, so it tallies against this turn's
+  // allowance; erasing hands back only what was paid this turn, since a
+  // mark carried over from an earlier turn was paid for then.
+  const markBox = (unit, copy) => {
+    const { max } = unitBox(unit);
+    const current = boxes[unit.uid]?.[copy] ?? 0;
+    const next = current >= max ? 0 : current + 1;
+    setBoxes((b) => {
+      const track = [...(b[unit.uid] ?? [])];
+      track[copy] = next;
+      return { ...b, [unit.uid]: track };
+    });
+    setBoxesThisTurn((b) => {
+      const track = [...(b[unit.uid] ?? [])];
+      const fresh = track[copy] ?? 0;
+      track[copy] = next > current ? fresh + 1 : Math.min(fresh, next);
+      return { ...b, [unit.uid]: track };
+    });
+    if (next > current) playBonus();
+    else playTick();
+    buzz();
+  };
+
+  // Command Actions spent so far this turn, to compare against the
+  // budget's allowance above. Reanimating and marking boxes both draw on
+  // the same per-turn pool, so they're tallied together.
   const reanimateSpend = sum(
     map(reanimated, (track, uid) =>
       sum(map(track, (done) => (done ? reanimateCost(UNITS_BY_UID[uid]) : 0)))
     )
   );
 
+  const boxSpend = sum(
+    map(boxesThisTurn, (track, uid) =>
+      sum(map(track, (n) => (n ?? 0) * (unitBox(UNITS_BY_UID[uid])?.cost ?? 0)))
+    )
+  );
+
+  const turnSpend = reanimateSpend + boxSpend;
+
   const newTurn = () => {
     setReanimated({});
+    // the marks stay on the cards; only their price is a spent turn's
+    setBoxesThisTurn({});
     playDrum();
     buzz(16);
   };
@@ -294,6 +378,8 @@ const ArmyBuilder = ({ onClose }) => {
       setCounts({});
       setMarks({});
       setReanimated({});
+      setBoxes({});
+      setBoxesThisTurn({});
       setClearArmed(false);
       playDrum();
       buzz(16);
@@ -401,22 +487,22 @@ const ArmyBuilder = ({ onClose }) => {
             </div>
           </div>
 
-          {reanimateSpend > 0 && (
-            <div className="ReanimateTally flex items-center justify-between gap-2 border-t border-iron-500 pt-1.5">
+          {turnSpend > 0 && (
+            <div className="TurnTally flex items-center justify-between gap-2 border-t border-iron-500 pt-1.5">
               <span className="flex items-center gap-1.5 font-mono text-[10px] text-bone-500">
-                <GiHealthIncrease
-                  className="text-sm text-moss-500"
+                <GiScrollUnfurled
+                  className="text-sm text-ember-600"
                   aria-hidden
                 />
-                Reanimated this turn:{" "}
+                Spent this turn:{" "}
                 <span
                   className={classNames(
-                    reanimateSpend > commandActions(budget)
+                    turnSpend > commandActions(budget)
                       ? "text-blood-400"
                       : "text-bone-300"
                   )}
                 >
-                  {reanimateSpend} CA
+                  {turnSpend} CA
                 </span>
               </span>
               <button
@@ -444,12 +530,14 @@ const ArmyBuilder = ({ onClose }) => {
                     count={counts[uid] ?? 0}
                     marks={marks[uid]}
                     reanimated={reanimated[uid]}
+                    boxes={boxes[uid]}
                     onAdd={() => addUnit(UNITS_BY_UID[uid])}
                     onRemove={() => removeUnit(UNITS_BY_UID[uid])}
                     onMark={(copy, value) =>
                       markDamage(UNITS_BY_UID[uid], copy, value)
                     }
                     onReanimate={(copy) => reanimate(UNITS_BY_UID[uid], copy)}
+                    onBox={(copy) => markBox(UNITS_BY_UID[uid], copy)}
                   />
                 );
               })}

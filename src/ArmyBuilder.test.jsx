@@ -127,7 +127,44 @@ describe("ArmyBuilder", () => {
         "menOfHawkshold/lancers": [false, false, false],
         "menOfHawkshold/sirSteaphensFreeCompany": [false],
       },
+      // and with an unmarked Bravery box
+      boxes: {
+        "menOfHawkshold/lancers": [0, 0, 0],
+        "menOfHawkshold/sirSteaphensFreeCompany": [0],
+      },
+      boxesThisTurn: {
+        "menOfHawkshold/lancers": [0, 0, 0],
+        "menOfHawkshold/sirSteaphensFreeCompany": [0],
+      },
     });
+  });
+
+  it("loadArmy clamps box marks to the boxes the card prints", () => {
+    localStorage.setItem(
+      "battledeck-army-v1",
+      JSON.stringify({
+        budget: 2000,
+        counts: {
+          "menOfHawkshold/swordsmen": 1, // Bravery: one box
+          "monstersAndMercenaries/ogres": 1, // Spoils: one box
+          "undeadArmy/zombies": 1, // faction has no box ability
+        },
+        boxes: {
+          "menOfHawkshold/swordsmen": [9], // clamps to the single box
+          "monstersAndMercenaries/ogres": [-3], // clamps up to 0
+          "undeadArmy/zombies": [1], // no box to mark at all
+        },
+        // marks claimed for this turn can never exceed the marks standing
+        boxesThisTurn: { "menOfHawkshold/swordsmen": [5] },
+      })
+    );
+    const army = loadArmy();
+    expect(army.boxes).toEqual({
+      "menOfHawkshold/swordsmen": [1],
+      "monstersAndMercenaries/ogres": [0],
+      "undeadArmy/zombies": [0],
+    });
+    expect(army.boxesThisTurn["menOfHawkshold/swordsmen"]).toEqual([1]);
   });
 
   it("marking damage walks the copy through yellow, red, and destroyed", () => {
@@ -182,11 +219,11 @@ describe("ArmyBuilder", () => {
       utils.getByLabelText("Zombies already Reanimated this turn")
     ).toBeDisabled();
     expect(
-      within(utils.container.querySelector(".ReanimateTally")).getByText("1 CA")
+      within(utils.container.querySelector(".TurnTally")).getByText("1 CA")
     ).toBeInTheDocument();
 
     fireEvent.click(utils.getByText("New turn"));
-    expect(utils.container.querySelector(".ReanimateTally")).not.toBeInTheDocument();
+    expect(utils.container.querySelector(".TurnTally")).not.toBeInTheDocument();
     expect(reanimate()).toBeEnabled();
   });
 
@@ -223,6 +260,85 @@ describe("ArmyBuilder", () => {
     expect(
       second.getByLabelText("Zombies already Reanimated this turn")
     ).toBeDisabled();
+  });
+
+  it("marking an army-ability box costs a Command Action and can be erased", () => {
+    const utils = setup();
+    utils.add("Swordsmen"); // Hawkshold: one Bravery box
+    const mark = () => utils.getByLabelText(/(Mark|Erase) Bravery on Swordsmen/);
+    expect(mark()).toHaveTextContent("0/1");
+    expect(utils.container.querySelector(".TurnTally")).not.toBeInTheDocument();
+
+    fireEvent.click(mark());
+    expect(
+      utils.getByLabelText("Erase Bravery on Swordsmen")
+    ).toHaveTextContent("1/1");
+    expect(
+      within(utils.container.querySelector(".TurnTally")).getByText("1 CA")
+    ).toBeInTheDocument();
+
+    // erasing a mark made this turn hands the Command Action back
+    fireEvent.click(mark());
+    expect(mark()).toHaveTextContent("0/1");
+    expect(utils.container.querySelector(".TurnTally")).not.toBeInTheDocument();
+  });
+
+  it("a Spoils card cycles through every box it prints", () => {
+    const utils = setup();
+    utils.add("Elementalist"); // Mercenary: two Spoils boxes
+    const mark = () =>
+      utils.getByLabelText(/(Mark|Erase) Spoils on Elementalist/);
+    fireEvent.click(mark());
+    expect(mark()).toHaveTextContent("1/2");
+    fireEvent.click(mark());
+    expect(mark()).toHaveTextContent("2/2");
+    expect(
+      within(utils.container.querySelector(".TurnTally")).getByText("2 CA")
+    ).toBeInTheDocument();
+    // at the last box the next tap wipes the card clean
+    fireEvent.click(mark());
+    expect(mark()).toHaveTextContent("0/2");
+  });
+
+  it("marks outlive the turn even though their Command Actions don't", () => {
+    const first = setup();
+    first.add("Swordsmen");
+    fireEvent.click(first.getByLabelText(/Mark Bravery on Swordsmen/));
+    fireEvent.click(first.getByText("New turn"));
+    // the turn's spend is gone, the mark is not
+    expect(first.container.querySelector(".TurnTally")).not.toBeInTheDocument();
+    expect(
+      first.getByLabelText("Erase Bravery on Swordsmen")
+    ).toHaveTextContent("1/1");
+
+    // and erasing it next turn costs nothing and refunds nothing
+    first.unmount();
+    const second = setup();
+    const mark = second.getByLabelText("Erase Bravery on Swordsmen");
+    expect(mark).toHaveTextContent("1/1");
+    fireEvent.click(mark);
+    expect(second.container.querySelector(".TurnTally")).not.toBeInTheDocument();
+  });
+
+  it("Reanimating and box marks share one Command Action tally", () => {
+    const utils = setup();
+    utils.add("Death Knights"); // Greater Undead: 3 CA to Reanimate
+    utils.add("Elementalist"); // Mercenary: 1 CA per Spoils box
+    fireEvent.click(utils.getByLabelText("Death Knights damage box 3"));
+    fireEvent.click(utils.getByLabelText(/Reanimate Death Knights/));
+    fireEvent.click(utils.getByLabelText(/Mark Spoils on Elementalist/));
+    expect(
+      within(utils.container.querySelector(".TurnTally")).getByText("4 CA")
+    ).toBeInTheDocument();
+  });
+
+  it("units their army ability can't empower get no box button", () => {
+    const utils = setup();
+    utils.add("Antonian Horsemen"); // card back rules out Rune of Uruz
+    utils.add("Zombies"); // Undead: the faction has no box ability
+    expect(utils.container.querySelectorAll(".BoxMark")).toHaveLength(0);
+    utils.add("Dwarven Axemen"); // but its faction-mates keep theirs
+    expect(utils.container.querySelectorAll(".BoxMark")).toHaveLength(1);
   });
 
   it("removing a copy drops its damage track", () => {
