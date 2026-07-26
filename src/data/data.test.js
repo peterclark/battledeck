@@ -38,6 +38,32 @@ describe("faction data", () => {
     });
   });
 
+  it("Wolf Riders gate their extra dice on a routing defender", () => {
+    const riders = UNITS_BY_UID["orcArmy/goblinWolfRiders"];
+    // running down a fleeing unit
+    expect(
+      map(activeAbilities(riders, { targetRouting: { on: true } }, "melee"), "bonus")
+    ).toEqual([[2, 0, 0]]);
+    // a foe standing its ground gives them nothing
+    expect(
+      activeAbilities(riders, { targetRouting: { on: false } }, "melee")
+    ).toHaveLength(0);
+    // and the Cavalry charge bonus is separate, so both can be live at once
+    expect(
+      map(
+        activeAbilities(
+          riders,
+          { targetRouting: { on: true }, chargingFourOrMoreDice: { on: true } },
+          "melee"
+        ),
+        "bonus"
+      )
+    ).toEqual([
+      [0, 0, 1],
+      [2, 0, 0],
+    ]);
+  });
+
   it("an Engaged effect can be a bonus, not just the archer's penalty", () => {
     // Orc Crossbowmen drop the crossbow for a greatsword in melee, and
     // High Elf Bowriders shoot from the saddle — both gain rather than lose
