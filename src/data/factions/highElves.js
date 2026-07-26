@@ -4,6 +4,20 @@
 // The Precision box the army ability marks is printed on the front of
 // every unit card, at the left end of the stat bar.
 
+// The Knights' card-back Cavalry extra. Stronger than the Hawkshold and
+// Dwarven version (+1 OP): the elves get +2 OP, marked by the asterisks
+// on the stat bar's OP and DS. The DS half applies when this unit is the
+// target, so it stays prose.
+const CAVALRY_CHARGE = {
+  name: "Cavalry",
+  code: "CAV",
+  text:
+    "(+0) +0/+2 and +1 DS while Charging (in addition to the normal " +
+    "Charging Bonus).",
+  bonus: [0, 0, 2],
+  when: ["chargingFourOrMoreDice", "chargingThreeOrLessDice"],
+};
+
 export default {
   id: "highElves",
   name: "High Elves",
@@ -44,6 +58,21 @@ export default {
       courage: 13,
       move: 3.5,
       damage: { green: 3, yellow: 3, red: 2 },
+    },
+    {
+      id: "highElfKnights",
+      name: "High Elf Knights",
+      points: 378,
+      class: "elite",
+      melee: { dice: 6, offensiveSkill: 6, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 3,
+      defensivePower: 2,
+      courage: 13,
+      move: 5,
+      damage: { green: 3, yellow: 2, red: 2 },
+      keywords: ["cavalry"],
+      abilities: [CAVALRY_CHARGE],
     },
     {
       id: "highElfSwordsmen",
