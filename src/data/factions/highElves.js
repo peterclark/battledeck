@@ -67,6 +67,19 @@ export default {
   ],
   units: [
     {
+      id: "celestialGuard",
+      name: "Celestial Guard",
+      points: 506,
+      class: "elite",
+      melee: { dice: 5, offensiveSkill: 7, offensivePower: 6 },
+      ranged: null,
+      defensiveSkill: 4,
+      defensivePower: 2,
+      courage: 14,
+      move: 3.5,
+      damage: { green: 4, yellow: 3, red: 3 },
+    },
+    {
       id: "cygnets",
       name: "Cygnets",
       points: 177,
