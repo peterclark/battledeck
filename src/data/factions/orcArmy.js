@@ -19,6 +19,52 @@ export default {
   ],
   units: [
     {
+      id: "goblinBombChucker",
+      name: "Goblin Bomb-Chucker",
+      points: 300,
+      // The stat bar prints (*) for its Attack Dice: the machine rolls
+      // them fresh for every shot (see Attack Dice below), so no fixed
+      // number exists. The prefill is 7 — the average roll of two dice
+      // once doubles, which misfire instead, are excluded — and is meant
+      // to be adjusted to whatever the two dice actually show. Engaged,
+      // the crew fight with the card back's own fixed profile, which is
+      // why the stat bar asterisks its OS and OP too.
+      melee: {
+        dice: 3,
+        offensiveSkill: 4,
+        offensivePower: 4,
+        noCommandCards: true,
+      },
+      ranged: {
+        dice: 7,
+        offensiveSkill: 5,
+        offensivePower: 6,
+        range: 21,
+        noCommandCards: true,
+      },
+      defensiveSkill: 1,
+      defensivePower: 2,
+      courage: 11,
+      move: 2.5,
+      damage: { green: 3, yellow: 2, red: 2 },
+      abilities: [
+        {
+          name: "Attack Dice",
+          text:
+            "As part of its roll to hit, first roll two dice (this roll " +
+            "may not be changed). If you roll doubles, Goblin " +
+            "Bomb-Chucker receives one damage and has no Attack Dice. " +
+            "Otherwise, the result is its number of Attack Dice.",
+        },
+        {
+          name: "Notes",
+          text:
+            "Cannot move and Shoot. You cannot play Command Cards while " +
+            "Goblin Bomb-Chucker is attacking.",
+        },
+      ],
+    },
+    {
       id: "trolls",
       name: "Trolls",
       points: 406,
