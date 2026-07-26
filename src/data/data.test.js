@@ -7,6 +7,7 @@ import {
   UNITS_BY_UID,
   activeAbilities,
   attackProfile,
+  damageStatus,
   reanimateCost,
   unitBox,
 } from "./index";
@@ -35,6 +36,18 @@ describe("faction data", () => {
         expect(ability.text, `${ability.name} text`).toBeTruthy();
       });
     });
+  });
+
+  it("a track with no yellow band goes straight from fresh to the red", () => {
+    // the Trolls card prints seven green boxes running into seven red,
+    // with no yellow between them
+    const trolls = UNITS_BY_UID["orcArmy/trolls"];
+    expect(trolls.damage.yellow).toBe(0);
+    expect(damageStatus(trolls, 0)).toBe("fresh");
+    expect(damageStatus(trolls, 6)).toBe("fresh");
+    expect(damageStatus(trolls, 7)).toBe("red"); // never "yellow"
+    expect(damageStatus(trolls, 13)).toBe("red");
+    expect(damageStatus(trolls, 14)).toBe("destroyed");
   });
 
   it("army-ability box descriptors are well-formed", () => {

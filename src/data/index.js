@@ -4,6 +4,7 @@ import highElves from "./factions/highElves";
 import lizardmen from "./factions/lizardmen";
 import menOfHawkshold from "./factions/menOfHawkshold";
 import monstersAndMercenaries from "./factions/monstersAndMercenaries";
+import orcArmy from "./factions/orcArmy";
 import undeadArmy from "./factions/undeadArmy";
 import { KEYWORDS } from "./keywords";
 
@@ -17,6 +18,7 @@ export const FACTIONS = [
   lizardmen,
   menOfHawkshold,
   monstersAndMercenaries,
+  orcArmy,
   undeadArmy,
 ];
 
