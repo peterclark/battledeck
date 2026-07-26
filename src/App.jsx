@@ -156,7 +156,7 @@ const SLOT_DAMAGE_TONE = {
 // One side of the engagement: shows the selected unit card (or a prompt),
 // opens the unit picker on tap, and clears via the small × button
 const UnitSlot = ({ role, icon: Icon, unit, copyLabel, damage, onOpen, onClear }) => (
-  <div className={className("UnitSlot flex flex-1 items-stretch gap-1", role)}>
+  <div className={className("UnitSlot flex w-full items-stretch gap-1", role)}>
     <button
       className="plate flex flex-1 items-center gap-2 px-2.5 py-1.5 text-left"
       onClick={onOpen}
@@ -907,7 +907,9 @@ const App = () => {
           <GiRallyTheTroops className="text-lg text-ember-600" aria-hidden />
           Units
         </div>
-        <div className="Units flex gap-1">
+        {/* stacked, not side by side: two long unit names plus their clear
+            buttons overflow a phone-width column */}
+        <div className="Units flex flex-col gap-1">
           <UnitSlot
             role="attacker"
             icon={GiBroadsword}
@@ -917,6 +919,13 @@ const App = () => {
             onOpen={() => openUnitPicker("attacker")}
             onClear={() => clearUnit("attacker")}
           />
+          <div className="Versus flex items-center gap-2 px-1" aria-hidden>
+            <span className="h-px flex-1 bg-iron-500" />
+            <span className="font-display text-[10px] uppercase tracking-[0.3em] text-bone-500">
+              vs
+            </span>
+            <span className="h-px flex-1 bg-iron-500" />
+          </div>
           <UnitSlot
             role="defender"
             icon={GiShield}

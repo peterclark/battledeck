@@ -12,6 +12,10 @@ export default {
   abilities: [
     {
       name: "Spoils",
+      // each card prints its own Spoils boxes; the two-Command-Action
+      // price for a unit hired into another faction stays in the prose,
+      // since the roster doesn't model who hired whom
+      box: { cost: 1, countField: "spoils" },
       text:
         "You may pay one Command Action to mark a Spoils box on a " +
         "Non-Routing unit (two Command Actions if the unit is hired as a " +

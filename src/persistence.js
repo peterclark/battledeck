@@ -1,6 +1,6 @@
 import { mapValues } from "lodash";
 import { COMMAND_CARD_MODIFIERS, MODIFIERS } from "./constants";
-import { UNITS_BY_UID, damageBoxes } from "./data";
+import { UNITS_BY_UID, damageBoxes, unitBox } from "./data";
 import { MAX_DICE, MAX_ROLL } from "./derive";
 
 const CARD_IDS = new Set(COMMAND_CARD_MODIFIERS.map((card) => card.id));
@@ -143,6 +143,14 @@ export const DEFAULT_ARMY = {
   // which fielded copies have already been Reanimated this turn (a unit
   // may only be Reanimated once per turn); cleared by the New turn button
   reanimated: {},
+  // army-ability boxes marked per fielded copy (Bravery, Fury, Rune of
+  // Uruz, Precision, Spoils). These outlive the turn — a mark sits on the
+  // card until it's erased for its effect.
+  boxes: {},
+  // how many of those marks were made *this* turn, so the Command Action
+  // tally can price them and erasing a fresh mistake hands the Command
+  // Actions back; cleared by the New turn button
+  boxesThisTurn: {},
 };
 
 const maxCopies = (unit) =>
@@ -157,6 +165,8 @@ export const loadArmy = () => {
     const counts = {};
     const marks = {};
     const reanimated = {};
+    const boxes = {};
+    const boxesThisTurn = {};
     for (const [uid, n] of Object.entries(stored.counts ?? {})) {
       const unit = UNITS_BY_UID[uid];
       if (!unit || !Number.isInteger(n) || n < 1) continue;
@@ -175,12 +185,34 @@ export const loadArmy = () => {
         { length: counts[uid] },
         (_, copy) => savedTurn[copy] === true
       );
+      // box marks, clamped to the boxes this unit's card actually prints —
+      // a unit whose faction has no box ability keeps none
+      const max = unitBox(unit)?.max ?? 0;
+      const savedBoxes = Array.isArray(stored.boxes?.[uid])
+        ? stored.boxes[uid]
+        : [];
+      boxes[uid] = Array.from({ length: counts[uid] }, (_, copy) =>
+        Number.isInteger(savedBoxes[copy])
+          ? Math.min(Math.max(savedBoxes[copy], 0), max)
+          : 0
+      );
+      // marks made this turn can never exceed the marks actually standing
+      const savedFresh = Array.isArray(stored.boxesThisTurn?.[uid])
+        ? stored.boxesThisTurn[uid]
+        : [];
+      boxesThisTurn[uid] = Array.from({ length: counts[uid] }, (_, copy) =>
+        Number.isInteger(savedFresh[copy])
+          ? Math.min(Math.max(savedFresh[copy], 0), boxes[uid][copy])
+          : 0
+      );
     }
     return {
       budget: clampInt(stored.budget, BUDGET_MIN, BUDGET_MAX, 2000),
       counts,
       marks,
       reanimated,
+      boxes,
+      boxesThisTurn,
     };
   } catch {
     return DEFAULT_ARMY;

@@ -34,6 +34,30 @@ export const UNITS = flatMap(FACTIONS, (faction) =>
 
 export const UNITS_BY_UID = keyBy(UNITS, "uid");
 
+export const FACTIONS_BY_ID = keyBy(FACTIONS, "id");
+
+// The army-ability box a unit card prints: Hawkshold Bravery, Dwarven Rune
+// of Uruz, Lizardmen Fury, High Elf Precision, Mercenary Spoils. All five
+// work the same way — spend Command Actions to mark a box, erase the mark
+// later for the ability's effect — so the roster tracks them with one
+// mechanism. The faction ability that owns the box carries the descriptor:
+//
+//   box.cost       Command Actions to mark one box
+//   box.count      boxes printed on every unit's card (default 1)
+//   box.countField a unit field holding that unit's box count instead
+//                  (Spoils: each Mercenary card prints its own)
+//   box.except     unit ids the ability can't empower (the Antonian
+//                  Horsemen's card back rules out Rune of Uruz)
+//
+// Returns null for units with no box at all.
+export const unitBox = (unit) => {
+  const ability = find(FACTIONS_BY_ID[unit?.factionId]?.abilities, "box");
+  if (!ability || includes(ability.box.except, unit.id)) return null;
+  const { box } = ability;
+  const max = box.countField ? unit[box.countField] ?? 0 : box.count ?? 1;
+  return max > 0 ? { name: ability.name, cost: box.cost, max } : null;
+};
+
 // The stat profile a unit attacks with in the given stance, or null if it
 // has no attack of that kind
 export const attackProfile = (unit, mode) =>

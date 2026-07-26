@@ -39,6 +39,8 @@ export default {
   abilities: [
     {
       name: "Rune of Uruz",
+      // the Antonian Horsemen's card back rules them out
+      box: { cost: 1, except: ["antonianHorsemen"] },
       text:
         "You may spend a Command Action to empower one of your units with " +
         "Uruz, Rune of Endurance (mark the Uruz box on the unit card). " +

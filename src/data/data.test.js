@@ -8,6 +8,7 @@ import {
   activeAbilities,
   attackProfile,
   reanimateCost,
+  unitBox,
 } from "./index";
 import { MODIFIERS } from "../constants";
 import { MAX_DICE, MAX_ROLL } from "../derive";
@@ -34,6 +35,57 @@ describe("faction data", () => {
         expect(ability.text, `${ability.name} text`).toBeTruthy();
       });
     });
+  });
+
+  it("army-ability box descriptors are well-formed", () => {
+    each(FACTIONS, (faction) =>
+      each(faction.abilities, (ability) => {
+        if (!ability.box) return;
+        const { cost, count, countField, except } = ability.box;
+        expect(isInteger(cost), `${ability.name} box cost`).toBe(true);
+        expect(cost).toBeGreaterThan(0);
+        if (count !== undefined) expect(count).toBeGreaterThan(0);
+        // a fixed count and a per-unit field would contradict each other
+        expect(count === undefined || countField === undefined).toBe(true);
+        // an `except` id that no longer names a unit would silently stop
+        // excluding anything
+        each(except, (id) =>
+          expect(
+            map(faction.units, "id"),
+            `${ability.name} excludes ${id}`
+          ).toContain(id)
+        );
+      })
+    );
+  });
+
+  it("unitBox reads the faction's box ability, or null when there is none", () => {
+    // one box on every card, the common shape
+    expect(unitBox(UNITS_BY_UID["menOfHawkshold/swordsmen"])).toEqual({
+      name: "Bravery",
+      cost: 1,
+      max: 1,
+    });
+    expect(unitBox(UNITS_BY_UID["highElves/celestialGuard"]).name).toBe(
+      "Precision"
+    );
+    expect(unitBox(UNITS_BY_UID["lizardmen/trogWarriors"]).name).toBe("Fury");
+    // Spoils counts the boxes printed on the individual card
+    expect(unitBox(UNITS_BY_UID["monstersAndMercenaries/elementalist"])).toEqual(
+      { name: "Spoils", cost: 1, max: 2 }
+    );
+    expect(unitBox(UNITS_BY_UID["monstersAndMercenaries/ogres"]).max).toBe(1);
+    // a Mercenary card with no Spoils boxes has nothing to mark
+    expect(unitBox(UNITS_BY_UID["monstersAndMercenaries/ancientRedDragon"]))
+      .toBeNull();
+    // the Antonian Horsemen's card back rules out Rune of Uruz
+    expect(unitBox(UNITS_BY_UID["dwarvesOfRunegard/antonianHorsemen"])).toBeNull();
+    expect(unitBox(UNITS_BY_UID["dwarvesOfRunegard/dwarvenAxemen"]).name).toBe(
+      "Rune of Uruz"
+    );
+    // the Undead army ability is Reanimate, which marks no box
+    expect(unitBox(UNITS_BY_UID["undeadArmy/zombies"])).toBeNull();
+    expect(unitBox(null)).toBeNull();
   });
 
   it("unit uids are globally unique", () => {
