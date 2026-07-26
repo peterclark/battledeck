@@ -45,5 +45,18 @@ export default {
       move: 3.5,
       damage: { green: 3, yellow: 3, red: 2 },
     },
+    {
+      id: "highElfSwordsmen",
+      name: "High Elf Swordsmen",
+      points: 299,
+      class: "core",
+      melee: { dice: 5, offensiveSkill: 6, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 3,
+      defensivePower: 2,
+      courage: 13,
+      move: 3.5,
+      damage: { green: 4, yellow: 3, red: 3 },
+    },
   ],
 };
