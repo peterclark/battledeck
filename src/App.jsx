@@ -257,6 +257,10 @@ const App = () => {
   // Shots spent per unit copy (breath weapons, arrows) — keyed uid#copy
   const [ammoSpent, setAmmoSpent] = useState(initial.ammoSpent);
   const [unitPicker, setUnitPicker] = useState(null); // "attacker" | "defender" | null
+  // Which faction the picker is browsing, per slot (null = its faction
+  // list). Kept per slot and persisted, so reopening lands where you left
+  // off — the defender is usually an enemy from another faction.
+  const [pickerFaction, setPickerFaction] = useState(initial.pickerFaction);
   const [muted, setMutedState] = useState(isMuted());
   const [showHelp, setShowHelp] = useState(false);
   const [showArmy, setShowArmy] = useState(false);
@@ -579,6 +583,7 @@ const App = () => {
       defenderCopy,
       ammoSpent,
       playedCards,
+      pickerFaction,
       modifiers,
     });
   }, [
@@ -594,6 +599,7 @@ const App = () => {
     defenderCopy,
     ammoSpent,
     playedCards,
+    pickerFaction,
     modifiers,
   ]);
 
@@ -765,6 +771,10 @@ const App = () => {
           role={unitPicker}
           selectedUid={unitPicker === "attacker" ? attackerUid : defenderUid}
           selectedCopy={unitPicker === "attacker" ? attackerCopy : defenderCopy}
+          factionId={pickerFaction[unitPicker]}
+          onFactionChange={(id) =>
+            setPickerFaction((last) => ({ ...last, [unitPicker]: id }))
+          }
           onSelect={selectUnit}
           onClose={() => setUnitPicker(null)}
         />

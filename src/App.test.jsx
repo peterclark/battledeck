@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, within } from "@testing-library/react";
+import { find } from "lodash";
 import App from "./App";
+import { UNITS } from "./data";
 import { saveArmy } from "./persistence";
 
 // Buttons built on usePressable (ranks, dice, reset) tap on pointer up;
@@ -256,8 +258,15 @@ describe("Units", () => {
     fireEvent.click(
       utils.container.querySelector(`.UnitSlot.${role} button`)
     );
-    const overlay = utils.container.querySelector(".UnitPicker");
-    fireEvent.click(within(overlay).getByText(unitName));
+    const overlay = () => utils.container.querySelector(".UnitPicker");
+    // the picker opens on its faction list, and remembers the last faction
+    // it was left in — so step back to the list, then into this unit's own
+    const unit = find(UNITS, { name: unitName.replace(/ #\d+$/, "") });
+    if (!overlay().querySelector(".FactionRow")) {
+      fireEvent.click(within(overlay()).getByLabelText("Back to factions"));
+    }
+    fireEvent.click(within(overlay()).getByText(unit.factionName));
+    fireEvent.click(within(overlay()).getByText(unitName));
   };
 
   const pickAttacker = (utils) => pickUnit(utils, "attacker");
@@ -380,6 +389,9 @@ describe("Units", () => {
     const utils = setup();
     fireEvent.click(utils.getByLabelText("Pick attacker unit"));
     const overlay = utils.container.querySelector(".UnitPicker");
+    // the faction list counts only what the filter leaves visible
+    expect(within(overlay).getByText("3 units")).toBeInTheDocument();
+    fireEvent.click(within(overlay).getByText("Men of Hawkshold"));
     // multiple copies list one row each, with their own damage state
     expect(within(overlay).getByText("Swordsmen #1")).toBeInTheDocument();
     expect(within(overlay).getByText("Swordsmen #2")).toBeInTheDocument();
@@ -396,10 +408,68 @@ describe("Units", () => {
     const utils = setup();
     fireEvent.click(utils.getByLabelText("Pick attacker unit"));
     const overlay = utils.container.querySelector(".UnitPicker");
+    fireEvent.click(within(overlay).getByText("Men of Hawkshold"));
     expect(within(overlay).getByText("Militia")).toBeInTheDocument();
     expect(
       within(overlay).queryByText("Show all units")
     ).not.toBeInTheDocument();
+  });
+
+  it("the picker drills from factions into one faction and back", () => {
+    const utils = setup();
+    fireEvent.click(utils.getByLabelText("Pick attacker unit"));
+    const overlay = utils.container.querySelector(".UnitPicker");
+    // the list shows factions, not units
+    expect(within(overlay).getByText("Orc Army")).toBeInTheDocument();
+    expect(within(overlay).queryByText("Militia")).not.toBeInTheDocument();
+
+    fireEvent.click(within(overlay).getByText("Men of Hawkshold"));
+    expect(within(overlay).getByText("Militia")).toBeInTheDocument();
+    // and only that faction's units
+    expect(within(overlay).queryByText("Orc Axemen")).not.toBeInTheDocument();
+
+    fireEvent.click(within(overlay).getByLabelText("Back to factions"));
+    expect(within(overlay).queryByText("Militia")).not.toBeInTheDocument();
+    expect(within(overlay).getByText("Orc Army")).toBeInTheDocument();
+    // from the list, back leaves the picker altogether
+    fireEvent.click(within(overlay).getByLabelText("Back to BattleDeck"));
+    expect(utils.container.querySelector(".UnitPicker")).toBeNull();
+  });
+
+  it("each slot remembers its own faction, and both survive a reload", () => {
+    const first = setup();
+    const overlay = () => first.container.querySelector(".UnitPicker");
+    const open = (role) =>
+      fireEvent.click(first.getByLabelText(`Pick ${role} unit`));
+    const shut = () =>
+      fireEvent.click(within(overlay()).getByLabelText("Close unit picker"));
+
+    open("attacker");
+    fireEvent.click(within(overlay()).getByText("Lizardmen"));
+    shut();
+
+    // the defender keeps its own place: still on the faction list, since
+    // the enemy is usually from a different faction than your own army
+    open("defender");
+    expect(within(overlay()).queryByText("Trog Warriors")).not.toBeInTheDocument();
+    expect(within(overlay()).getByText("Orc Army")).toBeInTheDocument();
+    fireEvent.click(within(overlay()).getByText("Orc Army"));
+    expect(within(overlay()).getByText("Orc Axemen")).toBeInTheDocument();
+    shut();
+
+    // and the attacker is still where it was left
+    open("attacker");
+    expect(within(overlay()).getByText("Trog Warriors")).toBeInTheDocument();
+    shut();
+    first.unmount();
+
+    const second = setup();
+    const reopened = () => second.container.querySelector(".UnitPicker");
+    fireEvent.click(second.getByLabelText("Pick attacker unit"));
+    expect(within(reopened()).getByText("Trog Warriors")).toBeInTheDocument();
+    fireEvent.click(within(reopened()).getByLabelText("Close unit picker"));
+    fireEvent.click(second.getByLabelText("Pick defender unit"));
+    expect(within(reopened()).getByText("Orc Axemen")).toBeInTheDocument();
   });
 
   it("an army copy's damage prefills In the Yellow / In the Red", () => {

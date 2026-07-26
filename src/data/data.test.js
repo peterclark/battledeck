@@ -7,6 +7,7 @@ import {
   UNITS_BY_UID,
   activeAbilities,
   attackProfile,
+  damageStatus,
   reanimateCost,
   unitBox,
 } from "./index";
@@ -35,6 +36,61 @@ describe("faction data", () => {
         expect(ability.text, `${ability.name} text`).toBeTruthy();
       });
     });
+  });
+
+  it("Wolf Riders gate their extra dice on a routing defender", () => {
+    const riders = UNITS_BY_UID["orcArmy/goblinWolfRiders"];
+    // running down a fleeing unit
+    expect(
+      map(activeAbilities(riders, { targetRouting: { on: true } }, "melee"), "bonus")
+    ).toEqual([[2, 0, 0]]);
+    // a foe standing its ground gives them nothing
+    expect(
+      activeAbilities(riders, { targetRouting: { on: false } }, "melee")
+    ).toHaveLength(0);
+    // and the Cavalry charge bonus is separate, so both can be live at once
+    expect(
+      map(
+        activeAbilities(
+          riders,
+          { targetRouting: { on: true }, chargingFourOrMoreDice: { on: true } },
+          "melee"
+        ),
+        "bonus"
+      )
+    ).toEqual([
+      [0, 0, 1],
+      [2, 0, 0],
+    ]);
+  });
+
+  it("an Engaged effect can be a bonus, not just the archer's penalty", () => {
+    // Orc Crossbowmen drop the crossbow for a greatsword in melee, and
+    // High Elf Bowriders shoot from the saddle — both gain rather than lose
+    const crossbows = UNITS_BY_UID["orcArmy/orcCrossbowmen"];
+    expect(map(activeAbilities(crossbows, {}, "melee"), "bonus")).toEqual([
+      [2, 0, 1],
+    ]);
+    expect(activeAbilities(crossbows, {}, "ranged")).toHaveLength(0);
+    expect(
+      map(activeAbilities(UNITS_BY_UID["highElves/highElfBowriders"], {}, "melee"), "bonus")
+    ).toEqual([[1, 0, 0]]);
+    // while the plain archers still take theirs
+    expect(
+      map(activeAbilities(UNITS_BY_UID["highElves/highElfArchers"], {}, "melee"), "bonus")
+    ).toEqual([[0, -2, -2]]);
+  });
+
+  it("a track with no yellow band goes straight from fresh to the red", () => {
+    // the Trolls card prints seven green boxes running into seven red,
+    // with no yellow between them
+    const trolls = UNITS_BY_UID["orcArmy/trolls"];
+    expect(trolls.damage.yellow).toBe(0);
+    expect(damageStatus(trolls, 0)).toBe("fresh");
+    expect(damageStatus(trolls, 6)).toBe("fresh");
+    expect(damageStatus(trolls, 7)).toBe("red"); // never "yellow"
+    expect(damageStatus(trolls, 13)).toBe("red");
+    expect(damageStatus(trolls, 14)).toBe("destroyed");
   });
 
   it("army-ability box descriptors are well-formed", () => {
