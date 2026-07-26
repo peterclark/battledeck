@@ -20,6 +20,8 @@ const clampInt = (value, min, max, fallback) =>
 // data files — a renamed or removed unit falls back to no selection
 const validUid = (uid) => (UNITS_BY_UID[uid] ? uid : null);
 
+const validFaction = (id) => (FACTIONS_BY_ID[id] ? id : null);
+
 export const DEFAULT_STATE = {
   attackMode: "melee",
   baseDice: 4,
@@ -33,9 +35,11 @@ export const DEFAULT_STATE = {
   defenderCopy: null,
   ammoSpent: {},
   playedCards: [],
-  // Which faction the unit picker was last browsing, so reopening it
-  // lands where the player left off; null means its faction list
-  pickerFaction: null,
+  // Which faction the unit picker was last browsing, per slot, so
+  // reopening it lands where the player left off; null means its faction
+  // list. Kept per slot because the defender is often an enemy from a
+  // different faction than the attacker.
+  pickerFaction: { attacker: null, defender: null },
   modifiers: MODIFIERS,
 };
 
@@ -75,10 +79,11 @@ export const loadState = () => {
       defenderCopy: validCopy(validUid(stored.defenderUid), stored.defenderCopy),
       ammoSpent: validAmmoSpent(stored.ammoSpent),
       // a faction that has since been renamed or removed falls back to
-      // the picker's faction list
-      pickerFaction: FACTIONS_BY_ID[stored.pickerFaction]
-        ? stored.pickerFaction
-        : null,
+      // the picker's faction list, as does the pre-per-slot shape
+      pickerFaction: {
+        attacker: validFaction(stored.pickerFaction?.attacker),
+        defender: validFaction(stored.pickerFaction?.defender),
+      },
       playedCards: (Array.isArray(stored.playedCards) ? stored.playedCards : [])
         .filter((id) => CARD_IDS.has(id))
         .slice(0, MAX_PLAYED_CARDS),

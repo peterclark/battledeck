@@ -436,23 +436,40 @@ describe("Units", () => {
     expect(utils.container.querySelector(".UnitPicker")).toBeNull();
   });
 
-  it("the picker reopens on the faction it was left in, and survives a reload", () => {
+  it("each slot remembers its own faction, and both survive a reload", () => {
     const first = setup();
-    fireEvent.click(first.getByLabelText("Pick attacker unit"));
     const overlay = () => first.container.querySelector(".UnitPicker");
-    fireEvent.click(within(overlay()).getByText("Lizardmen"));
-    fireEvent.click(within(overlay()).getByLabelText("Close unit picker"));
+    const open = (role) =>
+      fireEvent.click(first.getByLabelText(`Pick ${role} unit`));
+    const shut = () =>
+      fireEvent.click(within(overlay()).getByLabelText("Close unit picker"));
 
-    // reopening the other slot lands in the same faction, not the list
-    fireEvent.click(first.getByLabelText("Pick defender unit"));
+    open("attacker");
+    fireEvent.click(within(overlay()).getByText("Lizardmen"));
+    shut();
+
+    // the defender keeps its own place: still on the faction list, since
+    // the enemy is usually from a different faction than your own army
+    open("defender");
+    expect(within(overlay()).queryByText("Trog Warriors")).not.toBeInTheDocument();
+    expect(within(overlay()).getByText("Orc Army")).toBeInTheDocument();
+    fireEvent.click(within(overlay()).getByText("Orc Army"));
+    expect(within(overlay()).getByText("Orc Axemen")).toBeInTheDocument();
+    shut();
+
+    // and the attacker is still where it was left
+    open("attacker");
     expect(within(overlay()).getByText("Trog Warriors")).toBeInTheDocument();
-    fireEvent.click(within(overlay()).getByLabelText("Close unit picker"));
+    shut();
     first.unmount();
 
     const second = setup();
+    const reopened = () => second.container.querySelector(".UnitPicker");
     fireEvent.click(second.getByLabelText("Pick attacker unit"));
-    const reopened = second.container.querySelector(".UnitPicker");
-    expect(within(reopened).getByText("Trog Warriors")).toBeInTheDocument();
+    expect(within(reopened()).getByText("Trog Warriors")).toBeInTheDocument();
+    fireEvent.click(within(reopened()).getByLabelText("Close unit picker"));
+    fireEvent.click(second.getByLabelText("Pick defender unit"));
+    expect(within(reopened()).getByText("Orc Axemen")).toBeInTheDocument();
   });
 
   it("an army copy's damage prefills In the Yellow / In the Red", () => {
