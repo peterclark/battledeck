@@ -38,6 +38,23 @@ describe("faction data", () => {
     });
   });
 
+  it("an Engaged effect can be a bonus, not just the archer's penalty", () => {
+    // Orc Crossbowmen drop the crossbow for a greatsword in melee, and
+    // High Elf Bowriders shoot from the saddle — both gain rather than lose
+    const crossbows = UNITS_BY_UID["orcArmy/orcCrossbowmen"];
+    expect(map(activeAbilities(crossbows, {}, "melee"), "bonus")).toEqual([
+      [2, 0, 1],
+    ]);
+    expect(activeAbilities(crossbows, {}, "ranged")).toHaveLength(0);
+    expect(
+      map(activeAbilities(UNITS_BY_UID["highElves/highElfBowriders"], {}, "melee"), "bonus")
+    ).toEqual([[1, 0, 0]]);
+    // while the plain archers still take theirs
+    expect(
+      map(activeAbilities(UNITS_BY_UID["highElves/highElfArchers"], {}, "melee"), "bonus")
+    ).toEqual([[0, -2, -2]]);
+  });
+
   it("a track with no yellow band goes straight from fresh to the red", () => {
     // the Trolls card prints seven green boxes running into seven red,
     // with no yellow between them

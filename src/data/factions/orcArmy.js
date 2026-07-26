@@ -19,6 +19,35 @@ export default {
   ],
   units: [
     {
+      id: "crazedGoblins",
+      name: "Crazed Goblins",
+      points: 83,
+      // no Courage value on the stat bar: they pass every Courage Check.
+      // The disc at the end of the bar reads "C" rather than sitting
+      // blank, for the Close Standing Order they are locked into.
+      melee: {
+        dice: 5,
+        offensiveSkill: 4,
+        offensivePower: 4,
+        noCommandCards: true,
+      },
+      ranged: null,
+      defensiveSkill: 0,
+      defensivePower: 1,
+      move: 5,
+      damage: { green: 3, yellow: 3, red: 2 },
+      abilities: [
+        {
+          name: "Notes",
+          text:
+            "Always has the Close Standing Order and may not be given an " +
+            "Objective. Passes all Courage Checks. Is unaffected by your " +
+            "Command Cards and may not be Lashed. You may not play " +
+            "Command Cards while Crazed Goblins is attacking or defending.",
+        },
+      ],
+    },
+    {
       id: "goblinBombChucker",
       name: "Goblin Bomb-Chucker",
       points: 300,
@@ -88,6 +117,71 @@ export default {
       courage: 13,
       move: 3.5,
       damage: { green: 5, yellow: 3, red: 2 },
+    },
+    {
+      id: "orcCrossbowmen",
+      name: "Orc Crossbowmen",
+      points: 267,
+      // One stat line for both stances, like the other bow-armed cards —
+      // but where every other archer takes a penalty in melee, these drop
+      // the crossbow for a greatsword and come out stronger.
+      melee: { dice: 3, offensiveSkill: 5, offensivePower: 5 },
+      ranged: { dice: 3, offensiveSkill: 5, offensivePower: 5, range: 14 },
+      defensiveSkill: 1,
+      defensivePower: 3,
+      courage: 12,
+      move: 3.5,
+      damage: { green: 4, yellow: 4, red: 2 },
+      abilities: [
+        {
+          name: "Engaged",
+          code: "ENG",
+          text: "(+2) +0/+1 while Engaged.",
+          bonus: [2, 0, 1],
+          stance: "melee",
+        },
+        {
+          name: "Notes",
+          text: "Range attack is Line of Sight.",
+        },
+      ],
+    },
+    {
+      id: "orcMarauders",
+      name: "Orc Marauders",
+      points: 367,
+      melee: { dice: 7, offensiveSkill: 6, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 3,
+      courage: 13,
+      move: 3.5,
+      damage: { green: 5, yellow: 3, red: 2 },
+    },
+    {
+      id: "orcSpearmen",
+      name: "Orc Spearmen",
+      points: 264,
+      melee: { dice: 6, offensiveSkill: 5, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 3,
+      courage: 12,
+      move: 3.5,
+      damage: { green: 4, yellow: 4, red: 2 },
+      keywords: ["spears"],
+    },
+    {
+      id: "orcSwordsmen",
+      name: "Orc Swordsmen",
+      points: 237,
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 3,
+      courage: 12,
+      move: 3.5,
+      damage: { green: 4, yellow: 4, red: 2 },
     },
     {
       id: "trolls",
