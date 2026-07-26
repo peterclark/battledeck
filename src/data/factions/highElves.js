@@ -93,6 +93,19 @@ export default {
       damage: { green: 3, yellow: 3, red: 2 },
     },
     {
+      id: "elderBladeSwordsmen",
+      name: "Elder-Blade Swordsmen",
+      points: 352,
+      class: "core",
+      melee: { dice: 5, offensiveSkill: 6, offensivePower: 6 },
+      ranged: null,
+      defensiveSkill: 3,
+      defensivePower: 2,
+      courage: 13,
+      move: 3.5,
+      damage: { green: 4, yellow: 3, red: 3 },
+    },
+    {
       id: "highElfArchers",
       name: "High Elf Archers",
       points: 225,
@@ -118,6 +131,35 @@ export default {
       courage: 13,
       move: 3.5,
       damage: { green: 3, yellow: 3, red: 2 },
+    },
+    {
+      id: "highElfBattlemages",
+      name: "High Elf Battlemages",
+      points: 239,
+      class: "elite",
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 5 },
+      ranged: { dice: 5, offensiveSkill: 5, offensivePower: 5, range: 14 },
+      defensiveSkill: 2,
+      defensivePower: 1,
+      courage: 13,
+      move: 3.5,
+      damage: { green: 2, yellow: 2, red: 2 },
+      abilities: [
+        {
+          name: "Engaged",
+          code: "ENG",
+          text: "(-2) -2/-2 when Engaged.",
+          bonus: [-2, -2, -2],
+          stance: "melee",
+        },
+        {
+          name: "Command Card",
+          text:
+            "During your turn, if this unit is Unengaged, you may draw a " +
+            "Command Card at the start of the Combat Phase. If you do, " +
+            "this unit does not make a range attack this turn.",
+        },
+      ],
     },
     {
       id: "highElfBowriders",
