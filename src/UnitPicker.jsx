@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { capitalize, filter, map, range, some } from "lodash";
+import { capitalize, filter, map, range, some, sumBy } from "lodash";
 import classNames from "classnames";
-import { FaArrowLeft, FaTimes } from "react-icons/fa";
+import { FaArrowLeft, FaChevronRight, FaTimes } from "react-icons/fa";
 import { GiBowArrow, GiCrossedSwords } from "react-icons/gi";
-import { FACTIONS, KEYWORDS, damageStatus } from "./data";
+import { FACTIONS, FACTIONS_BY_ID, KEYWORDS, damageStatus } from "./data";
 import { useModalOverlay } from "./hooks";
 import { loadArmy } from "./persistence";
 import { buzz, playTick } from "./sounds";
@@ -117,10 +117,38 @@ const UnitRow = ({ unit, copy = null, copies = 0, marked = 0, selected, onSelect
   );
 };
 
-// Full-screen unit picker, one section per faction. Same modal conventions
-// as the rules help: focus moves in on open, the page behind is locked,
-// Escape closes, Tab is trapped.
-const UnitPicker = ({ role, selectedUid, selectedCopy, onSelect, onClose }) => {
+// One faction's card on the picker's front page: tapping it opens that
+// faction's units. The count reflects the current army/all filter, so it
+// matches what's actually behind the card.
+const FactionRow = ({ faction, count, onOpen }) => (
+  <button
+    className="FactionRow plate flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
+    onClick={onOpen}
+  >
+    <span className="font-display text-sm tracking-wider text-bone-100">
+      {faction.name}
+    </span>
+    <span className="flex shrink-0 items-center gap-2 font-mono text-[10px] text-bone-500">
+      {`${count} unit${count === 1 ? "" : "s"}`}
+      <FaChevronRight className="text-[9px] text-ember-600" aria-hidden />
+    </span>
+  </button>
+);
+
+// Full-screen unit picker. Two levels, like the rules help's page stack:
+// a faction list, then one faction's units. Back steps up a level and
+// closes from the list. Same modal conventions as the help overlay: focus
+// moves in on open, the page behind is locked, Escape closes, Tab is
+// trapped.
+const UnitPicker = ({
+  role,
+  selectedUid,
+  selectedCopy,
+  factionId,
+  onFactionChange,
+  onSelect,
+  onClose,
+}) => {
   // A built army narrows the picker to its own units by default; with no
   // army yet, everything shows. "Show all" covers picking an enemy
   // defender that isn't in the player's roster.
@@ -141,11 +169,31 @@ const UnitPicker = ({ role, selectedUid, selectedCopy, onSelect, onClose }) => {
     buzz();
   };
 
+  const faction = FACTIONS_BY_ID[factionId] ?? null;
+  const factionUnits = faction ? visibleUnits(faction) : [];
+
+  // What the faction card advertises: the number of rows behind it, so a
+  // unit fielded three times counts three times, exactly as it lists
+  const rowCount = (f) =>
+    sumBy(visibleUnits(f), (unit) =>
+      Math.max(armyCounts[`${f.id}/${unit.id}`] ?? 0, 1)
+    );
+
+  const openFaction = (id) => {
+    onFactionChange(id);
+    playTick();
+    buzz();
+  };
+
   const close = () => {
     onClose();
     playTick();
     buzz();
   };
+
+  // Back steps up to the faction list; from the list there's nowhere left
+  // to go, so it closes the picker
+  const back = () => (faction ? openFaction(null) : close());
 
   const { overlayProps } = useModalOverlay(close);
 
@@ -164,13 +212,18 @@ const UnitPicker = ({ role, selectedUid, selectedCopy, onSelect, onClose }) => {
         <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-iron-500 bg-iron-900/95 px-3 py-2 backdrop-blur-sm">
           <button
             className="plate flex h-9 w-9 shrink-0 items-center justify-center text-bone-300"
-            onClick={close}
-            aria-label="Back to BattleDeck"
+            onClick={back}
+            aria-label={faction ? "Back to factions" : "Back to BattleDeck"}
           >
             <FaArrowLeft />
           </button>
-          <h2 className="flex min-w-0 flex-1 items-center justify-center font-display text-base font-bold uppercase tracking-[0.15em] text-ember-400">
-            Pick {role}
+          <h2 className="flex min-w-0 flex-1 flex-col items-center justify-center text-center font-display font-bold uppercase tracking-[0.15em] text-ember-400">
+            <span className="text-base leading-none">Pick {role}</span>
+            {faction && (
+              <span className="truncate text-[10px] leading-tight tracking-[0.25em] text-bone-500">
+                {faction.name}
+              </span>
+            )}
           </h2>
           <button
             className="plate flex h-9 w-9 shrink-0 items-center justify-center text-bone-300"
@@ -191,62 +244,73 @@ const UnitPicker = ({ role, selectedUid, selectedCopy, onSelect, onClose }) => {
               {showAll ? "Show only my army" : "Show all units"}
             </button>
           )}
-          {map(FACTIONS, (faction) => {
-            const units = visibleUnits(faction);
-            if (!units.length) return null;
-            return (
-              <div key={faction.id} className="flex flex-col gap-1.5">
-                <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-bone-500">
-                  {faction.name}
+          {!faction &&
+            map(
+              filter(FACTIONS, (f) => visibleUnits(f).length),
+              (f) => (
+                <FactionRow
+                  key={f.id}
+                  faction={f}
+                  count={rowCount(f)}
+                  onOpen={() => openFaction(f.id)}
+                />
+              )
+            )}
+
+          {faction && (
+            <div className="flex flex-col gap-1.5">
+              {map(faction.abilities, ({ name, text }) => (
+                <div
+                  key={name}
+                  className="FactionAbility border-l-2 border-ember-600 pl-2.5 text-[10px] leading-snug text-bone-500"
+                >
+                  <span className="font-bold text-ember-500">{name}.</span>{" "}
+                  {text}
                 </div>
-                {map(faction.abilities, ({ name, text }) => (
-                  <div
-                    key={name}
-                    className="FactionAbility border-l-2 border-ember-600 pl-2.5 text-[10px] leading-snug text-bone-500"
-                  >
-                    <span className="font-bold text-ember-500">
-                      {name}.
-                    </span>{" "}
-                    {text}
-                  </div>
-                ))}
-                {map(units, (unit) => {
-                  const uid = `${faction.id}/${unit.id}`;
-                  const copies = armyCounts[uid] ?? 0;
-                  // fielded units list one row per copy, each with its own
-                  // damage state; everything else is a plain row
-                  if (!copies) {
-                    return (
-                      <UnitRow
-                        key={uid}
-                        unit={unit}
-                        selected={
-                          uid === selectedUid && selectedCopy === null
-                        }
-                        onSelect={() => onSelect(uid, null)}
-                      />
-                    );
-                  }
-                  return map(range(copies), (copy) => (
+              ))}
+              {map(factionUnits, (unit) => {
+                const uid = `${faction.id}/${unit.id}`;
+                const copies = armyCounts[uid] ?? 0;
+                // fielded units list one row per copy, each with its own
+                // damage state; everything else is a plain row
+                if (!copies) {
+                  return (
                     <UnitRow
-                      key={`${uid}#${copy}`}
+                      key={uid}
                       unit={unit}
-                      copy={copy}
-                      copies={copies}
-                      marked={army.marks[uid]?.[copy] ?? 0}
-                      selected={
-                        uid === selectedUid && copy === selectedCopy
-                      }
-                      onSelect={() => onSelect(uid, copy)}
+                      selected={uid === selectedUid && selectedCopy === null}
+                      onSelect={() => onSelect(uid, null)}
                     />
-                  ));
-                })}
-              </div>
-            );
-          })}
-          <p className="text-center text-[10px] italic leading-snug text-bone-500">
-            More factions and units are added as their cards are transcribed.
-          </p>
+                  );
+                }
+                return map(range(copies), (copy) => (
+                  <UnitRow
+                    key={`${uid}#${copy}`}
+                    unit={unit}
+                    copy={copy}
+                    copies={copies}
+                    marked={army.marks[uid]?.[copy] ?? 0}
+                    selected={uid === selectedUid && copy === selectedCopy}
+                    onSelect={() => onSelect(uid, copy)}
+                  />
+                ));
+              })}
+              {/* the remembered faction can outlive the army that filtered
+                  it — say so rather than showing a blank page */}
+              {!factionUnits.length && (
+                <p className="text-center text-[10px] italic leading-snug text-bone-500">
+                  No {faction.name} units in your army. Tap Show all units to
+                  see the rest.
+                </p>
+              )}
+            </div>
+          )}
+
+          {!faction && (
+            <p className="text-center text-[10px] italic leading-snug text-bone-500">
+              More factions and units are added as their cards are transcribed.
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { mapValues } from "lodash";
 import { COMMAND_CARD_MODIFIERS, MODIFIERS } from "./constants";
-import { UNITS_BY_UID, damageBoxes, unitBox } from "./data";
+import { FACTIONS_BY_ID, UNITS_BY_UID, damageBoxes, unitBox } from "./data";
 import { MAX_DICE, MAX_ROLL } from "./derive";
 
 const CARD_IDS = new Set(COMMAND_CARD_MODIFIERS.map((card) => card.id));
@@ -33,6 +33,9 @@ export const DEFAULT_STATE = {
   defenderCopy: null,
   ammoSpent: {},
   playedCards: [],
+  // Which faction the unit picker was last browsing, so reopening it
+  // lands where the player left off; null means its faction list
+  pickerFaction: null,
   modifiers: MODIFIERS,
 };
 
@@ -71,6 +74,11 @@ export const loadState = () => {
       attackerCopy: validCopy(validUid(stored.attackerUid), stored.attackerCopy),
       defenderCopy: validCopy(validUid(stored.defenderUid), stored.defenderCopy),
       ammoSpent: validAmmoSpent(stored.ammoSpent),
+      // a faction that has since been renamed or removed falls back to
+      // the picker's faction list
+      pickerFaction: FACTIONS_BY_ID[stored.pickerFaction]
+        ? stored.pickerFaction
+        : null,
       playedCards: (Array.isArray(stored.playedCards) ? stored.playedCards : [])
         .filter((id) => CARD_IDS.has(id))
         .slice(0, MAX_PLAYED_CARDS),
@@ -107,6 +115,7 @@ export const saveState = (state) => {
         defenderCopy: state.defenderCopy,
         ammoSpent: state.ammoSpent,
         playedCards: state.playedCards,
+        pickerFaction: state.pickerFaction,
         modifiers: mapValues(state.modifiers, ({ on, count }) =>
           count === undefined ? { on } : { on, count }
         ),
