@@ -159,6 +159,50 @@ export default {
       ],
     },
     {
+      id: "highElfScorpions",
+      name: "High Elf Scorpions",
+      points: 260,
+      class: "elite",
+      melee: { dice: 4, offensiveSkill: 6, offensivePower: 6 },
+      ranged: { dice: 4, offensiveSkill: 6, offensivePower: 6, range: 17.5 },
+      defensiveSkill: 1,
+      defensivePower: 2,
+      courage: 13,
+      move: 2.5,
+      damage: { green: 2, yellow: 2, red: 2 },
+      keywords: ["wheeled"],
+      abilities: [
+        {
+          name: "Engaged",
+          code: "ENG",
+          text: "(-1) -2/-3 while Engaged.",
+          bonus: [-1, -2, -3],
+          stance: "melee",
+        },
+        {
+          name: "Notes",
+          text:
+            "May not Sprint. Cannot move and Shoot. Cannot Shoot at " +
+            "Engaged units. Cannot Shoot over terrain features that block " +
+            "Line of Sight.",
+        },
+      ],
+    },
+    {
+      id: "highElfSpearmen",
+      name: "High Elf Spearmen",
+      points: 334,
+      class: "core",
+      melee: { dice: 6, offensiveSkill: 6, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 3,
+      defensivePower: 2,
+      courage: 13,
+      move: 3.5,
+      damage: { green: 4, yellow: 3, red: 3 },
+      keywords: ["spears"],
+    },
+    {
       id: "highElfSwordsmen",
       name: "High Elf Swordsmen",
       points: 299,
