@@ -141,6 +141,24 @@ export default {
       abilities: [KNIGHTS_CAVALRY_CHARGE],
     },
     {
+      id: "highElfRangers",
+      name: "High Elf Rangers",
+      points: 261,
+      melee: { dice: 5, offensiveSkill: 6, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 3,
+      defensivePower: 1,
+      courage: 13,
+      move: 5,
+      damage: { green: 4, yellow: 2, red: 2 },
+      abilities: [
+        {
+          name: "Hard to Hit",
+          text: "+1 DS / +0 Toughness against ranged attacks.",
+        },
+      ],
+    },
+    {
       id: "highElfSwordsmen",
       name: "High Elf Swordsmen",
       points: 299,
