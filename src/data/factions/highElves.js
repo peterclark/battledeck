@@ -58,6 +58,19 @@ export default {
   ],
   units: [
     {
+      id: "cygnets",
+      name: "Cygnets",
+      points: 177,
+      class: "core",
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 5 },
+      ranged: null,
+      defensiveSkill: 2,
+      defensivePower: 2,
+      courage: 12,
+      move: 3.5,
+      damage: { green: 4, yellow: 2, red: 3 },
+    },
+    {
       id: "highElfBattleSquad",
       name: "High Elf Battle Squad",
       points: 187,
