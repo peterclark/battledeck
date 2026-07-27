@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { capitalize, map, range, sum } from "lodash";
+import { capitalize, filter, map, range, sum, sumBy } from "lodash";
 import classNames from "classnames";
-import { FaArrowLeft, FaMinus, FaPlus, FaTimes } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaChevronRight,
+  FaMinus,
+  FaPlus,
+  FaTimes,
+} from "react-icons/fa";
 import {
   GiHealthIncrease,
   GiRallyTheTroops,
@@ -10,6 +16,7 @@ import {
 } from "react-icons/gi";
 import {
   FACTIONS,
+  FACTIONS_BY_ID,
   UNITS_BY_UID,
   damageStatus,
   reanimateCost,
@@ -225,9 +232,35 @@ const UnitRow = ({
   );
 };
 
+// One faction's card on the builder's front page. The right-hand summary
+// is what you've drawn from it so far — copies fielded and points spent —
+// falling back to how many cards it has when you've taken none.
+const FactionRow = ({ faction, fielded, points, onOpen }) => (
+  <button
+    className="FactionRow plate flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
+    onClick={onOpen}
+  >
+    <span className="font-display text-sm tracking-wider text-bone-100">
+      {faction.name}
+    </span>
+    <span
+      className={classNames(
+        "flex shrink-0 items-center gap-2 font-mono text-[10px]",
+        fielded ? "text-ember-400" : "text-bone-500"
+      )}
+    >
+      {fielded
+        ? `${fielded} fielded · ${points} pts`
+        : `${faction.units.length} units`}
+      <FaChevronRight className="text-[9px] text-ember-600" aria-hidden />
+    </span>
+  </button>
+);
+
 // Full-screen army roster: pick a point budget, tap units in and out, and
 // watch the total, remaining points, and Command Actions. The Unique
-// keyword's one-copy rule is enforced by the add button's cap.
+// keyword's one-copy rule is enforced by the add button's cap. Two levels
+// deep like the unit picker: a faction list, then one faction's units.
 const ArmyBuilder = ({ onClose }) => {
   const [initial] = useState(loadArmy);
   const [budget, setBudget] = useState(initial.budget);
@@ -236,9 +269,18 @@ const ArmyBuilder = ({ onClose }) => {
   const [reanimated, setReanimated] = useState(initial.reanimated);
   const [boxes, setBoxes] = useState(initial.boxes);
   const [boxesThisTurn, setBoxesThisTurn] = useState(initial.boxesThisTurn);
+  const [factionId, setFactionId] = useState(initial.faction);
   const [clearArmed, setClearArmed] = useState(false);
   const clearTimer = useRef(null);
   useEffect(() => () => clearTimeout(clearTimer.current), []);
+
+  const faction = FACTIONS_BY_ID[factionId] ?? null;
+
+  const openFaction = (id) => {
+    setFactionId(id);
+    playTick();
+    buzz();
+  };
 
   const close = () => {
     onClose();
@@ -246,12 +288,35 @@ const ArmyBuilder = ({ onClose }) => {
     buzz();
   };
 
+  // Back steps up to the faction list; from the list it leaves the builder
+  const back = () => (faction ? openFaction(null) : close());
+
   const { overlayProps } = useModalOverlay(close);
 
   // The roster outlives the battle screen — persist on every change
   useEffect(() => {
-    saveArmy({ budget, counts, marks, reanimated, boxes, boxesThisTurn });
-  }, [budget, counts, marks, reanimated, boxes, boxesThisTurn]);
+    saveArmy({
+      budget,
+      counts,
+      marks,
+      reanimated,
+      boxes,
+      boxesThisTurn,
+      faction: factionId,
+    });
+  }, [budget, counts, marks, reanimated, boxes, boxesThisTurn, factionId]);
+
+  // What a faction card advertises: copies fielded from it and their cost
+  const factionTally = (f) => {
+    const units = filter(f.units, (unit) => counts[`${f.id}/${unit.id}`] > 0);
+    return {
+      fielded: sumBy(units, (unit) => counts[`${f.id}/${unit.id}`]),
+      points: sumBy(
+        units,
+        (unit) => UNITS_BY_UID[`${f.id}/${unit.id}`].points * counts[`${f.id}/${unit.id}`]
+      ),
+    };
+  };
 
   const total = sum(
     map(counts, (count, uid) => UNITS_BY_UID[uid].points * count)
@@ -407,17 +472,24 @@ const ArmyBuilder = ({ onClose }) => {
           <div className="flex items-center gap-2">
             <button
               className="plate flex h-9 w-9 shrink-0 items-center justify-center text-bone-300"
-              onClick={close}
-              aria-label="Back to BattleDeck"
+              onClick={back}
+              aria-label={faction ? "Back to factions" : "Back to BattleDeck"}
             >
               <FaArrowLeft />
             </button>
-            <h2 className="flex min-w-0 flex-1 items-center justify-center gap-2 font-display text-base font-bold uppercase tracking-[0.15em] text-ember-400">
-              <GiRallyTheTroops
-                className="shrink-0 text-xl text-ember-600"
-                aria-hidden
-              />
-              Army
+            <h2 className="flex min-w-0 flex-1 flex-col items-center justify-center text-center font-display font-bold uppercase tracking-[0.15em] text-ember-400">
+              <span className="flex items-center gap-2 text-base leading-none">
+                <GiRallyTheTroops
+                  className="shrink-0 text-xl text-ember-600"
+                  aria-hidden
+                />
+                Army
+              </span>
+              {faction && (
+                <span className="truncate text-[10px] leading-tight tracking-[0.25em] text-bone-500">
+                  {faction.name}
+                </span>
+              )}
             </h2>
             <button
               className="plate flex h-9 w-9 shrink-0 items-center justify-center text-bone-300"
@@ -516,11 +588,33 @@ const ArmyBuilder = ({ onClose }) => {
         </div>
 
         <div className="flex flex-col gap-3 px-3 pb-6 pt-3">
-          {map(FACTIONS, (faction) => (
-            <div key={faction.id} className="flex flex-col gap-1.5">
-              <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-bone-500">
-                {faction.name}
-              </div>
+          {!faction &&
+            map(FACTIONS, (f) => {
+              const { fielded, points } = factionTally(f);
+              return (
+                <FactionRow
+                  key={f.id}
+                  faction={f}
+                  fielded={fielded}
+                  points={points}
+                  onOpen={() => openFaction(f.id)}
+                />
+              );
+            })}
+
+          {faction && (
+            <div className="flex flex-col gap-1.5">
+              {/* the army abilities are what the box button on each copy
+                  spends Command Actions on, so keep them in view here */}
+              {map(faction.abilities, ({ name, text }) => (
+                <div
+                  key={name}
+                  className="FactionAbility border-l-2 border-ember-600 pl-2.5 text-[10px] leading-snug text-bone-500"
+                >
+                  <span className="font-bold text-ember-500">{name}.</span>{" "}
+                  {text}
+                </div>
+              ))}
               {map(faction.units, (unit) => {
                 const uid = `${faction.id}/${unit.id}`;
                 return (
@@ -542,22 +636,28 @@ const ArmyBuilder = ({ onClose }) => {
                 );
               })}
             </div>
-          ))}
+          )}
 
-          <button
-            className="ClearArmy plate plate-on-gold h-10 text-sm tracking-widest"
-            onClick={clearArmy}
-          >
-            {clearArmed ? "Tap again to clear" : "Clear army"}
-          </button>
+          {/* clearing the whole roster belongs with the whole roster, not
+              inside one faction */}
+          {!faction && (
+            <>
+              <button
+                className="ClearArmy plate plate-on-gold h-10 text-sm tracking-widest"
+                onClick={clearArmy}
+              >
+                {clearArmed ? "Tap again to clear" : "Clear army"}
+              </button>
 
-          <button
-            className="plate flex h-10 items-center justify-center gap-2 text-xs tracking-widest text-bone-300"
-            onClick={close}
-          >
-            <FaArrowLeft aria-hidden />
-            Back to BattleDeck
-          </button>
+              <button
+                className="plate flex h-10 items-center justify-center gap-2 text-xs tracking-widest text-bone-300"
+                onClick={close}
+              >
+                <FaArrowLeft aria-hidden />
+                Back to BattleDeck
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

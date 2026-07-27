@@ -165,6 +165,9 @@ export const DEFAULT_ARMY = {
   // tally can price them and erasing a fresh mistake hands the Command
   // Actions back; cleared by the New turn button
   boxesThisTurn: {},
+  // which faction the builder was last browsing, so reopening it lands
+  // where the player left off; null means its faction list
+  faction: null,
 };
 
 const maxCopies = (unit) =>
@@ -227,6 +230,7 @@ export const loadArmy = () => {
       reanimated,
       boxes,
       boxesThisTurn,
+      faction: validFaction(stored.faction),
     };
   } catch {
     return DEFAULT_ARMY;

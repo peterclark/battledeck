@@ -1,15 +1,33 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, within } from "@testing-library/react";
+import { find } from "lodash";
 import ArmyBuilder from "./ArmyBuilder";
+import { UNITS } from "./data";
 import { loadArmy } from "./persistence";
 
 const setup = () => {
   const utils = render(<ArmyBuilder onClose={vi.fn()} />);
   const summary = () => utils.container.querySelector(".ArmySummary");
-  const add = (name) => fireEvent.click(utils.getByLabelText(`Add one ${name}`));
-  const remove = (name) =>
+  // the builder opens on its faction list and remembers where it was left,
+  // so step back out to the list before going into a faction
+  const toList = () => {
+    if (!utils.container.querySelector(".FactionRow")) {
+      fireEvent.click(utils.getByLabelText("Back to factions"));
+    }
+  };
+  const openFor = (name) => {
+    toList();
+    fireEvent.click(utils.getByText(find(UNITS, { name }).factionName));
+  };
+  const add = (name) => {
+    openFor(name);
+    fireEvent.click(utils.getByLabelText(`Add one ${name}`));
+  };
+  const remove = (name) => {
+    openFor(name);
     fireEvent.click(utils.getByLabelText(`Remove one ${name}`));
-  return { ...utils, summary, add, remove };
+  };
+  return { ...utils, summary, add, remove, openFor, toList };
 };
 
 describe("ArmyBuilder", () => {
@@ -69,12 +87,58 @@ describe("ArmyBuilder", () => {
   });
 
   it("clear requires a second tap and empties the roster", () => {
-    const { summary, add, getByText } = setup();
+    const { summary, add, getByText, toList } = setup();
     add("Peasant Mob");
+    toList(); // clearing the whole roster lives on the faction list
     fireEvent.click(getByText("Clear army"));
     expect(within(summary()).getByText("70")).toBeInTheDocument(); // armed, not cleared
     fireEvent.click(getByText("Tap again to clear"));
     expect(within(summary()).getByText("0")).toBeInTheDocument();
+  });
+
+  it("drills from factions into one faction and back", () => {
+    const utils = setup();
+    // the list shows factions, not units
+    expect(utils.getByText("Orc Army")).toBeInTheDocument();
+    expect(utils.queryByLabelText("Add one Militia")).not.toBeInTheDocument();
+
+    fireEvent.click(utils.getByText("Men of Hawkshold"));
+    expect(utils.getByLabelText("Add one Militia")).toBeInTheDocument();
+    // and only that faction's units
+    expect(
+      utils.queryByLabelText("Add one Orc Axemen")
+    ).not.toBeInTheDocument();
+    // clearing the whole roster belongs to the whole roster
+    expect(utils.queryByText("Clear army")).not.toBeInTheDocument();
+
+    fireEvent.click(utils.getByLabelText("Back to factions"));
+    expect(utils.queryByLabelText("Add one Militia")).not.toBeInTheDocument();
+    expect(utils.getByText("Clear army")).toBeInTheDocument();
+  });
+
+  it("faction rows count what you have fielded from each", () => {
+    const utils = setup();
+    const row = (name) =>
+      [...utils.container.querySelectorAll(".FactionRow")].find((el) =>
+        el.textContent.startsWith(name)
+      );
+    expect(row("Men of Hawkshold")).toHaveTextContent("13 units");
+    utils.add("Swordsmen"); // 197
+    utils.add("Swordsmen");
+    utils.toList();
+    expect(row("Men of Hawkshold")).toHaveTextContent("2 fielded · 394 pts");
+    // untouched factions still advertise their size
+    expect(row("Orc Army")).toHaveTextContent("12 units");
+  });
+
+  it("reopens on the faction it was left in", () => {
+    const first = setup();
+    first.add("Zombies");
+    first.unmount();
+    const second = setup();
+    // straight back into the Undead, not the faction list
+    expect(second.getByLabelText("Add one Zombies")).toBeInTheDocument();
+    expect(second.getByLabelText("Back to factions")).toBeInTheDocument();
   });
 
   it("persists the roster and budget across remounts", () => {
@@ -136,6 +200,8 @@ describe("ArmyBuilder", () => {
         "menOfHawkshold/lancers": [0, 0, 0],
         "menOfHawkshold/sirSteaphensFreeCompany": [0],
       },
+      // nothing stored for the builder's page, so it opens on its list
+      faction: null,
     });
   });
 
@@ -245,9 +311,11 @@ describe("ArmyBuilder", () => {
   it("units without an Undead classification get no Reanimate button", () => {
     const utils = setup();
     utils.add("Swarm of Rats"); // Undead army, but no classification
-    utils.add("Swordsmen");
     fireEvent.click(utils.getByLabelText("Swarm of Rats damage box 2"));
     expect(utils.container.querySelectorAll(".Reanimate")).toHaveLength(0);
+    // its classified faction-mates still get one
+    utils.add("Zombies");
+    expect(utils.container.querySelectorAll(".Reanimate")).toHaveLength(1);
   });
 
   it("the once-per-turn lock survives a remount", () => {
@@ -322,11 +390,12 @@ describe("ArmyBuilder", () => {
 
   it("Reanimating and box marks share one Command Action tally", () => {
     const utils = setup();
-    utils.add("Death Knights"); // Greater Undead: 3 CA to Reanimate
     utils.add("Elementalist"); // Mercenary: 1 CA per Spoils box
+    fireEvent.click(utils.getByLabelText(/Mark Spoils on Elementalist/));
+    // the tally spans factions, so cross into the Undead for the rest
+    utils.add("Death Knights"); // Greater Undead: 3 CA to Reanimate
     fireEvent.click(utils.getByLabelText("Death Knights damage box 3"));
     fireEvent.click(utils.getByLabelText(/Reanimate Death Knights/));
-    fireEvent.click(utils.getByLabelText(/Mark Spoils on Elementalist/));
     expect(
       within(utils.container.querySelector(".TurnTally")).getByText("4 CA")
     ).toBeInTheDocument();
