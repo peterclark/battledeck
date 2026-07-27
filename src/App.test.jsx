@@ -502,6 +502,12 @@ describe("Units", () => {
     pickUnit(utils, "attacker", "Swordsmen");
     expect(utils.modifier("inTheYellow")).not.toHaveClass("plate-on-blood");
     fireEvent.click(utils.getByLabelText("Build your army"));
+    // the builder opens on its faction list too
+    fireEvent.click(
+      within(utils.container.querySelector(".ArmyBuilder")).getByText(
+        "Men of Hawkshold"
+      )
+    );
     fireEvent.click(utils.getByLabelText("Swordsmen damage box 5"));
     fireEvent.click(utils.getByLabelText("Close army builder"));
     expect(utils.modifier("inTheYellow")).toHaveClass("plate-on-blood");
