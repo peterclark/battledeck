@@ -41,7 +41,7 @@ import {
   sumModifiers,
   sumTriples,
 } from "./derive";
-import { loadArmy, loadState, saveArmy, saveState } from "./persistence";
+import { loadArmies, loadState, saveArmy, saveState } from "./persistence";
 import {
   UNITS_BY_UID,
   activeAbilities,
@@ -157,21 +157,35 @@ const SLOT_DAMAGE_TONE = {
 
 // One side of the engagement: shows the selected unit card (or a prompt),
 // opens the unit picker on tap, and clears via the small × button
-const UnitSlot = ({ role, icon: Icon, unit, copyLabel, damage, onOpen, onClear }) => (
+const UnitSlot = ({
+  role,
+  icon: Icon,
+  unit,
+  copyLabel,
+  enemy = false,
+  damage,
+  onOpen,
+  onClear,
+}) => (
   <div className={className("UnitSlot flex w-full items-stretch gap-1", role)}>
     <button
       className="plate flex flex-1 items-center gap-2 px-2.5 py-1.5 text-left"
       onClick={onOpen}
       aria-label={
         unit
-          ? `${role}: ${unit.name}. Tap to change.`
+          ? `${role}: ${unit.name}${enemy ? " (enemy)" : ""}. Tap to change.`
           : `Pick ${role} unit`
       }
     >
       <Icon className="shrink-0 text-lg text-ember-600" aria-hidden />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-bone-500">
+        <span className="flex items-baseline gap-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-bone-500">
           {role}
+          {enemy && (
+            <span className="rounded-sm border border-blood-500/40 px-1 font-mono text-blood-400">
+              enemy
+            </span>
+          )}
         </span>
         {unit ? (
           <>
@@ -256,6 +270,11 @@ const App = () => {
   // picked outside the army) — copies carry their own damage tallies
   const [attackerCopy, setAttackerCopy] = useState(initial.attackerCopy);
   const [defenderCopy, setDefenderCopy] = useState(initial.defenderCopy);
+  // which roster ("mine" | "enemy") each slot's copy came from — a mirror
+  // match can field the same unit on both sides, so the uid+copy pair
+  // alone is ambiguous
+  const [attackerArmy, setAttackerArmy] = useState(initial.attackerArmy);
+  const [defenderArmy, setDefenderArmy] = useState(initial.defenderArmy);
   // Shots spent per unit copy (breath weapons, arrows) — keyed uid#copy
   const [ammoSpent, setAmmoSpent] = useState(initial.ammoSpent);
   const [unitPicker, setUnitPicker] = useState(null); // "attacker" | "defender" | null
@@ -266,9 +285,9 @@ const App = () => {
   const [muted, setMutedState] = useState(isMuted());
   const [showHelp, setShowHelp] = useState(false);
   const [showArmy, setShowArmy] = useState(false);
-  // Snapshot of the saved army (marks feed the slots' damage readouts);
-  // refreshed whenever the army builder closes
-  const [army, setArmy] = useState(loadArmy);
+  // Snapshot of both saved rosters (marks feed the slots' damage
+  // readouts); refreshed whenever the army builder closes
+  const [armies, setArmies] = useState(loadArmies);
 
   const attacker = attackerUid ? UNITS_BY_UID[attackerUid] : null;
   const defender = defenderUid ? UNITS_BY_UID[defenderUid] : null;
@@ -365,16 +384,19 @@ const App = () => {
     }));
   };
 
-  const selectUnit = (uid, copy = null) => {
+  const selectUnit = (uid, copy = null, side = null) => {
     const unit = UNITS_BY_UID[uid];
+    const armySide = copy === null ? null : side ?? "mine";
     if (unitPicker === "attacker") {
       setAttackerUid(uid);
       setAttackerCopy(copy);
+      setAttackerArmy(armySide);
       applyAttackerProfile(unit, attackMode);
-      applyDamageState(unit, copy, army);
+      applyDamageState(unit, copy, armies[armySide ?? "mine"]);
     } else {
       setDefenderUid(uid);
       setDefenderCopy(copy);
+      setDefenderArmy(armySide);
       setDefensiveSkill(unit.defensiveSkill % MAX_ROLL);
       setDefensivePower(unit.defensivePower % MAX_ROLL);
     }
@@ -389,28 +411,30 @@ const App = () => {
     if (role === "attacker") {
       setAttackerUid(null);
       setAttackerCopy(null);
+      setAttackerArmy(null);
     } else {
       setDefenderUid(null);
       setDefenderCopy(null);
+      setDefenderArmy(null);
     }
     playTick();
     buzz();
   };
 
-  // Damage marked in the army builder flows back: refresh the snapshot and
-  // re-prefill the attacker's Yellow/Red state from its copy's new tally
+  // Damage marked in the army builder flows back: refresh the snapshots
+  // and re-prefill the attacker's Yellow/Red state from its copy's tally
   const closeArmy = () => {
     setShowArmy(false);
-    const refreshed = loadArmy();
-    setArmy(refreshed);
+    const refreshed = loadArmies();
+    setArmies(refreshed);
     if (attacker && attackerCopy !== null) {
-      applyDamageState(attacker, attackerCopy, refreshed);
+      applyDamageState(attacker, attackerCopy, refreshed[attackerArmy ?? "mine"]);
     }
   };
 
-  const slotDamage = (unit, copy) => {
+  const slotDamage = (unit, copy, side) => {
     if (!unit || copy === null) return null;
-    const marked = army.marks[unit.uid]?.[copy] ?? 0;
+    const marked = armies[side ?? "mine"].marks[unit.uid]?.[copy] ?? 0;
     return {
       marked,
       total: damageBoxes(unit),
@@ -421,62 +445,76 @@ const App = () => {
   // The selected copies' damage rows live on the battle screen too, so
   // damage can be marked as the dice land without opening the army
   // builder. Edits go through the same ops as the builder's and straight
-  // to the saved roster; the builder reads it fresh on its next open.
-  const editArmy = (unit, copy, next) => {
-    saveArmy(next);
-    setArmy(next);
+  // to that side's saved roster; the builder reads both fresh on its next
+  // open.
+  const editArmy = (side, unit, copy, next) => {
+    saveArmy(next, side);
+    setArmies((all) => ({ ...all, [side]: next }));
     // damage moving across a band boundary re-prefills In the Yellow / In
     // the Red, exactly as closing the builder does
-    if (unit.uid === attackerUid && copy === attackerCopy) {
+    if (
+      unit.uid === attackerUid &&
+      copy === attackerCopy &&
+      side === (attackerArmy ?? "mine")
+    ) {
       applyDamageState(unit, copy, next);
     }
   };
 
-  const markCopyDamage = (unit, copy, value) => {
-    const healed = value < (army.marks[unit.uid]?.[copy] ?? 0);
-    editArmy(unit, copy, withDamage(army, unit.uid, copy, value));
+  const markCopyDamage = (side, unit, copy, value) => {
+    const roster = armies[side];
+    const healed = value < (roster.marks[unit.uid]?.[copy] ?? 0);
+    editArmy(side, unit, copy, withDamage(roster, unit.uid, copy, value));
     if (healed) playTick();
     else playPenalty();
     buzz();
   };
 
-  const reanimateCopy = (unit, copy) => {
-    editArmy(unit, copy, withReanimate(army, unit.uid, copy));
+  const reanimateCopy = (side, unit, copy) => {
+    editArmy(side, unit, copy, withReanimate(armies[side], unit.uid, copy));
     playBonus();
     buzz();
   };
 
-  const cycleCopyBox = (unit, copy) => {
-    const next = withBoxCycle(army, unit.uid, copy);
+  const cycleCopyBox = (side, unit, copy) => {
+    const roster = armies[side];
+    const next = withBoxCycle(roster, unit.uid, copy);
     const marked =
-      (next.boxes[unit.uid]?.[copy] ?? 0) > (army.boxes[unit.uid]?.[copy] ?? 0);
-    editArmy(unit, copy, next);
+      (next.boxes[unit.uid]?.[copy] ?? 0) >
+      (roster.boxes[unit.uid]?.[copy] ?? 0);
+    editArmy(side, unit, copy, next);
     if (marked) playBonus();
     else playTick();
     buzz();
   };
 
-  // Only a fielded army copy has a persistent track to edit — a unit
-  // picked outside the army (an enemy defender, say) shows no row
-  const copyRow = (unit, copy) =>
-    unit && copy !== null && copy < (army.counts[unit.uid] ?? 0) ? (
+  // Only a fielded copy has a persistent track to edit — a unit picked
+  // outside both armies shows no row. Enemy copies read from and write to
+  // the enemy roster.
+  const copyRow = (unit, copy, side) => {
+    const roster = armies[side ?? "mine"];
+    if (!unit || copy === null || copy >= (roster.counts[unit.uid] ?? 0)) {
+      return null;
+    }
+    return (
       <div className="CopyDamage plate flex flex-col px-2.5 py-1.5">
         <DamageRow
           unit={unit}
           copy={copy}
-          copies={army.counts[unit.uid]}
-          marked={army.marks[unit.uid]?.[copy] ?? 0}
-          reanimated={army.reanimated[unit.uid]?.[copy] === true}
-          boxed={army.boxes[unit.uid]?.[copy] ?? 0}
-          onMark={(value) => markCopyDamage(unit, copy, value)}
-          onReanimate={() => reanimateCopy(unit, copy)}
-          onBox={() => cycleCopyBox(unit, copy)}
+          copies={roster.counts[unit.uid]}
+          marked={roster.marks[unit.uid]?.[copy] ?? 0}
+          reanimated={roster.reanimated[unit.uid]?.[copy] === true}
+          boxed={roster.boxes[unit.uid]?.[copy] ?? 0}
+          onMark={(value) => markCopyDamage(side ?? "mine", unit, copy, value)}
+          onReanimate={() => reanimateCopy(side ?? "mine", unit, copy)}
+          onBox={() => cycleCopyBox(side ?? "mine", unit, copy)}
         />
       </div>
-    ) : null;
+    );
+  };
 
-  const copyLabel = (unit, copy) =>
-    unit && copy !== null && (army.counts[unit.uid] ?? 0) > 1
+  const copyLabel = (unit, copy, side) =>
+    unit && copy !== null && (armies[side ?? "mine"].counts[unit.uid] ?? 0) > 1
       ? ` #${copy + 1}`
       : "";
 
@@ -489,7 +527,11 @@ const App = () => {
   // Ammo pips for the attacker's current-stance profile (breath weapons,
   // arrows): tap pip N to spend shots through it, tap the last spent pip
   // to recover it. Tallies are per unit copy and survive reloads.
-  const ammoKey = attacker ? `${attacker.uid}#${attackerCopy ?? "-"}` : null;
+  // enemy copies get a side-qualified key, so a mirror match can't share
+  // arrows with the player's same-numbered copy
+  const ammoKey = attacker
+    ? `${attackerArmy === "enemy" ? "enemy:" : ""}${attacker.uid}#${attackerCopy ?? "-"}`
+    : null;
   const ammoTotal = activeProfile?.ammo ?? 0;
   const shotsSpent = min([ammoSpent[ammoKey] ?? 0, ammoTotal]);
 
@@ -640,6 +682,8 @@ const App = () => {
       defenderUid,
       attackerCopy,
       defenderCopy,
+      attackerArmy,
+      defenderArmy,
       ammoSpent,
       playedCards,
       pickerFaction,
@@ -656,6 +700,8 @@ const App = () => {
     defenderUid,
     attackerCopy,
     defenderCopy,
+    attackerArmy,
+    defenderArmy,
     ammoSpent,
     playedCards,
     pickerFaction,
@@ -830,6 +876,7 @@ const App = () => {
           role={unitPicker}
           selectedUid={unitPicker === "attacker" ? attackerUid : defenderUid}
           selectedCopy={unitPicker === "attacker" ? attackerCopy : defenderCopy}
+          selectedArmy={unitPicker === "attacker" ? attackerArmy : defenderArmy}
           factionId={pickerFaction[unitPicker]}
           onFactionChange={(id) =>
             setPickerFaction((last) => ({ ...last, [unitPicker]: id }))
@@ -983,12 +1030,13 @@ const App = () => {
             role="attacker"
             icon={GiBroadsword}
             unit={attacker}
-            copyLabel={copyLabel(attacker, attackerCopy)}
-            damage={slotDamage(attacker, attackerCopy)}
+            copyLabel={copyLabel(attacker, attackerCopy, attackerArmy)}
+            enemy={attackerArmy === "enemy"}
+            damage={slotDamage(attacker, attackerCopy, attackerArmy)}
             onOpen={() => openUnitPicker("attacker")}
             onClear={() => clearUnit("attacker")}
           />
-          {copyRow(attacker, attackerCopy)}
+          {copyRow(attacker, attackerCopy, attackerArmy)}
           <div className="Versus flex items-center gap-2 px-1" aria-hidden>
             <span className="h-px flex-1 bg-iron-500" />
             <span className="font-display text-[10px] uppercase tracking-[0.3em] text-bone-500">
@@ -1000,12 +1048,13 @@ const App = () => {
             role="defender"
             icon={GiShield}
             unit={defender}
-            copyLabel={copyLabel(defender, defenderCopy)}
-            damage={slotDamage(defender, defenderCopy)}
+            copyLabel={copyLabel(defender, defenderCopy, defenderArmy)}
+            enemy={defenderArmy === "enemy"}
+            damage={slotDamage(defender, defenderCopy, defenderArmy)}
             onOpen={() => openUnitPicker("defender")}
             onClear={() => clearUnit("defender")}
           />
-          {copyRow(defender, defenderCopy)}
+          {copyRow(defender, defenderCopy, defenderArmy)}
         </div>
         {ammoTotal > 0 && (
           <div className="AmmoRow flex items-center justify-center gap-1.5">

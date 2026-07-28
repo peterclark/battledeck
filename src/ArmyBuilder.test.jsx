@@ -141,6 +141,50 @@ describe("ArmyBuilder", () => {
     expect(second.getByLabelText("Back to factions")).toBeInTheDocument();
   });
 
+  it("the Enemy army toggle edits a separate roster", () => {
+    const utils = setup();
+    utils.add("Swordsmen"); // into my army
+    fireEvent.click(utils.getByText("Enemy army"));
+    // the enemy roster starts empty — my Swordsmen aren't in it
+    expect(within(utils.summary()).getByText("0")).toBeInTheDocument();
+    fireEvent.click(utils.getByText("Orc Army"));
+    fireEvent.click(utils.getByLabelText("Add one Trolls")); // 406
+    expect(within(utils.summary()).getByText("406")).toBeInTheDocument();
+
+    // each record landed under its own key
+    expect(loadArmy().counts).toEqual({ "menOfHawkshold/swordsmen": 1 });
+    expect(loadArmy("enemy").counts).toEqual({ "orcArmy/trolls": 1 });
+
+    // and toggling back shows my roster again
+    fireEvent.click(utils.getByText("Your army"));
+    expect(within(utils.summary()).getByText("197")).toBeInTheDocument();
+  });
+
+  it("clearing the enemy army leaves yours standing", () => {
+    const utils = setup();
+    utils.add("Swordsmen");
+    fireEvent.click(utils.getByText("Enemy army"));
+    fireEvent.click(utils.getByText("Orc Army"));
+    fireEvent.click(utils.getByLabelText("Add one Trolls"));
+    fireEvent.click(utils.getByLabelText("Back to factions"));
+    fireEvent.click(utils.getByText("Clear enemy army"));
+    fireEvent.click(utils.getByText("Tap again to clear"));
+    expect(loadArmy("enemy").counts).toEqual({});
+    expect(loadArmy().counts).toEqual({ "menOfHawkshold/swordsmen": 1 });
+  });
+
+  it("each roster remembers its own browsed faction", () => {
+    const utils = setup();
+    utils.openFor("Swordsmen"); // mine -> Hawkshold
+    fireEvent.click(utils.getByText("Enemy army"));
+    // the enemy roster has its own place: still on the faction list
+    expect(utils.getByText("Orc Army")).toBeInTheDocument();
+    fireEvent.click(utils.getByText("Orc Army"));
+    fireEvent.click(utils.getByText("Your army"));
+    // mine is still where it was left
+    expect(utils.getByLabelText("Add one Militia")).toBeInTheDocument();
+  });
+
   it("persists the roster and budget across remounts", () => {
     const first = setup();
     first.add("Lancers");

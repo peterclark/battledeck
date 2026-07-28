@@ -14,7 +14,7 @@ import {
   BUDGET_MAX,
   BUDGET_MIN,
   MAX_COPIES,
-  loadArmy,
+  loadArmies,
   saveArmy,
 } from "./persistence";
 import {
@@ -144,14 +144,32 @@ const FactionRow = ({ faction, fielded, points, onOpen }) => (
 // keyword's one-copy rule is enforced by the add button's cap. Two levels
 // deep like the unit picker: a faction list, then one faction's units.
 const ArmyBuilder = ({ onClose }) => {
-  const [army, setArmy] = useState(loadArmy);
+  // Both rosters at once — the player's and the enemy's share one builder
+  // behind a Yours/Enemy toggle, since they're the same record shape
+  const [armies, setArmies] = useState(loadArmies);
+  const [side, setSide] = useState("mine");
   const [clearArmed, setClearArmed] = useState(false);
   const clearTimer = useRef(null);
   useEffect(() => () => clearTimeout(clearTimer.current), []);
 
+  const army = armies[side];
+  const setArmy = (next) =>
+    setArmies((all) => ({
+      ...all,
+      [side]: typeof next === "function" ? next(all[side]) : next,
+    }));
+
   const { budget, counts, marks, reanimated, boxes } = army;
 
   const faction = FACTIONS_BY_ID[army.faction] ?? null;
+
+  const switchSide = (next) => {
+    if (next === side) return;
+    setSide(next);
+    setClearArmed(false);
+    playTick();
+    buzz();
+  };
 
   const openFaction = (id) => {
     setArmy((a) => ({ ...a, faction: id }));
@@ -170,10 +188,11 @@ const ArmyBuilder = ({ onClose }) => {
 
   const { overlayProps } = useModalOverlay(close);
 
-  // The roster outlives the battle screen — persist on every change
+  // The rosters outlive the battle screen — persist on every change
   useEffect(() => {
-    saveArmy(army);
-  }, [army]);
+    saveArmy(armies.mine, "mine");
+    saveArmy(armies.enemy, "enemy");
+  }, [armies]);
 
   // What a faction card advertises: copies fielded from it and their cost
   const factionTally = (f) => {
@@ -280,13 +299,21 @@ const ArmyBuilder = ({ onClose }) => {
             >
               <FaArrowLeft />
             </button>
-            <h2 className="flex min-w-0 flex-1 flex-col items-center justify-center text-center font-display font-bold uppercase tracking-[0.15em] text-ember-400">
+            <h2
+              className={classNames(
+                "flex min-w-0 flex-1 flex-col items-center justify-center text-center font-display font-bold uppercase tracking-[0.15em]",
+                side === "enemy" ? "text-blood-400" : "text-ember-400"
+              )}
+            >
               <span className="flex items-center gap-2 text-base leading-none">
                 <GiRallyTheTroops
-                  className="shrink-0 text-xl text-ember-600"
+                  className={classNames(
+                    "shrink-0 text-xl",
+                    side === "enemy" ? "text-blood-500" : "text-ember-600"
+                  )}
                   aria-hidden
                 />
-                Army
+                {side === "enemy" ? "Enemy army" : "Army"}
               </span>
               {faction && (
                 <span className="truncate text-[10px] leading-tight tracking-[0.25em] text-bone-500">
@@ -300,6 +327,30 @@ const ArmyBuilder = ({ onClose }) => {
               aria-label="Close army builder"
             >
               <FaTimes />
+            </button>
+          </div>
+
+          {/* one builder, two rosters: yours and the list across the table */}
+          <div className="SideSwitch flex gap-1" role="group" aria-label="Roster">
+            <button
+              className={classNames(
+                "MyArmy plate h-8 flex-1 text-[10px] font-bold uppercase tracking-[0.25em]",
+                side === "mine" && "plate-on-ember"
+              )}
+              aria-pressed={side === "mine"}
+              onClick={() => switchSide("mine")}
+            >
+              Your army
+            </button>
+            <button
+              className={classNames(
+                "EnemyArmy plate h-8 flex-1 text-[10px] font-bold uppercase tracking-[0.25em]",
+                side === "enemy" && "plate-on-blood"
+              )}
+              aria-pressed={side === "enemy"}
+              onClick={() => switchSide("enemy")}
+            >
+              Enemy army
             </button>
           </div>
 
@@ -449,7 +500,11 @@ const ArmyBuilder = ({ onClose }) => {
                 className="ClearArmy plate plate-on-gold h-10 text-sm tracking-widest"
                 onClick={clearArmy}
               >
-                {clearArmed ? "Tap again to clear" : "Clear army"}
+                {clearArmed
+                  ? "Tap again to clear"
+                  : side === "enemy"
+                    ? "Clear enemy army"
+                    : "Clear army"}
               </button>
 
               <button
