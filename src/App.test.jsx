@@ -3,7 +3,7 @@ import { act, fireEvent, render, within } from "@testing-library/react";
 import { find } from "lodash";
 import App from "./App";
 import { UNITS } from "./data";
-import { saveArmy } from "./persistence";
+import { loadArmy, saveArmy } from "./persistence";
 
 // Buttons built on usePressable (ranks, dice, reset) tap on pointer up;
 // plain buttons (modifiers, command cards) use click.
@@ -502,18 +502,84 @@ describe("Units", () => {
     pickUnit(utils, "attacker", "Swordsmen");
     expect(utils.modifier("inTheYellow")).not.toHaveClass("plate-on-blood");
     fireEvent.click(utils.getByLabelText("Build your army"));
-    // the builder opens on its faction list too
-    fireEvent.click(
-      within(utils.container.querySelector(".ArmyBuilder")).getByText(
-        "Men of Hawkshold"
-      )
-    );
-    fireEvent.click(utils.getByLabelText("Swordsmen damage box 5"));
+    // the builder opens on its faction list too; scope inside it, since
+    // the battle screen now shows the same copy's damage row behind it
+    const builder = () => utils.container.querySelector(".ArmyBuilder");
+    fireEvent.click(within(builder()).getByText("Men of Hawkshold"));
+    fireEvent.click(within(builder()).getByLabelText("Swordsmen damage box 5"));
     fireEvent.click(utils.getByLabelText("Close army builder"));
     expect(utils.modifier("inTheYellow")).toHaveClass("plate-on-blood");
     expect(
       utils.getByLabelText(/attacker: Swordsmen/)
     ).toHaveTextContent("5/10 dmg · In the Yellow");
+  });
+
+  it("damage marked on the battle screen persists and prefills modifiers", () => {
+    saveArmy({
+      budget: 2000,
+      counts: { "menOfHawkshold/swordsmen": 1 },
+      marks: { "menOfHawkshold/swordsmen": [0] },
+    });
+    const utils = setup();
+    pickUnit(utils, "attacker", "Swordsmen");
+    const units = () => utils.container.querySelector(".Units");
+    // the selected copy's track sits under its slot
+    fireEvent.click(within(units()).getByLabelText("Swordsmen damage box 5"));
+    expect(utils.modifier("inTheYellow")).toHaveClass("plate-on-blood");
+    expect(utils.getByLabelText(/attacker: Swordsmen/)).toHaveTextContent(
+      "5/10 dmg · In the Yellow"
+    );
+    // healing back off the boundary releases the prefill
+    fireEvent.click(within(units()).getByLabelText("Swordsmen damage box 5"));
+    expect(utils.modifier("inTheYellow")).not.toHaveClass("plate-on-blood");
+    // and the roster saw every tap
+    expect(loadArmy().marks["menOfHawkshold/swordsmen"]).toEqual([4]);
+  });
+
+  it("Reanimating from the battle screen heals and shares the turn lock", () => {
+    saveArmy({
+      budget: 2000,
+      counts: { "undeadArmy/zombies": 1 },
+      marks: { "undeadArmy/zombies": [2] },
+    });
+    const utils = setup();
+    pickUnit(utils, "defender", "Zombies");
+    const units = () => utils.container.querySelector(".Units");
+    fireEvent.click(within(units()).getByLabelText(/Reanimate Zombies/));
+    expect(loadArmy().marks["undeadArmy/zombies"]).toEqual([1]);
+    expect(
+      within(units()).getByLabelText("Zombies already Reanimated this turn")
+    ).toBeDisabled();
+    // the builder sees the same lock — one Reanimate per unit per turn
+    fireEvent.click(utils.getByLabelText("Build your army"));
+    const builder = () => utils.container.querySelector(".ArmyBuilder");
+    fireEvent.click(within(builder()).getByText("Undead Army"));
+    expect(
+      within(builder()).getByLabelText("Zombies already Reanimated this turn")
+    ).toBeDisabled();
+  });
+
+  it("the battle screen's box button cycles the army-ability mark", () => {
+    saveArmy({
+      budget: 2000,
+      counts: { "menOfHawkshold/swordsmen": 1 },
+    });
+    const utils = setup();
+    pickUnit(utils, "attacker", "Swordsmen");
+    const units = () => utils.container.querySelector(".Units");
+    fireEvent.click(within(units()).getByLabelText(/Mark Bravery on Swordsmen/));
+    expect(
+      within(units()).getByLabelText("Erase Bravery on Swordsmen")
+    ).toHaveTextContent("1/1");
+    expect(loadArmy().boxes["menOfHawkshold/swordsmen"]).toEqual([1]);
+  });
+
+  it("units picked outside the army get no battle-screen damage row", () => {
+    const utils = setup();
+    pickAttacker(utils); // no army built, so no copy selected
+    expect(
+      utils.container.querySelector(".Units .DamageRow")
+    ).toBeNull();
   });
 
   it("the header army button opens the army builder", () => {

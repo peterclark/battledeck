@@ -41,7 +41,7 @@ import {
   sumModifiers,
   sumTriples,
 } from "./derive";
-import { loadArmy, loadState, saveState } from "./persistence";
+import { loadArmy, loadState, saveArmy, saveState } from "./persistence";
 import {
   UNITS_BY_UID,
   activeAbilities,
@@ -49,8 +49,10 @@ import {
   damageBoxes,
   damageStatus,
 } from "./data";
+import { withBoxCycle, withDamage, withReanimate } from "./army";
 import { BannerArt } from "./Artwork";
 import ArmyBuilder from "./ArmyBuilder";
+import DamageRow from "./DamageRow";
 import Help from "./Help";
 import UnitPicker from "./UnitPicker";
 import { usePressable } from "./hooks";
@@ -415,6 +417,63 @@ const App = () => {
       status: damageStatus(unit, marked),
     };
   };
+
+  // The selected copies' damage rows live on the battle screen too, so
+  // damage can be marked as the dice land without opening the army
+  // builder. Edits go through the same ops as the builder's and straight
+  // to the saved roster; the builder reads it fresh on its next open.
+  const editArmy = (unit, copy, next) => {
+    saveArmy(next);
+    setArmy(next);
+    // damage moving across a band boundary re-prefills In the Yellow / In
+    // the Red, exactly as closing the builder does
+    if (unit.uid === attackerUid && copy === attackerCopy) {
+      applyDamageState(unit, copy, next);
+    }
+  };
+
+  const markCopyDamage = (unit, copy, value) => {
+    const healed = value < (army.marks[unit.uid]?.[copy] ?? 0);
+    editArmy(unit, copy, withDamage(army, unit.uid, copy, value));
+    if (healed) playTick();
+    else playPenalty();
+    buzz();
+  };
+
+  const reanimateCopy = (unit, copy) => {
+    editArmy(unit, copy, withReanimate(army, unit.uid, copy));
+    playBonus();
+    buzz();
+  };
+
+  const cycleCopyBox = (unit, copy) => {
+    const next = withBoxCycle(army, unit.uid, copy);
+    const marked =
+      (next.boxes[unit.uid]?.[copy] ?? 0) > (army.boxes[unit.uid]?.[copy] ?? 0);
+    editArmy(unit, copy, next);
+    if (marked) playBonus();
+    else playTick();
+    buzz();
+  };
+
+  // Only a fielded army copy has a persistent track to edit — a unit
+  // picked outside the army (an enemy defender, say) shows no row
+  const copyRow = (unit, copy) =>
+    unit && copy !== null && copy < (army.counts[unit.uid] ?? 0) ? (
+      <div className="CopyDamage plate flex flex-col px-2.5 py-1.5">
+        <DamageRow
+          unit={unit}
+          copy={copy}
+          copies={army.counts[unit.uid]}
+          marked={army.marks[unit.uid]?.[copy] ?? 0}
+          reanimated={army.reanimated[unit.uid]?.[copy] === true}
+          boxed={army.boxes[unit.uid]?.[copy] ?? 0}
+          onMark={(value) => markCopyDamage(unit, copy, value)}
+          onReanimate={() => reanimateCopy(unit, copy)}
+          onBox={() => cycleCopyBox(unit, copy)}
+        />
+      </div>
+    ) : null;
 
   const copyLabel = (unit, copy) =>
     unit && copy !== null && (army.counts[unit.uid] ?? 0) > 1
@@ -929,6 +988,7 @@ const App = () => {
             onOpen={() => openUnitPicker("attacker")}
             onClear={() => clearUnit("attacker")}
           />
+          {copyRow(attacker, attackerCopy)}
           <div className="Versus flex items-center gap-2 px-1" aria-hidden>
             <span className="h-px flex-1 bg-iron-500" />
             <span className="font-display text-[10px] uppercase tracking-[0.3em] text-bone-500">
@@ -945,6 +1005,7 @@ const App = () => {
             onOpen={() => openUnitPicker("defender")}
             onClear={() => clearUnit("defender")}
           />
+          {copyRow(defender, defenderCopy)}
         </div>
         {ammoTotal > 0 && (
           <div className="AmmoRow flex items-center justify-center gap-1.5">
