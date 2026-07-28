@@ -24,6 +24,7 @@ import {
   withCopyAdded,
   withCopyRemoved,
   withDamage,
+  withLash,
   withNewTurn,
   withReanimate,
 } from "./army";
@@ -44,11 +45,13 @@ const UnitRow = ({
   marks,
   reanimated,
   boxes,
+  lashed,
   onAdd,
   onRemove,
   onMark,
   onReanimate,
   onBox,
+  onLash,
 }) => {
   const cap = isUnique(unit) ? 1 : MAX_COPIES;
   return (
@@ -103,9 +106,11 @@ const UnitRow = ({
               marked={marks?.[copy] ?? 0}
               reanimated={reanimated?.[copy] === true}
               boxed={boxes?.[copy] ?? 0}
+              lashed={lashed?.[copy] === true}
               onMark={(value) => onMark(copy, value)}
               onReanimate={() => onReanimate(copy)}
               onBox={() => onBox(copy)}
+              onLash={() => onLash(copy)}
             />
           ))}
         </div>
@@ -159,7 +164,7 @@ const ArmyBuilder = ({ onClose }) => {
       [side]: typeof next === "function" ? next(all[side]) : next,
     }));
 
-  const { budget, counts, marks, reanimated, boxes } = army;
+  const { budget, counts, marks, reanimated, boxes, lashed } = army;
 
   const faction = FACTIONS_BY_ID[army.faction] ?? null;
 
@@ -251,6 +256,14 @@ const ArmyBuilder = ({ onClose }) => {
     const marking = (boxes[unit.uid]?.[copy] ?? 0) < unitBox(unit).max;
     setArmy((a) => withBoxCycle(a, unit.uid, copy));
     if (marking) playBonus();
+    else playTick();
+    buzz();
+  };
+
+  const lash = (unit, copy) => {
+    const lashing = !(lashed[unit.uid]?.[copy] ?? false);
+    setArmy((a) => withLash(a, unit.uid, copy));
+    if (lashing) playBonus();
     else playTick();
     buzz();
   };
@@ -479,6 +492,7 @@ const ArmyBuilder = ({ onClose }) => {
                     marks={marks[uid]}
                     reanimated={reanimated[uid]}
                     boxes={boxes[uid]}
+                    lashed={lashed[uid]}
                     onAdd={() => addUnit(UNITS_BY_UID[uid])}
                     onRemove={() => removeUnit(UNITS_BY_UID[uid])}
                     onMark={(copy, value) =>
@@ -486,6 +500,7 @@ const ArmyBuilder = ({ onClose }) => {
                     }
                     onReanimate={(copy) => reanimate(UNITS_BY_UID[uid], copy)}
                     onBox={(copy) => markBox(UNITS_BY_UID[uid], copy)}
+                    onLash={(copy) => lash(UNITS_BY_UID[uid], copy)}
                   />
                 );
               })}

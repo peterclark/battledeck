@@ -39,8 +39,14 @@ export default {
   abilities: [
     {
       name: "Rune of Uruz",
-      // the Antonian Horsemen's card back rules them out
-      box: { cost: 1, except: ["antonianHorsemen"] },
+      // the Antonian Horsemen's card back rules them out; the marked
+      // box's (+1) +0/+0 feeds the dice pool while the attack is melee —
+      // the card gives no bonus to ranged attacks
+      box: {
+        cost: 1,
+        except: ["antonianHorsemen"],
+        effect: { code: "URUZ", bonus: [1, 0, 0], stance: "melee" },
+      },
       text:
         "You may spend a Command Action to empower one of your units with " +
         "Uruz, Rune of Endurance (mark the Uruz box on the unit card). " +

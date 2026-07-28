@@ -203,6 +203,10 @@ export const DEFAULT_ARMY = {
   // tally can price them and erasing a fresh mistake hands the Command
   // Actions back; cleared by the New turn button
   boxesThisTurn: {},
+  // which fielded copies are Lashed this turn (Orc army ability: +1
+  // Movement and +1 die for the turn, once per unit per turn); cleared by
+  // the New turn button
+  lashed: {},
   // which faction the builder was last browsing, so reopening it lands
   // where the player left off; null means its faction list
   faction: null,
@@ -222,6 +226,7 @@ export const loadArmy = (side = "mine") => {
     const reanimated = {};
     const boxes = {};
     const boxesThisTurn = {};
+    const lashed = {};
     for (const [uid, n] of Object.entries(stored.counts ?? {})) {
       const unit = UNITS_BY_UID[uid];
       if (!unit || !Number.isInteger(n) || n < 1) continue;
@@ -239,6 +244,13 @@ export const loadArmy = (side = "mine") => {
       reanimated[uid] = Array.from(
         { length: counts[uid] },
         (_, copy) => savedTurn[copy] === true
+      );
+      const savedLash = Array.isArray(stored.lashed?.[uid])
+        ? stored.lashed[uid]
+        : [];
+      lashed[uid] = Array.from(
+        { length: counts[uid] },
+        (_, copy) => savedLash[copy] === true
       );
       // box marks, clamped to the boxes this unit's card actually prints —
       // a unit whose faction has no box ability keeps none
@@ -268,6 +280,7 @@ export const loadArmy = (side = "mine") => {
       reanimated,
       boxes,
       boxesThisTurn,
+      lashed,
       faction: validFaction(stored.faction),
     };
   } catch {

@@ -1,5 +1,5 @@
 import { map, sum } from "lodash";
-import { UNITS_BY_UID, reanimateCost, unitBox } from "./data";
+import { UNITS_BY_UID, reanimateCost, unitBox, unitTurnBuff } from "./data";
 
 // Pure operations on the army record ({ counts, marks, reanimated, boxes,
 // boxesThisTurn, … }). The army builder edits the roster through these,
@@ -19,8 +19,8 @@ const dropLast = (tracks, uid) => {
   return next;
 };
 
-// A fresh copy joins with an unmarked damage track, no box marks, and no
-// Reanimate lock
+// A fresh copy joins with an unmarked damage track, no box marks, no
+// Reanimate lock, and no Lash
 export const withCopyAdded = (army, uid) => ({
   ...army,
   counts: { ...army.counts, [uid]: (army.counts[uid] ?? 0) + 1 },
@@ -34,6 +34,7 @@ export const withCopyAdded = (army, uid) => ({
     ...army.boxesThisTurn,
     [uid]: [...(army.boxesThisTurn[uid] ?? []), 0],
   },
+  lashed: { ...army.lashed, [uid]: [...(army.lashed[uid] ?? []), false] },
 });
 
 // The last-listed copy leaves, taking its damage, box marks, and
@@ -49,6 +50,7 @@ export const withCopyRemoved = (army, uid) => {
     reanimated: dropLast(army.reanimated, uid),
     boxes: dropLast(army.boxes, uid),
     boxesThisTurn: dropLast(army.boxesThisTurn, uid),
+    lashed: dropLast(army.lashed, uid),
   };
 };
 
@@ -90,12 +92,21 @@ export const withBoxCycle = (army, uid, copy) => {
   };
 };
 
-// A new turn releases the Reanimate locks and forgets what this turn
-// paid; box marks stay on the cards until erased for their effect
+// Lash: empower a copy for the turn, or take an accidental Lash back —
+// toggling off within the turn refunds its Command Action
+export const withLash = (army, uid, copy) => ({
+  ...army,
+  lashed: setTrack(army.lashed, uid, copy, !(army.lashed[uid]?.[copy] ?? false)),
+});
+
+// A new turn releases the Reanimate locks and the Lashes, and forgets
+// what this turn paid; box marks stay on the cards until erased for
+// their effect
 export const withNewTurn = (army) => ({
   ...army,
   reanimated: {},
   boxesThisTurn: {},
+  lashed: {},
 });
 
 export const withCleared = (army) => ({
@@ -105,10 +116,12 @@ export const withCleared = (army) => ({
   reanimated: {},
   boxes: {},
   boxesThisTurn: {},
+  lashed: {},
 });
 
-// Command Actions spent so far this turn. Reanimating and marking boxes
-// draw on the same per-turn pool, so they're tallied together.
+// Command Actions spent so far this turn. Reanimating, marking boxes,
+// and Lashing draw on the same per-turn pool, so they're tallied
+// together.
 export const turnSpend = (army) =>
   sum(
     map(army.reanimated, (track, uid) =>
@@ -118,5 +131,12 @@ export const turnSpend = (army) =>
   sum(
     map(army.boxesThisTurn, (track, uid) =>
       sum(map(track, (n) => (n ?? 0) * (unitBox(UNITS_BY_UID[uid])?.cost ?? 0)))
+    )
+  ) +
+  sum(
+    map(army.lashed, (track, uid) =>
+      sum(
+        map(track, (on) => (on ? unitTurnBuff(UNITS_BY_UID[uid])?.cost ?? 0 : 0))
+      )
     )
   );
