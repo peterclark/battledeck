@@ -390,17 +390,17 @@ describe("Units", () => {
     fireEvent.click(utils.getByLabelText("Pick attacker unit"));
     const overlay = utils.container.querySelector(".UnitPicker");
     // the faction list counts only what the filter leaves visible
-    expect(within(overlay).getByText("3 units")).toBeInTheDocument();
+    expect(within(overlay).getByText("3 yours")).toBeInTheDocument();
     fireEvent.click(within(overlay).getByText("Men of Hawkshold"));
     // multiple copies list one row each, with their own damage state
     expect(within(overlay).getByText("Swordsmen #1")).toBeInTheDocument();
     expect(within(overlay).getByText("Swordsmen #2")).toBeInTheDocument();
     expect(within(overlay).getByText("Lancers")).toBeInTheDocument();
     expect(within(overlay).queryByText("Militia")).not.toBeInTheDocument();
-    // the toggle covers enemy defenders outside the player's roster
+    // the toggle covers units outside both rosters
     fireEvent.click(within(overlay).getByText("Show all units"));
     expect(within(overlay).getByText("Militia")).toBeInTheDocument();
-    fireEvent.click(within(overlay).getByText("Show only my army"));
+    fireEvent.click(within(overlay).getByText("Show only the armies"));
     expect(within(overlay).queryByText("Militia")).not.toBeInTheDocument();
   });
 
@@ -580,6 +580,86 @@ describe("Units", () => {
     expect(
       utils.container.querySelector(".Units .DamageRow")
     ).toBeNull();
+  });
+
+  it("enemy roster units are pickable without Show all and edit their own record", () => {
+    saveArmy({
+      budget: 2000,
+      counts: { "menOfHawkshold/swordsmen": 1 },
+    });
+    saveArmy(
+      {
+        budget: 2000,
+        counts: { "orcArmy/trolls": 1 },
+        marks: { "orcArmy/trolls": [0] },
+      },
+      "enemy"
+    );
+    const utils = setup();
+    fireEvent.click(utils.getByLabelText("Pick defender unit"));
+    const overlay = utils.container.querySelector(".UnitPicker");
+    // the enemy's faction is on the filtered list, no Show all needed
+    expect(within(overlay).getByText("1 enemy")).toBeInTheDocument();
+    fireEvent.click(within(overlay).getByText("Orc Army"));
+    fireEvent.click(within(overlay).getByText("Trolls"));
+
+    // the slot marks the copy as the enemy's, and its track is editable
+    expect(
+      utils.getByLabelText("defender: Trolls (enemy). Tap to change.")
+    ).toBeInTheDocument();
+    const units = () => utils.container.querySelector(".Units");
+    fireEvent.click(within(units()).getByLabelText("Trolls damage box 3"));
+    expect(loadArmy("enemy").marks["orcArmy/trolls"]).toEqual([3]);
+    // the player's own roster never heard about it
+    expect(loadArmy().marks["orcArmy/trolls"]).toBeUndefined();
+  });
+
+  it("a mirror match keeps the two rosters' copies apart", () => {
+    saveArmy({
+      budget: 2000,
+      counts: { "orcArmy/orcAxemen": 1 },
+      marks: { "orcArmy/orcAxemen": [0] },
+    });
+    saveArmy(
+      {
+        budget: 2000,
+        counts: { "orcArmy/orcAxemen": 1 },
+        marks: { "orcArmy/orcAxemen": [0] },
+      },
+      "enemy"
+    );
+    const utils = setup();
+    fireEvent.click(utils.getByLabelText("Pick defender unit"));
+    const overlay = utils.container.querySelector(".UnitPicker");
+    fireEvent.click(within(overlay).getByText("Orc Army"));
+    // both copies list — the enemy's row is the tagged one
+    const rows = within(overlay).getAllByRole("button", {
+      name: /Orc Axemen/,
+    });
+    expect(rows).toHaveLength(2);
+    fireEvent.click(within(overlay).getByLabelText("enemy copy").closest("button"));
+
+    const units = () => utils.container.querySelector(".Units");
+    fireEvent.click(within(units()).getByLabelText("Orc Axemen damage box 2"));
+    expect(loadArmy("enemy").marks["orcArmy/orcAxemen"]).toEqual([2]);
+    expect(loadArmy().marks["orcArmy/orcAxemen"]).toEqual([0]);
+  });
+
+  it("an enemy attacker's damage still prefills In the Yellow", () => {
+    saveArmy(
+      {
+        budget: 2000,
+        counts: { "menOfHawkshold/swordsmen": 1 },
+        marks: { "menOfHawkshold/swordsmen": [5] }, // 5/2/3: In the Yellow
+      },
+      "enemy"
+    );
+    const utils = setup();
+    fireEvent.click(utils.getByLabelText("Pick attacker unit"));
+    const overlay = utils.container.querySelector(".UnitPicker");
+    fireEvent.click(within(overlay).getByText("Men of Hawkshold"));
+    fireEvent.click(within(overlay).getByText("Swordsmen"));
+    expect(utils.modifier("inTheYellow")).toHaveClass("plate-on-blood");
   });
 
   it("the header army button opens the army builder", () => {

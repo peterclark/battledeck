@@ -5,7 +5,7 @@ import { FaArrowLeft, FaChevronRight, FaTimes } from "react-icons/fa";
 import { GiBowArrow, GiCrossedSwords } from "react-icons/gi";
 import { FACTIONS, FACTIONS_BY_ID, KEYWORDS, damageStatus } from "./data";
 import { useModalOverlay } from "./hooks";
-import { loadArmy } from "./persistence";
+import { ARMY_SIDES, loadArmies } from "./persistence";
 import { buzz, playTick } from "./sounds";
 
 const STATUS_LABEL = {
@@ -53,7 +53,15 @@ const Profile = ({ icon: Icon, profile }) => (
   </span>
 );
 
-const UnitRow = ({ unit, copy = null, copies = 0, marked = 0, selected, onSelect }) => {
+const UnitRow = ({
+  unit,
+  copy = null,
+  copies = 0,
+  marked = 0,
+  side = null,
+  selected,
+  onSelect,
+}) => {
   const status = copy === null ? null : damageStatus(unit, marked);
   return (
   <button
@@ -65,9 +73,19 @@ const UnitRow = ({ unit, copy = null, copies = 0, marked = 0, selected, onSelect
     onClick={onSelect}
   >
     <span className="flex w-full items-baseline justify-between gap-2">
-      <span className="font-display text-sm tracking-wider text-bone-100">
-        {unit.name}
-        {copies > 1 ? ` #${copy + 1}` : ""}
+      <span className="flex min-w-0 items-baseline gap-1.5 font-display text-sm tracking-wider text-bone-100">
+        <span className="truncate">
+          {unit.name}
+          {copies > 1 ? ` #${copy + 1}` : ""}
+        </span>
+        {side === "enemy" && (
+          <span
+            className="shrink-0 rounded-sm border border-blood-500/40 px-1 font-mono text-[9px] uppercase tracking-widest text-blood-400"
+            aria-label="enemy copy"
+          >
+            enemy
+          </span>
+        )}
       </span>
       <span className="shrink-0 font-mono text-[10px] text-bone-500">
         {unit.points} pts
@@ -118,9 +136,9 @@ const UnitRow = ({ unit, copy = null, copies = 0, marked = 0, selected, onSelect
 };
 
 // One faction's card on the picker's front page: tapping it opens that
-// faction's units. The count reflects the current army/all filter, so it
-// matches what's actually behind the card.
-const FactionRow = ({ faction, count, onOpen }) => (
+// faction's units. The summary reflects the current armies/all filter, so
+// it matches what's actually behind the card.
+const FactionRow = ({ faction, summary, onOpen }) => (
   <button
     className="FactionRow plate flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
     onClick={onOpen}
@@ -129,7 +147,7 @@ const FactionRow = ({ faction, count, onOpen }) => (
       {faction.name}
     </span>
     <span className="flex shrink-0 items-center gap-2 font-mono text-[10px] text-bone-500">
-      {`${count} unit${count === 1 ? "" : "s"}`}
+      {summary}
       <FaChevronRight className="text-[9px] text-ember-600" aria-hidden />
     </span>
   </button>
@@ -144,23 +162,28 @@ const UnitPicker = ({
   role,
   selectedUid,
   selectedCopy,
+  selectedArmy,
   factionId,
   onFactionChange,
   onSelect,
   onClose,
 }) => {
-  // A built army narrows the picker to its own units by default; with no
-  // army yet, everything shows. "Show all" covers picking an enemy
-  // defender that isn't in the player's roster.
-  const [army] = useState(loadArmy);
-  const armyCounts = army.counts;
-  const hasArmy = some(armyCounts, (count) => count > 0);
+  // Built rosters narrow the picker to their units by default — the
+  // player's and the enemy's together, so an opposing defender is as easy
+  // to find as your own. With neither built, everything shows; "Show all"
+  // covers true one-offs outside both lists.
+  const [armies] = useState(loadArmies);
+  const fielded = (side, uid) => armies[side].counts[uid] ?? 0;
+  const anyFielded = (uid) => fielded("mine", uid) + fielded("enemy", uid) > 0;
+  const hasArmy =
+    some(armies.mine.counts, (count) => count > 0) ||
+    some(armies.enemy.counts, (count) => count > 0);
   const [showAll, setShowAll] = useState(!hasArmy);
 
   const visibleUnits = (faction) =>
     filter(
       faction.units,
-      (unit) => showAll || armyCounts[`${faction.id}/${unit.id}`] > 0
+      (unit) => showAll || anyFielded(`${faction.id}/${unit.id}`)
     );
 
   const toggleShowAll = () => {
@@ -172,12 +195,31 @@ const UnitPicker = ({
   const faction = FACTIONS_BY_ID[factionId] ?? null;
   const factionUnits = faction ? visibleUnits(faction) : [];
 
-  // What the faction card advertises: the number of rows behind it, so a
-  // unit fielded three times counts three times, exactly as it lists
-  const rowCount = (f) =>
-    sumBy(visibleUnits(f), (unit) =>
-      Math.max(armyCounts[`${f.id}/${unit.id}`] ?? 0, 1)
+  // What the faction card advertises. Filtered, it splits the fielded
+  // copies by roster ("2 yours · 3 enemy"); showing everything, it counts
+  // the rows behind it, a unit fielded N times counting N times.
+  const factionSummary = (f) => {
+    const sideRows = (side) =>
+      sumBy(visibleUnits(f), (unit) => fielded(side, `${f.id}/${unit.id}`));
+    if (!showAll) {
+      const mine = sideRows("mine");
+      const enemy = sideRows("enemy");
+      return [
+        mine ? `${mine} yours` : null,
+        enemy ? `${enemy} enemy` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+    }
+    const rows = sumBy(visibleUnits(f), (unit) =>
+      Math.max(
+        fielded("mine", `${f.id}/${unit.id}`) +
+          fielded("enemy", `${f.id}/${unit.id}`),
+        1
+      )
     );
+    return `${rows} unit${rows === 1 ? "" : "s"}`;
+  };
 
   const openFaction = (id) => {
     onFactionChange(id);
@@ -241,7 +283,7 @@ const UnitPicker = ({
               aria-pressed={showAll}
               onClick={toggleShowAll}
             >
-              {showAll ? "Show only my army" : "Show all units"}
+              {showAll ? "Show only the armies" : "Show all units"}
             </button>
           )}
           {!faction &&
@@ -251,7 +293,7 @@ const UnitPicker = ({
                 <FactionRow
                   key={f.id}
                   faction={f}
-                  count={rowCount(f)}
+                  summary={factionSummary(f)}
                   onOpen={() => openFaction(f.id)}
                 />
               )
@@ -270,37 +312,44 @@ const UnitPicker = ({
               ))}
               {map(factionUnits, (unit) => {
                 const uid = `${faction.id}/${unit.id}`;
-                const copies = armyCounts[uid] ?? 0;
-                // fielded units list one row per copy, each with its own
-                // damage state; everything else is a plain row
-                if (!copies) {
+                // fielded units list one row per copy — the player's, then
+                // the enemy's, each with its own damage state; everything
+                // else is a plain row
+                if (!anyFielded(uid)) {
                   return (
                     <UnitRow
                       key={uid}
                       unit={unit}
                       selected={uid === selectedUid && selectedCopy === null}
-                      onSelect={() => onSelect(uid, null)}
+                      onSelect={() => onSelect(uid, null, null)}
                     />
                   );
                 }
-                return map(range(copies), (copy) => (
-                  <UnitRow
-                    key={`${uid}#${copy}`}
-                    unit={unit}
-                    copy={copy}
-                    copies={copies}
-                    marked={army.marks[uid]?.[copy] ?? 0}
-                    selected={uid === selectedUid && copy === selectedCopy}
-                    onSelect={() => onSelect(uid, copy)}
-                  />
-                ));
+                return map(ARMY_SIDES, (side) =>
+                  map(range(fielded(side, uid)), (copy) => (
+                    <UnitRow
+                      key={`${side}:${uid}#${copy}`}
+                      unit={unit}
+                      copy={copy}
+                      copies={fielded(side, uid)}
+                      side={side}
+                      marked={armies[side].marks[uid]?.[copy] ?? 0}
+                      selected={
+                        uid === selectedUid &&
+                        copy === selectedCopy &&
+                        side === selectedArmy
+                      }
+                      onSelect={() => onSelect(uid, copy, side)}
+                    />
+                  ))
+                );
               })}
-              {/* the remembered faction can outlive the army that filtered
-                  it — say so rather than showing a blank page */}
+              {/* the remembered faction can outlive the armies that
+                  filtered it — say so rather than showing a blank page */}
               {!factionUnits.length && (
                 <p className="text-center text-[10px] italic leading-snug text-bone-500">
-                  No {faction.name} units in your army. Tap Show all units to
-                  see the rest.
+                  No {faction.name} units in either army. Tap Show all units
+                  to see the rest.
                 </p>
               )}
             </div>
