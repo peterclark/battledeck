@@ -797,7 +797,7 @@ describe("Units", () => {
     const utils = setup();
     pickUnit(utils, "attacker", "Ancient Blue Dragon");
     pickUnit(utils, "defender", "Communal Pikemen");
-    const { container, dice, hit, getByText, getByLabelText, modifier } = utils;
+    const { container, dice, hit, getByText, modifier } = utils;
     // melee first: cards playable, dice adjustable
     fireEvent.click(container.querySelector(".PlusOneDice"));
     expect(dice().querySelector(".text-6xl")).toHaveTextContent("7"); // 6 +1 CC
@@ -807,7 +807,6 @@ describe("Units", () => {
     expect(within(dice()).getByText("locked")).toBeInTheDocument();
     expect(container.querySelectorAll(".PlayedCard")).toHaveLength(0); // cleared
     expect(container.querySelector(".PlusOneDice")).toBeDisabled();
-    expect(getByLabelText(/Add one die/)).toBeDisabled();
     // modifiers still hit OS but never the pool
     fireEvent.click(modifier("disrupted"));
     expect(dice().querySelector(".text-6xl")).toHaveTextContent("3");
@@ -815,7 +814,32 @@ describe("Units", () => {
     // back in melee everything unlocks
     fireEvent.click(getByText("Melee"));
     expect(container.querySelector(".PlusOneDice")).toBeEnabled();
-    expect(getByLabelText(/Add one die/)).toBeEnabled();
+  });
+
+  it("picking units turns the base controls into inert labels", () => {
+    const utils = setup();
+    const { container, getByLabelText, queryByLabelText } = utils;
+    pickUnit(utils, "attacker", "Knights");
+    // the dice ± give way to a base-count label, the attacker ranks to text
+    expect(queryByLabelText(/Add one die/)).not.toBeInTheDocument();
+    expect(container.querySelector(".DiceBase")).toHaveTextContent("6");
+    expect(
+      container.querySelector(".OffensiveSkillRank").tagName
+    ).not.toBe("BUTTON");
+    // the defender's side stays editable until a defender is picked
+    expect(container.querySelector(".DefensiveSkillRank").tagName).toBe(
+      "BUTTON"
+    );
+    pickUnit(utils, "defender", "Communal Pikemen");
+    expect(container.querySelector(".DefensiveSkillRank").tagName).not.toBe(
+      "BUTTON"
+    );
+    // clearing the slot hands the controls back
+    fireEvent.click(getByLabelText("Clear attacker unit"));
+    expect(getByLabelText(/Add one die/)).toBeInTheDocument();
+    expect(container.querySelector(".OffensiveSkillRank").tagName).toBe(
+      "BUTTON"
+    );
   });
 
   it("tracks special-attack ammo with tap-down pips", () => {

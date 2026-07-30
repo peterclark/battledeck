@@ -80,7 +80,10 @@ const AnimatedNumber = ({ value, className: cls }) => (
 
 // Tap increments the rank; holding decrements (repeating while held).
 // Keyboard: Enter/Space raise, arrow keys raise/lower.
-const RankButton = ({ label, value, onInc, tone }) => {
+// Once a unit card fills the slot the rank is the card's: the equation
+// renders as an inert label and Command Cards / modifiers do all the
+// adjusting. Hand-editing only exists while the slot is empty.
+const RankButton = ({ label, value, onInc, tone, inert }) => {
   const inc = (mod) => {
     onInc(mod);
     playTick();
@@ -93,6 +96,18 @@ const RankButton = ({ label, value, onInc, tone }) => {
     onArrowUp: () => inc(1),
     onArrowDown: () => inc(-1),
   });
+  if (inert)
+    return (
+      <div
+        className={className(
+          "flex-1 flex flex-col items-center justify-center py-1",
+          tone
+        )}
+      >
+        <span className="font-display text-3xl leading-none">{value}</span>
+        <span className="text-[10px] tracking-widest opacity-70">{label}</span>
+      </div>
+    );
   return (
     <button
       className={className(
@@ -996,24 +1011,36 @@ const App = () => {
                 </>
               }
             />
-            <div className="flex gap-1">
-              <button
-                className="plate plate-danger flex h-12 flex-1 items-center justify-center text-xl"
-                aria-label="Remove one die. Hold to repeat."
-                disabled={diceLocked}
-                {...diceDown}
-              >
-                <FaMinus />
-              </button>
-              <button
-                className="plate plate-boon flex h-12 flex-1 items-center justify-center text-xl"
-                aria-label="Add one die. Hold to repeat."
-                disabled={diceLocked}
-                {...diceUp}
-              >
-                <FaPlus />
-              </button>
-            </div>
+            {/* the pool's base comes off the attacker's card once one is
+                picked — like the ranks, it goes inert and cards do the
+                adjusting; the ± only exists while the slot is empty */}
+            {attacker ? (
+              <div className="DiceBase flex h-12 flex-1 flex-col items-center justify-center py-1 text-ember-400">
+                <span className="font-display text-3xl leading-none">
+                  {baseDice}
+                </span>
+                <span className="text-[10px] tracking-widest opacity-70">
+                  base
+                </span>
+              </div>
+            ) : (
+              <div className="flex h-12 gap-1">
+                <button
+                  className="plate plate-danger flex flex-1 items-center justify-center text-xl"
+                  aria-label="Remove one die. Hold to repeat."
+                  {...diceDown}
+                >
+                  <FaMinus />
+                </button>
+                <button
+                  className="plate plate-boon flex flex-1 items-center justify-center text-xl"
+                  aria-label="Add one die. Hold to repeat."
+                  {...diceUp}
+                >
+                  <FaPlus />
+                </button>
+              </div>
+            )}
             <div className="flex gap-1">
               <CardPlayButton
                 card={CARDS_BY_ID.MinusOneDice}
@@ -1058,6 +1085,7 @@ const App = () => {
                 value={offensiveSkill}
                 onInc={handleIncOffensiveSkill}
                 tone="OffensiveSkillRank text-blood-300"
+                inert={Boolean(attacker)}
               />
               <span
                 className="font-display text-lg leading-none text-bone-500"
@@ -1070,6 +1098,7 @@ const App = () => {
                 value={defensiveSkill}
                 onInc={handleIncDefensiveSkill}
                 tone="DefensiveSkillRank text-steel-300"
+                inert={Boolean(defender)}
               />
             </div>
             <div className="flex gap-1">
@@ -1116,6 +1145,7 @@ const App = () => {
                 value={offensivePower}
                 onInc={handleIncOffensivePower}
                 tone="OffensivePowerRank text-blood-300"
+                inert={Boolean(attacker)}
               />
               <span
                 className="font-display text-lg leading-none text-bone-500"
@@ -1128,6 +1158,7 @@ const App = () => {
                 value={defensivePower}
                 onInc={handleIncDefensivePower}
                 tone="DefensivePowerRank text-steel-300"
+                inert={Boolean(defender)}
               />
             </div>
             <div className="flex gap-1">
