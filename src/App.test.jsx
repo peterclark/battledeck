@@ -5,9 +5,15 @@ import App from "./App";
 import { UNITS } from "./data";
 import { loadArmy, saveArmy } from "./persistence";
 
-// Buttons built on usePressable (ranks, dice, reset) tap on pointer up;
+// Buttons built on usePressable (the reset buttons) tap on pointer up;
 // plain buttons (modifiers, command cards) use click.
 const tap = (el) => fireEvent.pointerUp(el);
+
+// Calc-line terms split their value and code into differently sized spans,
+// so exact getByText can't see the joined text — match the Term wrapper's
+// full text content instead
+const term = (text) => (_, element) =>
+  element.classList.contains("Term") && element.textContent === text;
 
 const setup = () => {
   const utils = render(<App />);
@@ -22,54 +28,32 @@ const setup = () => {
 describe("App", () => {
   it("starts at 4 dice, hit 1, wound 1", () => {
     const { dice, hit, wound } = setup();
-    expect(within(dice()).getByText("4")).toBeInTheDocument();
-    expect(within(dice()).getByText("4 Dice")).toBeInTheDocument();
-    expect(within(hit()).getByText("1")).toBeInTheDocument();
-    expect(within(wound()).getByText("1")).toBeInTheDocument();
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("4");
+    expect(within(dice()).getByText(term("4 Dice"))).toBeInTheDocument();
+    expect(hit().querySelector(".text-6xl")).toHaveTextContent("1");
+    expect(wound().querySelector(".text-6xl")).toHaveTextContent("1");
   });
 
-  it("dice +/- buttons adjust the pool and clamp at 0", () => {
-    const { getByLabelText, dice } = setup();
-    tap(getByLabelText(/Add one die/));
-    expect(within(dice()).getByText("5")).toBeInTheDocument();
-    const minus = getByLabelText(/Remove one die/);
-    for (let i = 0; i < 7; i += 1) tap(minus);
-    expect(within(dice()).getByText("0")).toBeInTheDocument();
-  });
-
-  it("rank taps raise the rank and wrap 9 -> 0", () => {
-    const { container, hit } = setup();
-    const os = container.querySelector(".OffensiveSkillRank");
-    for (let i = 0; i < 3; i += 1) tap(os);
-    expect(within(os).getByText("3")).toBeInTheDocument();
-    // the big stat number, as opposed to the rank buttons below it
-    expect(hit().querySelector(".text-6xl")).toHaveTextContent("3");
-    for (let i = 0; i < 7; i += 1) tap(os);
-    expect(within(os).getByText("0")).toBeInTheDocument();
-  });
-
-  it("arrow keys raise and lower ranks (with wrap)", () => {
-    const { container } = setup();
-    const os = container.querySelector(".OffensiveSkillRank");
-    fireEvent.keyDown(os, { key: "ArrowDown" });
-    expect(within(os).getByText("9")).toBeInTheDocument();
-    fireEvent.keyDown(os, { key: "ArrowUp" });
-    expect(within(os).getByText("0")).toBeInTheDocument();
+  it("has no manual base controls — selection and cards set the numbers", () => {
+    const { container, queryByLabelText } = setup();
+    expect(queryByLabelText(/Add one die/)).not.toBeInTheDocument();
+    expect(queryByLabelText(/rank/)).not.toBeInTheDocument();
+    expect(container.querySelector(".OffensiveSkillRank")).toBeNull();
   });
 
   it("toggling a modifier updates totals and the breakdown", () => {
     const { dice, modifier } = setup();
     fireEvent.click(modifier("disrupted"));
-    expect(within(dice()).getByText("3")).toBeInTheDocument();
-    expect(within(dice()).getByText("-1 DI")).toBeInTheDocument();
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("3");
+    expect(within(dice()).getByText(term("-1 DI"))).toBeInTheDocument();
     fireEvent.click(modifier("disrupted"));
-    expect(within(dice()).getByText("4")).toBeInTheDocument();
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("4");
   });
 
   it("overkill shows when the unclamped total passes 5", () => {
     const { container, hit } = setup();
-    const os = container.querySelector(".OffensiveSkillRank");
-    for (let i = 0; i < 7; i += 1) tap(os); // OS 7, DS 0
+    const plusOS = container.querySelector(".PlusOneOS");
+    for (let i = 0; i < 7; i += 1) fireEvent.click(plusOS); // 0 OS +7 CC
     expect(hit().querySelector(".text-6xl")).toHaveTextContent("5");
     expect(within(hit()).getByText(/OK: 2/)).toBeInTheDocument();
   });
@@ -87,9 +71,9 @@ describe("App", () => {
   it("pinching stacks 0 -> 1 -> 2 -> 3 -> 0", () => {
     const { hit, modifier } = setup();
     fireEvent.click(modifier("pinching"));
-    expect(within(hit()).getByText("+1 PI")).toBeInTheDocument();
+    expect(within(hit()).getByText(term("+1 PI"))).toBeInTheDocument();
     fireEvent.click(modifier("pinching"));
-    expect(within(hit()).getByText("+2 PI")).toBeInTheDocument();
+    expect(within(hit()).getByText(term("+2 PI"))).toBeInTheDocument();
     expect(modifier("pinching")).toHaveTextContent("×2");
     fireEvent.click(modifier("pinching"));
     fireEvent.click(modifier("pinching"));
@@ -150,9 +134,9 @@ describe("App", () => {
     const { container, dice, modifier } = setup();
     fireEvent.click(container.querySelector(".PlusOneDice"));
     expect(within(dice()).getByText("5")).toBeInTheDocument();
-    expect(within(dice()).getByText("+1 CC")).toBeInTheDocument();
+    expect(within(dice()).getByText(term("+1 CC"))).toBeInTheDocument();
     fireEvent.click(modifier("frightened"));
-    expect(within(dice()).queryByText("+1 CC")).not.toBeInTheDocument();
+    expect(within(dice()).queryByText(term("+1 CC"))).not.toBeInTheDocument();
     expect(container.querySelectorAll(".PlayedCard")).toHaveLength(0);
     expect(container.querySelector(".PlusOneDice")).toBeDisabled();
     // the chips row (and its Reset) only renders while plays are logged
@@ -167,8 +151,8 @@ describe("App", () => {
     tap(reset);
     expect(reset).toHaveTextContent(/Tap\s*again/);
     tap(reset);
-    expect(within(dice()).getByText("4")).toBeInTheDocument();
-    expect(within(dice()).queryByText("-1 DI")).not.toBeInTheDocument();
+    expect(dice().querySelector(".text-6xl")).toHaveTextContent("4");
+    expect(within(dice()).queryByText(term("-1 DI"))).not.toBeInTheDocument();
     expect(modifier("disrupted")).not.toHaveClass("plate-on-blood");
     expect(modifier("pinching")).not.toHaveTextContent("×");
   });
@@ -179,7 +163,7 @@ describe("App", () => {
       const { hit, modifier } = setup();
       fireEvent.click(modifier("pinching"));
       fireEvent.click(modifier("pinching"));
-      expect(within(hit()).getByText("+2 PI")).toBeInTheDocument();
+      expect(within(hit()).getByText(term("+2 PI"))).toBeInTheDocument();
       const reset = modifier("reset");
       fireEvent.pointerDown(reset);
       act(() => {
@@ -189,7 +173,7 @@ describe("App", () => {
       expect(within(hit()).queryByText(/PI/)).not.toBeInTheDocument();
       // a fresh pinch tap starts back at ×1
       fireEvent.click(modifier("pinching"));
-      expect(within(hit()).getByText("+1 PI")).toBeInTheDocument();
+      expect(within(hit()).getByText(term("+1 PI"))).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }
@@ -211,9 +195,9 @@ describe("App", () => {
   it("switching stance turns the other stance's modifiers off", () => {
     const { getByText, hit, modifier } = setup();
     fireEvent.click(modifier("flanking"));
-    expect(within(hit()).getByText("+1 FL")).toBeInTheDocument();
+    expect(within(hit()).getByText(term("+1 FL"))).toBeInTheDocument();
     fireEvent.click(getByText("Ranged"));
-    expect(within(hit()).queryByText("+1 FL")).not.toBeInTheDocument();
+    expect(within(hit()).queryByText(term("+1 FL"))).not.toBeInTheDocument();
     fireEvent.click(getByText("Melee"));
     expect(modifier("flanking")).not.toHaveClass("plate-on-ember");
     // pinch count is cleared too, not just the on flag
@@ -238,16 +222,17 @@ describe("App", () => {
 
   it("restores mid-game state after an unmount and remount (reload)", () => {
     const first = setup();
-    tap(first.getByLabelText(/Add one die/));
+    fireEvent.click(first.container.querySelector(".PlusOneDice"));
     fireEvent.click(first.modifier("disrupted"));
     fireEvent.click(first.modifier("pinching"));
     fireEvent.click(first.modifier("pinching"));
     first.unmount();
 
     const second = setup();
-    expect(second.dice().querySelector(".text-6xl")).toHaveTextContent("4"); // 5 base -1 DI
-    expect(within(second.dice()).getByText("5 Dice")).toBeInTheDocument();
-    expect(within(second.dice()).getByText("-1 DI")).toBeInTheDocument();
+    expect(second.dice().querySelector(".text-6xl")).toHaveTextContent("4"); // 4 +1 CC -1 DI
+    expect(within(second.dice()).getByText(term("4 Dice"))).toBeInTheDocument();
+    expect(within(second.dice()).getByText(term("+1 CC"))).toBeInTheDocument();
+    expect(within(second.dice()).getByText(term("-1 DI"))).toBeInTheDocument();
     expect(second.modifier("pinching")).toHaveTextContent("×2");
   });
 
@@ -255,7 +240,7 @@ describe("App", () => {
     const { dice, modifier } = setup();
     fireEvent.click(modifier("disrupted"));
     tap(modifier("reset"));
-    expect(within(dice()).getByText("-1 DI")).toBeInTheDocument();
+    expect(within(dice()).getByText(term("-1 DI"))).toBeInTheDocument();
   });
 });
 
@@ -285,9 +270,9 @@ describe("Units", () => {
     const utils = setup();
     pickAttacker(utils);
     const { dice, hit, wound } = utils;
-    expect(within(dice()).getByText("7 Dice")).toBeInTheDocument();
+    expect(within(dice()).getByText(term("7 Dice"))).toBeInTheDocument();
     expect(dice().querySelector(".text-6xl")).toHaveTextContent("7");
-    expect(within(hit()).getByText("6 OS - 0 DS")).toBeInTheDocument();
+    expect(within(hit()).getByText(term("6 OS - 0 DS"))).toBeInTheDocument();
     // OS 6 vs DS 0 is an unclamped 6: shows 5 with one point of Overkill
     expect(hit().querySelector(".text-6xl")).toHaveTextContent("5");
     expect(within(hit()).getByText(/OK: 1/)).toBeInTheDocument();
@@ -301,9 +286,9 @@ describe("Units", () => {
     const { hit, wound } = utils;
     // OS 6 - DS 2 = 4 to hit; OP 5 - T 2 = 3 to wound — the calc line
     // under each number is the visible equation behind it
-    expect(within(hit()).getByText("6 OS - 2 DS")).toBeInTheDocument();
+    expect(within(hit()).getByText(term("6 OS - 2 DS"))).toBeInTheDocument();
     expect(hit().querySelector(".text-6xl")).toHaveTextContent("4");
-    expect(within(wound()).getByText("5 OP - 2 DP")).toBeInTheDocument();
+    expect(within(wound()).getByText(term("5 OP - 2 DP"))).toBeInTheDocument();
     expect(wound().querySelector(".text-6xl")).toHaveTextContent("3");
   });
 
@@ -314,10 +299,10 @@ describe("Units", () => {
     const { dice, wound, modifier } = utils;
     fireEvent.click(modifier("chargingFourOrMoreDice"));
     expect(dice().querySelector(".text-6xl")).toHaveTextContent("8"); // 6 +2 CH
-    expect(within(wound()).getByText("+1 CAV")).toBeInTheDocument();
+    expect(within(wound()).getByText(term("+1 CAV"))).toBeInTheDocument();
     expect(wound().querySelector(".text-6xl")).toHaveTextContent("5"); // 6-2 +1 CAV
     fireEvent.click(modifier("chargingFourOrMoreDice"));
-    expect(within(wound()).queryByText("+1 CAV")).not.toBeInTheDocument();
+    expect(within(wound()).queryByText(term("+1 CAV"))).not.toBeInTheDocument();
   });
 
   it("applies Spears automatically: +1 OS vs a Cavalry defender, -1 die charging", () => {
@@ -326,11 +311,11 @@ describe("Units", () => {
     pickUnit(utils, "defender", "Lancers");
     const { dice, hit, modifier } = utils;
     // OS 6 - DS 2 + 1 SP (Lancers are Cavalry) = 5
-    expect(within(hit()).getByText("+1 SP")).toBeInTheDocument();
+    expect(within(hit()).getByText(term("+1 SP"))).toBeInTheDocument();
     expect(hit().querySelector(".text-6xl")).toHaveTextContent("5");
     // charging: 7 base +2 CH -1 SP = 8 dice
     fireEvent.click(modifier("chargingFourOrMoreDice"));
-    expect(within(dice()).getByText("-1 SP")).toBeInTheDocument();
+    expect(within(dice()).getByText(term("-1 SP"))).toBeInTheDocument();
     expect(dice().querySelector(".text-6xl")).toHaveTextContent("8");
   });
 
@@ -343,13 +328,13 @@ describe("Units", () => {
     // a Lizardmen attacker turns it into a die, with its own breakdown line
     pickUnit(utils, "attacker", "Trog Warriors");
     expect(dice().querySelector(".text-6xl")).toHaveTextContent("6"); // 5 +1 BF
-    expect(within(dice()).getByText("+1 BF")).toBeInTheDocument();
+    expect(within(dice()).getByText(term("+1 BF"))).toBeInTheDocument();
     fireEvent.click(modifier("targetDamaged"));
     expect(dice().querySelector(".text-6xl")).toHaveTextContent("5");
     // and it is melee-only: switching stance drops it
     fireEvent.click(modifier("targetDamaged"));
     fireEvent.click(getByText("Ranged"));
-    expect(within(dice()).queryByText("+1 BF")).not.toBeInTheDocument();
+    expect(within(dice()).queryByText(term("+1 BF"))).not.toBeInTheDocument();
     fireEvent.click(getByText("Melee"));
     expect(modifier("targetDamaged")).not.toHaveClass("plate-on-ember");
   });
@@ -359,11 +344,11 @@ describe("Units", () => {
     pickUnit(utils, "attacker", "Bowmen");
     const { hit, wound, getByText } = utils;
     // melee: OS 5 - 2 ENG = 3, OP 5 - 2 ENG = 3
-    expect(within(hit()).getByText("-2 ENG")).toBeInTheDocument();
+    expect(within(hit()).getByText(term("-2 ENG"))).toBeInTheDocument();
     expect(hit().querySelector(".text-6xl")).toHaveTextContent("3");
     expect(wound().querySelector(".text-6xl")).toHaveTextContent("3");
     fireEvent.click(getByText("Ranged"));
-    expect(within(hit()).queryByText("-2 ENG")).not.toBeInTheDocument();
+    expect(within(hit()).queryByText(term("-2 ENG"))).not.toBeInTheDocument();
     expect(hit().querySelector(".text-6xl")).toHaveTextContent("5"); // OS 5 vs DS 0
   });
 
@@ -383,7 +368,7 @@ describe("Units", () => {
     pickAttacker(utils);
     fireEvent.click(utils.getByLabelText("Clear attacker unit"));
     expect(utils.getByLabelText("Pick attacker unit")).toBeInTheDocument();
-    expect(within(utils.dice()).getByText("7 Dice")).toBeInTheDocument();
+    expect(within(utils.dice()).getByText(term("7 Dice"))).toBeInTheDocument();
   });
 
   it("the picker narrows to army units, with a toggle for the rest", () => {
@@ -486,11 +471,11 @@ describe("Units", () => {
     const utils = setup();
     pickUnit(utils, "attacker", "Swordsmen #1"); // 5 marked: yellow
     expect(utils.modifier("inTheYellow")).toHaveClass("plate-on-blood");
-    expect(within(utils.dice()).getByText("-1 IY")).toBeInTheDocument();
+    expect(within(utils.dice()).getByText(term("-1 IY"))).toBeInTheDocument();
     pickUnit(utils, "attacker", "Swordsmen #2"); // 7 marked: red
     expect(utils.modifier("inTheYellow")).not.toHaveClass("plate-on-blood");
     expect(utils.modifier("inTheRed")).toHaveClass("plate-on-blood");
-    expect(within(utils.dice()).getByText("-2 IR")).toBeInTheDocument();
+    expect(within(utils.dice()).getByText(term("-2 IR"))).toBeInTheDocument();
     // the slot shows the copy and its damage state
     expect(
       utils.getByLabelText(/attacker: Swordsmen/)
@@ -721,7 +706,7 @@ describe("Units", () => {
     fireEvent.click(utils.getByLabelText("Close army builder"));
     expect(utils.modifier("targetDamaged")).toHaveClass("plate-on-ember");
     // and the Trogs' Blood Frenzy turns the wound into a die
-    expect(within(utils.dice()).getByText("+1 BF")).toBeInTheDocument();
+    expect(within(utils.dice()).getByText(term("+1 BF"))).toBeInTheDocument();
   });
 
   it("a marked Uruz box feeds the dice pool in melee only", () => {
@@ -734,13 +719,13 @@ describe("Units", () => {
     pickUnit(utils, "attacker", "Dwarven Axemen"); // (5) 5/5 melee
     // 5 base + 1 URUZ
     expect(utils.dice().querySelector(".text-6xl")).toHaveTextContent("6");
-    expect(within(utils.dice()).getByText("+1 URUZ")).toBeInTheDocument();
+    expect(within(utils.dice()).getByText(term("+1 URUZ"))).toBeInTheDocument();
 
     // erasing the mark from the battle-screen row drops it live
     const units = () => utils.container.querySelector(".Units");
     fireEvent.click(within(units()).getByLabelText(/Erase Rune of Uruz/));
     expect(utils.dice().querySelector(".text-6xl")).toHaveTextContent("5");
-    expect(within(utils.dice()).queryByText("+1 URUZ")).not.toBeInTheDocument();
+    expect(within(utils.dice()).queryByText(term("+1 URUZ"))).not.toBeInTheDocument();
   });
 
   it("Lashing from the battle screen adds its die until the turn ends", () => {
@@ -762,7 +747,7 @@ describe("Units", () => {
     const units = () => utils.container.querySelector(".Units");
     fireEvent.click(within(units()).getByLabelText(/Lash Orc Marauders/));
     expect(utils.dice().querySelector(".text-6xl")).toHaveTextContent("8");
-    expect(within(utils.dice()).getByText("+1 LASH")).toBeInTheDocument();
+    expect(within(utils.dice()).getByText(term("+1 LASH"))).toBeInTheDocument();
     // and it landed on the enemy record, where this copy lives
     expect(loadArmy("enemy").lashed["orcArmy/orcMarauders"]).toEqual([true]);
 
@@ -773,7 +758,7 @@ describe("Units", () => {
     fireEvent.click(within(builder()).getByText("New turn"));
     fireEvent.click(utils.getByLabelText("Close army builder"));
     expect(utils.dice().querySelector(".text-6xl")).toHaveTextContent("7");
-    expect(within(utils.dice()).queryByText("+1 LASH")).not.toBeInTheDocument();
+    expect(within(utils.dice()).queryByText(term("+1 LASH"))).not.toBeInTheDocument();
   });
 
   it("the header army button opens the army builder", () => {
@@ -807,22 +792,11 @@ describe("Units", () => {
     expect(container.querySelector(".PlusOneDice")).toBeEnabled();
   });
 
-  it("picking units retires the base controls, the calc line takes over", () => {
+  it("selection writes the calc line's base terms", () => {
     const utils = setup();
-    const { container, dice, getByLabelText, queryByLabelText } = utils;
+    const { dice } = utils;
     pickUnit(utils, "attacker", "Knights");
-    // the dice ± and attacker ranks retire; the calc line is the label
-    expect(queryByLabelText(/Add one die/)).not.toBeInTheDocument();
-    expect(container.querySelector(".OffensiveSkillRank")).toBeNull();
-    expect(within(dice()).getByText("6 Dice")).toBeInTheDocument();
-    // the defender's side stays editable until a defender is picked
-    expect(container.querySelector(".DefensiveSkillRank")).not.toBeNull();
-    pickUnit(utils, "defender", "Communal Pikemen");
-    expect(container.querySelector(".DefensiveSkillRank")).toBeNull();
-    // clearing the slot hands the controls back
-    fireEvent.click(getByLabelText("Clear attacker unit"));
-    expect(getByLabelText(/Add one die/)).toBeInTheDocument();
-    expect(container.querySelector(".OffensiveSkillRank")).not.toBeNull();
+    expect(within(dice()).getByText(term("6 Dice"))).toBeInTheDocument();
   });
 
   it("tracks special-attack ammo with tap-down pips", () => {

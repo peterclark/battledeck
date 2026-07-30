@@ -5,7 +5,6 @@ import {
   keyBy,
   map,
   mapValues,
-  max,
   min,
   pick,
   range,
@@ -24,8 +23,6 @@ import {
   GiShield,
 } from "react-icons/gi";
 import {
-  FaMinus,
-  FaPlus,
   FaQuestion,
   FaTimes,
   FaVolumeUp,
@@ -80,36 +77,14 @@ const AnimatedNumber = ({ value, className: cls }) => (
 
 // Tap increments the rank; holding decrements (repeating while held).
 // Keyboard: Enter/Space raise, arrow keys raise/lower.
-// Rank buttons only render while their slot is empty — once a unit card
-// fills it, the rank is the card's and the calc line under the big
-// number is the label.
-const RankButton = ({ label, value, onInc, tone }) => {
-  const inc = (mod) => {
-    onInc(mod);
-    playTick();
-    buzz();
-  };
-  const press = usePressable({
-    onTap: () => inc(1),
-    onHold: () => inc(-1),
-    repeat: 280,
-    onArrowUp: () => inc(1),
-    onArrowDown: () => inc(-1),
-  });
-  return (
-    <button
-      className={className(
-        "plate flex-1 flex flex-col items-center justify-center py-1",
-        tone
-      )}
-      aria-label={`${label} rank ${value}. Tap to raise, hold to lower.`}
-      {...press}
-    >
-      <span className="font-display text-3xl leading-none">{value}</span>
-      <span className="text-[10px] tracking-widest opacity-70">{label}</span>
-    </button>
-  );
-};
+// One calc-line term — the value a touch larger than its code so the
+// numbers read first
+const Term = ({ value, code }) => (
+  <span className="Term whitespace-nowrap">
+    <span className="text-[11px]">{value}</span>
+    {code && <span className="text-[9px]"> {code}</span>}
+  </span>
+);
 
 // Reset wipes state and sits next to frequently-tapped controls, so it asks
 // for confirmation: hold to reset, or tap twice within the arm window (the
@@ -260,7 +235,9 @@ const CardPlayButton = ({ card, disabled, onPlay }) => (
 // line under it, so a stack of active modifiers widens the line instead
 // of pushing the page down
 const StatCard = ({ title, value, tone, calc }) => (
-  <div className="flex flex-col items-center gap-0.5 pt-1">
+  // flex-1: the card grows to fill its grid cell so the card-play row
+  // below stays level across columns even when one calc line wraps
+  <div className="flex flex-1 flex-col items-center gap-0.5 pt-1">
     <span className="text-[11px] font-bold tracking-wider text-bone-300">
       {title}
     </span>
@@ -326,26 +303,6 @@ const App = () => {
   const activeProfile = attacker ? attackProfile(attacker, attackMode) : null;
   const ccLocked = frightened.on || Boolean(activeProfile?.noCommandCards);
   const diceLocked = Boolean(activeProfile?.lockedDice);
-
-  const handleIncDice = (mod) => {
-    setBaseDice((dice) => min([max([dice + mod, 0]), MAX_DICE]));
-  };
-
-  const handleIncOffensiveSkill = (mod) => {
-    setOffensiveSkill((os) => (os + mod + MAX_ROLL) % MAX_ROLL);
-  };
-
-  const handleIncOffensivePower = (mod) => {
-    setOffensivePower((op) => (op + mod + MAX_ROLL) % MAX_ROLL);
-  };
-
-  const handleIncDefensiveSkill = (mod) => {
-    setDefensiveSkill((ds) => (ds + mod + MAX_ROLL) % MAX_ROLL);
-  };
-
-  const handleIncDefensivePower = (mod) => {
-    setDefensivePower((dp) => (dp + mod + MAX_ROLL) % MAX_ROLL);
-  };
 
   const resetModifiers = () => {
     setModifiers(MODIFIERS);
@@ -802,7 +759,7 @@ const App = () => {
   // single term — the individual plays stay visible as chips below
   const ccTerm = (column) => {
     const net = [ccDice, ccOffensiveSkill, ccOffensivePower][column];
-    return net !== 0 && <span>{signed(net)} CC</span>;
+    return net !== 0 && <Term value={signed(net)} code="CC" />;
   };
 
   // One term per live attacker ability touching this column (index in the
@@ -812,9 +769,11 @@ const App = () => {
       const value = bonus[column];
       return (
         value !== 0 && (
-          <span key={`ability-${name}-${index}`}>
-            {signed(value)} {code ?? name}
-          </span>
+          <Term
+            key={`ability-${name}-${index}`}
+            value={signed(value)}
+            code={code ?? name}
+          />
         )
       );
     });
@@ -875,34 +834,6 @@ const App = () => {
     );
     return disabled;
   }, [modifiers, status]);
-
-  const diceDown = usePressable({
-    onTap: () => {
-      handleIncDice(-1);
-      playDrum();
-      buzz();
-    },
-    onHold: () => {
-      handleIncDice(-1);
-      playDrum();
-      buzz();
-    },
-    repeat: 140,
-  });
-
-  const diceUp = usePressable({
-    onTap: () => {
-      handleIncDice(1);
-      playDrum();
-      buzz();
-    },
-    onHold: () => {
-      handleIncDice(1);
-      playDrum();
-      buzz();
-    },
-    repeat: 140,
-  });
 
   return (
     <div
@@ -982,7 +913,7 @@ const App = () => {
               tone="text-ember-400"
               calc={
                 <>
-                  <span>{baseDice} Dice</span>
+                  <Term value={baseDice} code="Dice" />
                   {diceLocked ? (
                     <span className="text-ember-500">locked</span>
                   ) : (
@@ -992,9 +923,11 @@ const App = () => {
                       {map(
                         onModifiersForDice,
                         ({ id, modifier, count, code }) => (
-                          <span key={id}>
-                            {signed(modifier[0] * (count ?? 1))} {code}
-                          </span>
+                          <Term
+                            key={id}
+                            value={signed(modifier[0] * (count ?? 1))}
+                            code={code}
+                          />
                         )
                       )}
                       {frightened.on && <span>{frightened.code}</span>}
@@ -1003,32 +936,6 @@ const App = () => {
                 </>
               }
             />
-            {/* manual base controls only exist while their slot is empty —
-                once units are picked the calc line is the label and cards
-                do the adjusting. The row renders (empty if need be) while
-                any column still has controls, keeping the card rows level */}
-            {(!attacker || !defender) && (
-              <div className="flex h-12 gap-1">
-                {!attacker && (
-                  <>
-                    <button
-                      className="plate plate-danger flex flex-1 items-center justify-center text-xl"
-                      aria-label="Remove one die. Hold to repeat."
-                      {...diceDown}
-                    >
-                      <FaMinus />
-                    </button>
-                    <button
-                      className="plate plate-boon flex flex-1 items-center justify-center text-xl"
-                      aria-label="Add one die. Hold to repeat."
-                      {...diceUp}
-                    >
-                      <FaPlus />
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
             <div className="flex gap-1">
               <CardPlayButton
                 card={CARDS_BY_ID.MinusOneDice}
@@ -1050,15 +957,18 @@ const App = () => {
               tone="text-blood-300"
               calc={
                 <>
-                  <span>
-                    {offensiveSkill} OS - {defensiveSkill} DS
+                  <span className="Term whitespace-nowrap">
+                    <Term value={offensiveSkill} code="OS" /> -{" "}
+                    <Term value={defensiveSkill} code="DS" />
                   </span>
                   {ccTerm(1)}
                   {abilityTerms(1)}
                   {map(onModifiersForSkill, ({ id, modifier, count, code }) => (
-                    <span key={id}>
-                      {signed(modifier[1] * (count ?? 1))} {code}
-                    </span>
+                    <Term
+                      key={id}
+                      value={signed(modifier[1] * (count ?? 1))}
+                      code={code}
+                    />
                   ))}
                   {frightened.on && <span>{frightened.code}</span>}
                   {hitOverkill > 0 && (
@@ -1069,34 +979,6 @@ const App = () => {
                 </>
               }
             />
-            {(!attacker || !defender) && (
-              <div className="flex h-12 items-center gap-0.5">
-                {!attacker && (
-                  <RankButton
-                    label="OS"
-                    value={offensiveSkill}
-                    onInc={handleIncOffensiveSkill}
-                    tone="OffensiveSkillRank text-blood-300"
-                  />
-                )}
-                {!attacker && !defender && (
-                  <span
-                    className="font-display text-lg leading-none text-bone-500"
-                    aria-hidden
-                  >
-                    &minus;
-                  </span>
-                )}
-                {!defender && (
-                  <RankButton
-                    label="DS"
-                    value={defensiveSkill}
-                    onInc={handleIncDefensiveSkill}
-                    tone="DefensiveSkillRank text-steel-300"
-                  />
-                )}
-              </div>
-            )}
             <div className="flex gap-1">
               <CardPlayButton
                 card={CARDS_BY_ID.MinusOneOS}
@@ -1118,15 +1000,18 @@ const App = () => {
               tone="text-steel-300"
               calc={
                 <>
-                  <span>
-                    {offensivePower} OP - {defensivePower} DP
+                  <span className="Term whitespace-nowrap">
+                    <Term value={offensivePower} code="OP" /> -{" "}
+                    <Term value={defensivePower} code="DP" />
                   </span>
                   {ccTerm(2)}
                   {abilityTerms(2)}
                   {map(onModifiersForPower, ({ id, modifier, count, code }) => (
-                    <span key={id}>
-                      {signed(modifier[2] * (count ?? 1))} {code}
-                    </span>
+                    <Term
+                      key={id}
+                      value={signed(modifier[2] * (count ?? 1))}
+                      code={code}
+                    />
                   ))}
                   {frightened.on && <span>{frightened.code}</span>}
                   {woundOverkill > 0 && (
@@ -1137,34 +1022,6 @@ const App = () => {
                 </>
               }
             />
-            {(!attacker || !defender) && (
-              <div className="flex h-12 items-center gap-0.5">
-                {!attacker && (
-                  <RankButton
-                    label="OP"
-                    value={offensivePower}
-                    onInc={handleIncOffensivePower}
-                    tone="OffensivePowerRank text-blood-300"
-                  />
-                )}
-                {!attacker && !defender && (
-                  <span
-                    className="font-display text-lg leading-none text-bone-500"
-                    aria-hidden
-                  >
-                    &minus;
-                  </span>
-                )}
-                {!defender && (
-                  <RankButton
-                    label="DP"
-                    value={defensivePower}
-                    onInc={handleIncDefensivePower}
-                    tone="DefensivePowerRank text-steel-300"
-                  />
-                )}
-              </div>
-            )}
             <div className="flex gap-1">
               <CardPlayButton
                 card={CARDS_BY_ID.MinusOneOP}
