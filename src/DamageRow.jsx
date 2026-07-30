@@ -1,7 +1,7 @@
 import { map, range } from "lodash";
 import classNames from "classnames";
-import { GiHealthIncrease, GiRuneStone } from "react-icons/gi";
-import { damageStatus, reanimateCost, unitBox } from "./data";
+import { GiHealthIncrease, GiRuneStone, GiWhip } from "react-icons/gi";
+import { damageStatus, reanimateCost, unitBox, unitTurnBuff } from "./data";
 
 const STATUS_LABEL = {
   fresh: "",
@@ -19,9 +19,10 @@ const STATUS_TONE = {
 // One fielded copy's damage track, shared by the army builder and the
 // battle screen: tapping box i marks damage up to it, tapping the last
 // marked box heals it back off. Undead copies also get a Reanimate button
-// showing its Command Action cost, and copies whose faction has an
+// showing its Command Action cost, copies whose faction has an
 // army-ability box (Bravery, Fury, Rune of Uruz, Precision, Spoils) get a
-// button that cycles that box's marks.
+// button that cycles that box's marks, and copies whose faction has a
+// turn-scoped empowerment (the Orc Lash) get a toggle for it.
 const DamageRow = ({
   unit,
   copy,
@@ -29,14 +30,24 @@ const DamageRow = ({
   marked,
   reanimated,
   boxed,
+  lashed,
   onMark,
   onReanimate,
   onBox,
+  onLash,
 }) => {
   const status = damageStatus(unit, marked);
   const label = `${unit.name}${copies > 1 ? ` #${copy + 1}` : ""}`;
   const cost = reanimateCost(unit);
   const box = unitBox(unit);
+  const buff = unitTurnBuff(unit);
+  const buffLabel = buff
+    ? lashed
+      ? `Undo ${buff.name} on ${label}`
+      : `${buff.name} ${label} for ${buff.cost} Command Action${
+          buff.cost > 1 ? "s" : ""
+        }`
+    : null;
   const boxLabel = box
     ? boxed >= box.max
       ? `Erase ${box.name} on ${label}`
@@ -115,6 +126,26 @@ const DamageRow = ({
             aria-hidden
           />
           {boxed}/{box.max}
+        </button>
+      )}
+      {buff && (
+        <button
+          className={classNames(
+            "TurnBuff plate flex h-6 shrink-0 items-center gap-1 px-1.5 font-mono text-[9px]",
+            lashed && "plate-on-ember"
+          )}
+          aria-label={buffLabel}
+          aria-pressed={lashed === true}
+          onClick={onLash}
+        >
+          <GiWhip
+            className={classNames(
+              "text-[11px]",
+              lashed ? "text-ember-300" : "text-bone-500"
+            )}
+            aria-hidden
+          />
+          {buff.cost}
         </button>
       )}
     </div>

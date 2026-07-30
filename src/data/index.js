@@ -50,6 +50,10 @@ export const FACTIONS_BY_ID = keyBy(FACTIONS, "id");
 //                  (Spoils: each Mercenary card prints its own)
 //   box.except     unit ids the ability can't empower (the Antonian
 //                  Horsemen's card back rules out Rune of Uruz)
+//   box.effect     optional attack effect that is live while the copy has
+//                  a mark standing (Uruz's (+1) +0/+0 while Engaged); the
+//                  other box abilities work outside the dice math and
+//                  carry none
 //
 // Returns null for units with no box at all.
 export const unitBox = (unit) => {
@@ -57,7 +61,27 @@ export const unitBox = (unit) => {
   if (!ability || includes(ability.box.except, unit.id)) return null;
   const { box } = ability;
   const max = box.countField ? unit[box.countField] ?? 0 : box.count ?? 1;
-  return max > 0 ? { name: ability.name, cost: box.cost, max } : null;
+  return max > 0
+    ? { name: ability.name, cost: box.cost, max, effect: box.effect ?? null }
+    : null;
+};
+
+// A turn-scoped empowerment the faction can buy per copy — the Orc Lash.
+// Unlike a box it marks nothing on the card: it lasts the turn and clears
+// with it, Reanimate-shaped. The owning ability carries the descriptor:
+//
+//   turn.cost    Command Actions per use
+//   turn.except  unit ids that can't receive it (Crazed Goblins may not
+//                be Lashed)
+//   turn.effect  attack effect live while the copy is empowered
+export const unitTurnBuff = (unit) => {
+  const ability = find(FACTIONS_BY_ID[unit?.factionId]?.abilities, "turn");
+  if (!ability || includes(ability.turn.except, unit.id)) return null;
+  return {
+    name: ability.name,
+    cost: ability.turn.cost,
+    effect: ability.turn.effect ?? null,
+  };
 };
 
 // The stat profile a unit attacks with in the given stance, or null if it
@@ -105,15 +129,30 @@ const unitEffects = (unit) => [
   ),
 ];
 
+// Faction-ability effects gated on the attacking copy's roster state: the
+// Uruz box while a mark is standing, Lash while the copy is empowered
+// this turn. A unit picked outside both armies has no copy state, so
+// neither fires.
+const copyStateEffects = (unit, { boxed = 0, lashed = false } = {}) => {
+  const box = unitBox(unit);
+  const buff = unitTurnBuff(unit);
+  return [
+    ...(box?.effect && boxed > 0 ? [{ name: box.name, ...box.effect }] : []),
+    ...(buff?.effect && lashed ? [{ name: buff.name, ...buff.effect }] : []),
+  ];
+};
+
 // Effects that adjust the current attack: only ones with a structured
 // `bonus` triple participate. An effect with a `when` list is live while
 // any of those modifiers is on; `stance` limits it to an attack mode (the
 // archers' Engaged penalty in melee); `whenTarget` requires the selected
-// defender to carry one of the listed keywords (Spears vs Cavalry). All
-// gates must pass. Prose-only rules are informational and never returned.
-export const activeAbilities = (unit, modifiers, attackMode, target) =>
+// defender to carry one of the listed keywords (Spears vs Cavalry).
+// `copyState` carries the selected copy's roster state for the
+// faction-ability effects above. All gates must pass. Prose-only rules
+// are informational and never returned.
+export const activeAbilities = (unit, modifiers, attackMode, target, copyState) =>
   filter(
-    unitEffects(unit),
+    [...unitEffects(unit), ...copyStateEffects(unit, copyState)],
     (effect) =>
       effect.bonus &&
       (!effect.stance || effect.stance === attackMode) &&

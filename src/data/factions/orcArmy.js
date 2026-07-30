@@ -11,6 +11,15 @@ export default {
   abilities: [
     {
       name: "Lash",
+      // turn-scoped, Reanimate-shaped: nothing marks the card, the buff
+      // clears with the turn. The (+1) +0/+0 feeds the dice pool in
+      // either stance; the +1 Movement half is outside the calculator.
+      // The Crazed Goblins' card back says they may not be Lashed.
+      turn: {
+        cost: 1,
+        except: ["crazedGoblins"],
+        effect: { code: "LASH", bonus: [1, 0, 0] },
+      },
       text:
         "You may spend a Command Action to Lash one of your units. A " +
         "Lashed unit gets +1 Movement and (+1) +0/+0 for the turn. You " +

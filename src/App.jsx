@@ -49,7 +49,7 @@ import {
   damageBoxes,
   damageStatus,
 } from "./data";
-import { withBoxCycle, withDamage, withReanimate } from "./army";
+import { withBoxCycle, withDamage, withLash, withReanimate } from "./army";
 import { BannerArt } from "./Artwork";
 import ArmyBuilder from "./ArmyBuilder";
 import DamageRow from "./DamageRow";
@@ -476,6 +476,15 @@ const App = () => {
     buzz();
   };
 
+  const lashCopy = (side, unit, copy) => {
+    const roster = armies[side];
+    const lashing = !(roster.lashed[unit.uid]?.[copy] ?? false);
+    editArmy(side, unit, copy, withLash(roster, unit.uid, copy));
+    if (lashing) playBonus();
+    else playTick();
+    buzz();
+  };
+
   const cycleCopyBox = (side, unit, copy) => {
     const roster = armies[side];
     const next = withBoxCycle(roster, unit.uid, copy);
@@ -505,9 +514,11 @@ const App = () => {
           marked={roster.marks[unit.uid]?.[copy] ?? 0}
           reanimated={roster.reanimated[unit.uid]?.[copy] === true}
           boxed={roster.boxes[unit.uid]?.[copy] ?? 0}
+          lashed={roster.lashed[unit.uid]?.[copy] === true}
           onMark={(value) => markCopyDamage(side ?? "mine", unit, copy, value)}
           onReanimate={() => reanimateCopy(side ?? "mine", unit, copy)}
           onBox={() => cycleCopyBox(side ?? "mine", unit, copy)}
+          onLash={() => lashCopy(side ?? "mine", unit, copy)}
         />
       </div>
     );
@@ -596,13 +607,33 @@ const App = () => {
     [playedCards]
   );
 
+  // The selected attacker copy's roster state, gating the faction-ability
+  // effects: a standing Uruz mark, a Lash bought this turn. An attacker
+  // picked outside both armies has neither.
+  const attackerCopyState = useMemo(() => {
+    if (!attacker || attackerCopy === null) return {};
+    const roster = armies[attackerArmy ?? "mine"];
+    return {
+      boxed: roster.boxes[attacker.uid]?.[attackerCopy] ?? 0,
+      lashed: roster.lashed[attacker.uid]?.[attackerCopy] === true,
+    };
+  }, [attacker, attackerCopy, attackerArmy, armies]);
+
   // The selected attacker's card abilities that are live right now (e.g.
-  // Spears while Charging) — applied automatically and shown as their own
-  // breakdown lines
+  // Spears while Charging, a marked Uruz box) — applied automatically and
+  // shown as their own breakdown lines
   const attackerAbilities = useMemo(
     () =>
-      attacker ? activeAbilities(attacker, modifiers, attackMode, defender) : [],
-    [attacker, modifiers, attackMode, defender]
+      attacker
+        ? activeAbilities(
+            attacker,
+            modifiers,
+            attackMode,
+            defender,
+            attackerCopyState
+          )
+        : [],
+    [attacker, modifiers, attackMode, defender, attackerCopyState]
   );
 
   const [abilityDice, abilityOS, abilityOP] = useMemo(

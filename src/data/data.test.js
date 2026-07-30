@@ -10,6 +10,7 @@ import {
   damageStatus,
   reanimateCost,
   unitBox,
+  unitTurnBuff,
 } from "./index";
 import { MODIFIERS } from "../constants";
 import { MAX_DICE, MAX_ROLL } from "../derive";
@@ -116,11 +117,13 @@ describe("faction data", () => {
   });
 
   it("unitBox reads the faction's box ability, or null when there is none", () => {
-    // one box on every card, the common shape
+    // one box on every card, the common shape; Bravery's effect is
+    // Courage, outside the dice math, so it carries none
     expect(unitBox(UNITS_BY_UID["menOfHawkshold/swordsmen"])).toEqual({
       name: "Bravery",
       cost: 1,
       max: 1,
+      effect: null,
     });
     expect(unitBox(UNITS_BY_UID["highElves/celestialGuard"]).name).toBe(
       "Precision"
@@ -128,7 +131,7 @@ describe("faction data", () => {
     expect(unitBox(UNITS_BY_UID["lizardmen/trogWarriors"]).name).toBe("Fury");
     // Spoils counts the boxes printed on the individual card
     expect(unitBox(UNITS_BY_UID["monstersAndMercenaries/elementalist"])).toEqual(
-      { name: "Spoils", cost: 1, max: 2 }
+      { name: "Spoils", cost: 1, max: 2, effect: null }
     );
     expect(unitBox(UNITS_BY_UID["monstersAndMercenaries/ogres"]).max).toBe(1);
     // a Mercenary card with no Spoils boxes has nothing to mark
@@ -142,6 +145,77 @@ describe("faction data", () => {
     // the Undead army ability is Reanimate, which marks no box
     expect(unitBox(UNITS_BY_UID["undeadArmy/zombies"])).toBeNull();
     expect(unitBox(null)).toBeNull();
+  });
+
+  it("unitTurnBuff resolves the Orc Lash, or null when there is none", () => {
+    expect(unitTurnBuff(UNITS_BY_UID["orcArmy/orcAxemen"])).toEqual({
+      name: "Lash",
+      cost: 1,
+      effect: { code: "LASH", bonus: [1, 0, 0] },
+    });
+    // the Crazed Goblins' card back says they may not be Lashed
+    expect(unitTurnBuff(UNITS_BY_UID["orcArmy/crazedGoblins"])).toBeNull();
+    // no other faction has a turn-scoped empowerment
+    expect(unitTurnBuff(UNITS_BY_UID["menOfHawkshold/swordsmen"])).toBeNull();
+    expect(unitTurnBuff(null)).toBeNull();
+  });
+
+  it("a standing Uruz mark adds its die in melee only", () => {
+    const axemen = UNITS_BY_UID["dwarvesOfRunegard/dwarvenAxemen"];
+    expect(
+      map(activeAbilities(axemen, {}, "melee", null, { boxed: 1 }), "code")
+    ).toEqual(["URUZ"]);
+    // the card gives no bonus to ranged attacks
+    expect(
+      activeAbilities(axemen, {}, "ranged", null, { boxed: 1 })
+    ).toHaveLength(0);
+    // no mark standing, no bonus — and no copy state at all (a unit picked
+    // outside both armies) reads the same way
+    expect(
+      activeAbilities(axemen, {}, "melee", null, { boxed: 0 })
+    ).toHaveLength(0);
+    expect(activeAbilities(axemen, {}, "melee")).toHaveLength(0);
+    // the Horsemen can't carry the Rune, marked state or not
+    expect(
+      activeAbilities(
+        UNITS_BY_UID["dwarvesOfRunegard/antonianHorsemen"],
+        {},
+        "melee",
+        null,
+        { boxed: 1 }
+      )
+    ).toHaveLength(0);
+    // the other box abilities work outside the dice math: a marked
+    // Bravery box adds nothing
+    expect(
+      activeAbilities(UNITS_BY_UID["menOfHawkshold/swordsmen"], {}, "melee", null, {
+        boxed: 1,
+      })
+    ).toHaveLength(0);
+  });
+
+  it("a Lashed copy adds its die in either stance", () => {
+    const crossbows = UNITS_BY_UID["orcArmy/orcCrossbowmen"];
+    // ranged: just the Lash die
+    expect(
+      map(activeAbilities(crossbows, {}, "ranged", null, { lashed: true }), "code")
+    ).toEqual(["LASH"]);
+    // melee: their Engaged bonus stacks with it
+    expect(
+      map(activeAbilities(crossbows, {}, "melee", null, { lashed: true }), "bonus")
+    ).toEqual([
+      [2, 0, 1],
+      [1, 0, 0],
+    ]);
+    expect(
+      activeAbilities(crossbows, {}, "ranged", null, { lashed: false })
+    ).toHaveLength(0);
+    // the Crazed Goblins may not be Lashed, so the state can't fire
+    expect(
+      activeAbilities(UNITS_BY_UID["orcArmy/crazedGoblins"], {}, "melee", null, {
+        lashed: true,
+      })
+    ).toHaveLength(0);
   });
 
   it("unit uids are globally unique", () => {

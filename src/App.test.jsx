@@ -662,6 +662,58 @@ describe("Units", () => {
     expect(utils.modifier("inTheYellow")).toHaveClass("plate-on-blood");
   });
 
+  it("a marked Uruz box feeds the dice pool in melee only", () => {
+    saveArmy({
+      budget: 2000,
+      counts: { "dwarvesOfRunegard/dwarvenAxemen": 1 },
+      boxes: { "dwarvesOfRunegard/dwarvenAxemen": [1] },
+    });
+    const utils = setup();
+    pickUnit(utils, "attacker", "Dwarven Axemen"); // (5) 5/5 melee
+    // 5 base + 1 URUZ
+    expect(utils.dice().querySelector(".text-6xl")).toHaveTextContent("6");
+    expect(within(utils.dice()).getByText("1 URUZ")).toBeInTheDocument();
+
+    // erasing the mark from the battle-screen row drops it live
+    const units = () => utils.container.querySelector(".Units");
+    fireEvent.click(within(units()).getByLabelText(/Erase Rune of Uruz/));
+    expect(utils.dice().querySelector(".text-6xl")).toHaveTextContent("5");
+    expect(within(utils.dice()).queryByText("1 URUZ")).not.toBeInTheDocument();
+  });
+
+  it("Lashing from the battle screen adds its die until the turn ends", () => {
+    saveArmy(
+      {
+        budget: 2000,
+        counts: { "orcArmy/orcMarauders": 1 },
+      },
+      "enemy"
+    );
+    const utils = setup();
+    fireEvent.click(utils.getByLabelText("Pick attacker unit"));
+    const overlay = utils.container.querySelector(".UnitPicker");
+    fireEvent.click(within(overlay).getByText("Orc Army"));
+    fireEvent.click(within(overlay).getByText("Orc Marauders"));
+    // (7) 6/5 melee prefill
+    expect(utils.dice().querySelector(".text-6xl")).toHaveTextContent("7");
+
+    const units = () => utils.container.querySelector(".Units");
+    fireEvent.click(within(units()).getByLabelText(/Lash Orc Marauders/));
+    expect(utils.dice().querySelector(".text-6xl")).toHaveTextContent("8");
+    expect(within(utils.dice()).getByText("1 LASH")).toBeInTheDocument();
+    // and it landed on the enemy record, where this copy lives
+    expect(loadArmy("enemy").lashed["orcArmy/orcMarauders"]).toEqual([true]);
+
+    // New turn (in the builder) releases it
+    fireEvent.click(utils.getByLabelText("Build your army"));
+    const builder = () => utils.container.querySelector(".ArmyBuilder");
+    fireEvent.click(within(builder()).getByText("Enemy army"));
+    fireEvent.click(within(builder()).getByText("New turn"));
+    fireEvent.click(utils.getByLabelText("Close army builder"));
+    expect(utils.dice().querySelector(".text-6xl")).toHaveTextContent("7");
+    expect(within(utils.dice()).queryByText("1 LASH")).not.toBeInTheDocument();
+  });
+
   it("the header army button opens the army builder", () => {
     const { getByLabelText, container } = setup();
     fireEvent.click(getByLabelText("Build your army"));

@@ -244,6 +244,11 @@ describe("ArmyBuilder", () => {
         "menOfHawkshold/lancers": [0, 0, 0],
         "menOfHawkshold/sirSteaphensFreeCompany": [0],
       },
+      // and un-Lashed (an Orc-only state, but every copy tracks it)
+      lashed: {
+        "menOfHawkshold/lancers": [false, false, false],
+        "menOfHawkshold/sirSteaphensFreeCompany": [false],
+      },
       // nothing stored for the builder's page, so it opens on its list
       faction: null,
     });
@@ -452,6 +457,42 @@ describe("ArmyBuilder", () => {
     expect(utils.container.querySelectorAll(".BoxMark")).toHaveLength(0);
     utils.add("Dwarven Axemen"); // but its faction-mates keep theirs
     expect(utils.container.querySelectorAll(".BoxMark")).toHaveLength(1);
+  });
+
+  it("Lash spends a Command Action for the turn and can be taken back", () => {
+    const utils = setup();
+    utils.add("Orc Axemen");
+    const lash = () => utils.getByLabelText(/Lash Orc Axemen|Undo Lash/);
+    expect(utils.container.querySelector(".TurnTally")).not.toBeInTheDocument();
+
+    fireEvent.click(lash());
+    expect(utils.getByLabelText("Undo Lash on Orc Axemen")).toBeInTheDocument();
+    expect(
+      within(utils.container.querySelector(".TurnTally")).getByText("1 CA")
+    ).toBeInTheDocument();
+
+    // taking an accidental Lash back refunds it
+    fireEvent.click(lash());
+    expect(
+      utils.getByLabelText("Lash Orc Axemen for 1 Command Action")
+    ).toBeInTheDocument();
+    expect(utils.container.querySelector(".TurnTally")).not.toBeInTheDocument();
+
+    // a new turn releases the Lash without a refund fuss
+    fireEvent.click(lash());
+    fireEvent.click(utils.getByText("New turn"));
+    expect(utils.container.querySelector(".TurnTally")).not.toBeInTheDocument();
+    expect(
+      utils.getByLabelText("Lash Orc Axemen for 1 Command Action")
+    ).toBeInTheDocument();
+  });
+
+  it("the Crazed Goblins get no Lash button", () => {
+    const utils = setup();
+    utils.add("Crazed Goblins");
+    expect(utils.container.querySelectorAll(".TurnBuff")).toHaveLength(0);
+    utils.add("Goblin Raiders"); // their faction-mates keep theirs
+    expect(utils.container.querySelectorAll(".TurnBuff")).toHaveLength(1);
   });
 
   it("removing a copy drops its damage track", () => {
