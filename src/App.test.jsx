@@ -662,6 +662,63 @@ describe("Units", () => {
     expect(utils.modifier("inTheYellow")).toHaveClass("plate-on-blood");
   });
 
+  it("a damaged defender copy prefills Foe Damaged, live with its track", () => {
+    saveArmy({
+      budget: 2000,
+      counts: { "menOfHawkshold/swordsmen": 2 },
+      marks: { "menOfHawkshold/swordsmen": [3, 0] },
+    });
+    const utils = setup();
+    pickUnit(utils, "defender", "Swordsmen #1"); // wounded: FD lights
+    expect(utils.modifier("targetDamaged")).toHaveClass("plate-on-ember");
+    pickUnit(utils, "defender", "Swordsmen #2"); // untouched: FD clears
+    expect(utils.modifier("targetDamaged")).not.toHaveClass("plate-on-ember");
+    // wounding the copy from its battle-screen row flips it on the spot...
+    const units = () => utils.container.querySelector(".Units");
+    fireEvent.click(within(units()).getByLabelText("Swordsmen #2 damage box 1"));
+    expect(utils.modifier("targetDamaged")).toHaveClass("plate-on-ember");
+    // ...and healing back to untouched releases it
+    fireEvent.click(within(units()).getByLabelText("Swordsmen #2 damage box 1"));
+    expect(utils.modifier("targetDamaged")).not.toHaveClass("plate-on-ember");
+  });
+
+  it("a defender picked without a copy leaves Foe Damaged alone", () => {
+    const utils = setup();
+    fireEvent.click(utils.modifier("targetDamaged"));
+    pickDefender(utils); // no armies, so no copy — nothing is known
+    expect(utils.modifier("targetDamaged")).toHaveClass("plate-on-ember");
+  });
+
+  it("wounding the defender in the builder feeds Blood Frenzy on close", () => {
+    saveArmy({
+      budget: 2000,
+      counts: { "lizardmen/trogWarriors": 1 },
+      marks: { "lizardmen/trogWarriors": [0] },
+    });
+    saveArmy(
+      {
+        budget: 2000,
+        counts: { "orcArmy/trolls": 1 },
+        marks: { "orcArmy/trolls": [0] },
+      },
+      "enemy"
+    );
+    const utils = setup();
+    pickUnit(utils, "attacker", "Trog Warriors");
+    pickUnit(utils, "defender", "Trolls");
+    expect(utils.modifier("targetDamaged")).not.toHaveClass("plate-on-ember");
+    // wound the Trolls on the enemy roster; closing hands the news over
+    fireEvent.click(utils.getByLabelText("Build your army"));
+    const builder = () => utils.container.querySelector(".ArmyBuilder");
+    fireEvent.click(within(builder()).getByText("Enemy army"));
+    fireEvent.click(within(builder()).getByText("Orc Army"));
+    fireEvent.click(within(builder()).getByLabelText("Trolls damage box 2"));
+    fireEvent.click(utils.getByLabelText("Close army builder"));
+    expect(utils.modifier("targetDamaged")).toHaveClass("plate-on-ember");
+    // and the Trogs' Blood Frenzy turns the wound into a die
+    expect(within(utils.dice()).getByText("1 BF")).toBeInTheDocument();
+  });
+
   it("a marked Uruz box feeds the dice pool in melee only", () => {
     saveArmy({
       budget: 2000,

@@ -384,6 +384,19 @@ const App = () => {
     }));
   };
 
+  // The defender's damage prefills Foe Damaged the same way — Blood
+  // Frenzy keys off a wounded defender, and a selected defender copy's
+  // marks are known. A defender picked without a copy tells us nothing,
+  // so the toggle is left alone.
+  const applyTargetDamaged = (unit, copy, armyState) => {
+    if (copy === null || copy === undefined) return;
+    const marked = armyState.marks[unit.uid]?.[copy] ?? 0;
+    setModifiers((mods) => ({
+      ...mods,
+      targetDamaged: { ...mods.targetDamaged, on: marked > 0 },
+    }));
+  };
+
   const selectUnit = (uid, copy = null, side = null) => {
     const unit = UNITS_BY_UID[uid];
     const armySide = copy === null ? null : side ?? "mine";
@@ -399,6 +412,7 @@ const App = () => {
       setDefenderArmy(armySide);
       setDefensiveSkill(unit.defensiveSkill % MAX_ROLL);
       setDefensivePower(unit.defensivePower % MAX_ROLL);
+      applyTargetDamaged(unit, copy, armies[armySide ?? "mine"]);
     }
     setUnitPicker(null);
     playBonus();
@@ -430,6 +444,13 @@ const App = () => {
     if (attacker && attackerCopy !== null) {
       applyDamageState(attacker, attackerCopy, refreshed[attackerArmy ?? "mine"]);
     }
+    if (defender && defenderCopy !== null) {
+      applyTargetDamaged(
+        defender,
+        defenderCopy,
+        refreshed[defenderArmy ?? "mine"]
+      );
+    }
   };
 
   const slotDamage = (unit, copy, side) => {
@@ -458,6 +479,14 @@ const App = () => {
       side === (attackerArmy ?? "mine")
     ) {
       applyDamageState(unit, copy, next);
+    }
+    // and wounding the selected defender re-prefills Foe Damaged
+    if (
+      unit.uid === defenderUid &&
+      copy === defenderCopy &&
+      side === (defenderArmy ?? "mine")
+    ) {
+      applyTargetDamaged(unit, copy, next);
     }
   };
 
