@@ -80,10 +80,10 @@ const AnimatedNumber = ({ value, className: cls }) => (
 
 // Tap increments the rank; holding decrements (repeating while held).
 // Keyboard: Enter/Space raise, arrow keys raise/lower.
-// Once a unit card fills the slot the rank is the card's: the equation
-// renders as an inert label and Command Cards / modifiers do all the
-// adjusting. Hand-editing only exists while the slot is empty.
-const RankButton = ({ label, value, onInc, tone, inert }) => {
+// Rank buttons only render while their slot is empty — once a unit card
+// fills it, the rank is the card's and the calc line under the big
+// number is the label.
+const RankButton = ({ label, value, onInc, tone }) => {
   const inc = (mod) => {
     onInc(mod);
     playTick();
@@ -96,18 +96,6 @@ const RankButton = ({ label, value, onInc, tone, inert }) => {
     onArrowUp: () => inc(1),
     onArrowDown: () => inc(-1),
   });
-  if (inert)
-    return (
-      <div
-        className={className(
-          "flex-1 flex flex-col items-center justify-center py-1",
-          tone
-        )}
-      >
-        <span className="font-display text-3xl leading-none">{value}</span>
-        <span className="text-[10px] tracking-widest opacity-70">{label}</span>
-      </div>
-    );
   return (
     <button
       className={className(
@@ -268,17 +256,20 @@ const CardPlayButton = ({ card, disabled, onPlay }) => (
   </button>
 );
 
-const StatCard = ({ title, value, tone, lines }) => (
-  <div className="flex items-start justify-center gap-1.5 pt-1">
+// Title above the number, then the whole calculation as one wrappable
+// line under it, so a stack of active modifiers widens the line instead
+// of pushing the page down
+const StatCard = ({ title, value, tone, calc }) => (
+  <div className="flex flex-col items-center gap-0.5 pt-1">
+    <span className="text-[11px] font-bold tracking-wider text-bone-300">
+      {title}
+    </span>
     <AnimatedNumber
       value={value}
       className={className("font-display text-6xl leading-none", tone)}
     />
-    <div className="flex flex-col justify-center pt-1 font-mono text-[10px] leading-tight text-bone-500">
-      <span className="text-[11px] font-bold tracking-wider text-bone-300">
-        {title}
-      </span>
-      {lines}
+    <div className="flex min-h-4 flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 px-0.5 text-center font-mono text-[10px] leading-tight text-bone-500">
+      {calc}
     </div>
   </div>
 );
@@ -803,25 +794,26 @@ const App = () => {
     modifiers,
   ]);
 
-  // One breakdown line per played card touching this column (0=dice, 1=OS,
-  // 2=OP) — opposing cards show as separate lines instead of a hidden net
-  const ccLines = (column) =>
-    map(playedCards, (id, index) => {
-      const value = CARDS_BY_ID[id].mod[column];
-      return (
-        value !== 0 && <span key={`cc-${index}`}>{value} CC</span>
-      );
-    });
+  // Calculation terms render signed ("+1 CC", "-2 ENG") so the whole line
+  // reads as one equation under the big number
+  const signed = (value) => (value > 0 ? `+${value}` : `${value}`);
 
-  // One breakdown line per live attacker ability touching this column
-  // (index in the key: a keyword can contribute several same-named effects)
-  const abilityLines = (column) =>
+  // The played cards' net effect on a column (0=dice, 1=OS, 2=OP) as a
+  // single term — the individual plays stay visible as chips below
+  const ccTerm = (column) => {
+    const net = [ccDice, ccOffensiveSkill, ccOffensivePower][column];
+    return net !== 0 && <span>{signed(net)} CC</span>;
+  };
+
+  // One term per live attacker ability touching this column (index in the
+  // key: a keyword can contribute several same-named effects)
+  const abilityTerms = (column) =>
     map(attackerAbilities, ({ name, code, bonus }, index) => {
       const value = bonus[column];
       return (
         value !== 0 && (
           <span key={`ability-${name}-${index}`}>
-            {value} {code ?? name}
+            {signed(value)} {code ?? name}
           </span>
         )
       );
@@ -988,20 +980,20 @@ const App = () => {
               title="Dice"
               value={diceToRoll}
               tone="text-ember-400"
-              lines={
+              calc={
                 <>
-                  <span>{baseDice} base</span>
+                  <span>{baseDice} Dice</span>
                   {diceLocked ? (
                     <span className="text-ember-500">locked</span>
                   ) : (
                     <>
-                      {ccLines(0)}
-                      {abilityLines(0)}
+                      {ccTerm(0)}
+                      {abilityTerms(0)}
                       {map(
                         onModifiersForDice,
                         ({ id, modifier, count, code }) => (
                           <span key={id}>
-                            {modifier[0] * (count ?? 1)} {code}
+                            {signed(modifier[0] * (count ?? 1))} {code}
                           </span>
                         )
                       )}
@@ -1011,34 +1003,30 @@ const App = () => {
                 </>
               }
             />
-            {/* the pool's base comes off the attacker's card once one is
-                picked — like the ranks, it goes inert and cards do the
-                adjusting; the ± only exists while the slot is empty */}
-            {attacker ? (
-              <div className="DiceBase flex h-12 flex-1 flex-col items-center justify-center py-1 text-ember-400">
-                <span className="font-display text-3xl leading-none">
-                  {baseDice}
-                </span>
-                <span className="text-[10px] tracking-widest opacity-70">
-                  base
-                </span>
-              </div>
-            ) : (
+            {/* manual base controls only exist while their slot is empty —
+                once units are picked the calc line is the label and cards
+                do the adjusting. The row renders (empty if need be) while
+                any column still has controls, keeping the card rows level */}
+            {(!attacker || !defender) && (
               <div className="flex h-12 gap-1">
-                <button
-                  className="plate plate-danger flex flex-1 items-center justify-center text-xl"
-                  aria-label="Remove one die. Hold to repeat."
-                  {...diceDown}
-                >
-                  <FaMinus />
-                </button>
-                <button
-                  className="plate plate-boon flex flex-1 items-center justify-center text-xl"
-                  aria-label="Add one die. Hold to repeat."
-                  {...diceUp}
-                >
-                  <FaPlus />
-                </button>
+                {!attacker && (
+                  <>
+                    <button
+                      className="plate plate-danger flex flex-1 items-center justify-center text-xl"
+                      aria-label="Remove one die. Hold to repeat."
+                      {...diceDown}
+                    >
+                      <FaMinus />
+                    </button>
+                    <button
+                      className="plate plate-boon flex flex-1 items-center justify-center text-xl"
+                      aria-label="Add one die. Hold to repeat."
+                      {...diceUp}
+                    >
+                      <FaPlus />
+                    </button>
+                  </>
+                )}
               </div>
             )}
             <div className="flex gap-1">
@@ -1060,13 +1048,16 @@ const App = () => {
               title="Hit"
               value={rollToHit}
               tone="text-blood-300"
-              lines={
+              calc={
                 <>
-                  {ccLines(1)}
-                  {abilityLines(1)}
+                  <span>
+                    {offensiveSkill} OS - {defensiveSkill} DS
+                  </span>
+                  {ccTerm(1)}
+                  {abilityTerms(1)}
                   {map(onModifiersForSkill, ({ id, modifier, count, code }) => (
                     <span key={id}>
-                      {modifier[1] * (count ?? 1)} {code}
+                      {signed(modifier[1] * (count ?? 1))} {code}
                     </span>
                   ))}
                   {frightened.on && <span>{frightened.code}</span>}
@@ -1078,29 +1069,34 @@ const App = () => {
                 </>
               }
             />
-            {/* the rank buttons are the math behind the big number */}
-            <div className="flex h-12 items-center gap-0.5">
-              <RankButton
-                label="OS"
-                value={offensiveSkill}
-                onInc={handleIncOffensiveSkill}
-                tone="OffensiveSkillRank text-blood-300"
-                inert={Boolean(attacker)}
-              />
-              <span
-                className="font-display text-lg leading-none text-bone-500"
-                aria-hidden
-              >
-                &minus;
-              </span>
-              <RankButton
-                label="DS"
-                value={defensiveSkill}
-                onInc={handleIncDefensiveSkill}
-                tone="DefensiveSkillRank text-steel-300"
-                inert={Boolean(defender)}
-              />
-            </div>
+            {(!attacker || !defender) && (
+              <div className="flex h-12 items-center gap-0.5">
+                {!attacker && (
+                  <RankButton
+                    label="OS"
+                    value={offensiveSkill}
+                    onInc={handleIncOffensiveSkill}
+                    tone="OffensiveSkillRank text-blood-300"
+                  />
+                )}
+                {!attacker && !defender && (
+                  <span
+                    className="font-display text-lg leading-none text-bone-500"
+                    aria-hidden
+                  >
+                    &minus;
+                  </span>
+                )}
+                {!defender && (
+                  <RankButton
+                    label="DS"
+                    value={defensiveSkill}
+                    onInc={handleIncDefensiveSkill}
+                    tone="DefensiveSkillRank text-steel-300"
+                  />
+                )}
+              </div>
+            )}
             <div className="flex gap-1">
               <CardPlayButton
                 card={CARDS_BY_ID.MinusOneOS}
@@ -1120,13 +1116,16 @@ const App = () => {
               title="Wound"
               value={rollToWound}
               tone="text-steel-300"
-              lines={
+              calc={
                 <>
-                  {ccLines(2)}
-                  {abilityLines(2)}
+                  <span>
+                    {offensivePower} OP - {defensivePower} DP
+                  </span>
+                  {ccTerm(2)}
+                  {abilityTerms(2)}
                   {map(onModifiersForPower, ({ id, modifier, count, code }) => (
                     <span key={id}>
-                      {modifier[2] * (count ?? 1)} {code}
+                      {signed(modifier[2] * (count ?? 1))} {code}
                     </span>
                   ))}
                   {frightened.on && <span>{frightened.code}</span>}
@@ -1138,29 +1137,34 @@ const App = () => {
                 </>
               }
             />
-            {/* the rank buttons are the math behind the big number */}
-            <div className="flex h-12 items-center gap-0.5">
-              <RankButton
-                label="OP"
-                value={offensivePower}
-                onInc={handleIncOffensivePower}
-                tone="OffensivePowerRank text-blood-300"
-                inert={Boolean(attacker)}
-              />
-              <span
-                className="font-display text-lg leading-none text-bone-500"
-                aria-hidden
-              >
-                &minus;
-              </span>
-              <RankButton
-                label="DP"
-                value={defensivePower}
-                onInc={handleIncDefensivePower}
-                tone="DefensivePowerRank text-steel-300"
-                inert={Boolean(defender)}
-              />
-            </div>
+            {(!attacker || !defender) && (
+              <div className="flex h-12 items-center gap-0.5">
+                {!attacker && (
+                  <RankButton
+                    label="OP"
+                    value={offensivePower}
+                    onInc={handleIncOffensivePower}
+                    tone="OffensivePowerRank text-blood-300"
+                  />
+                )}
+                {!attacker && !defender && (
+                  <span
+                    className="font-display text-lg leading-none text-bone-500"
+                    aria-hidden
+                  >
+                    &minus;
+                  </span>
+                )}
+                {!defender && (
+                  <RankButton
+                    label="DP"
+                    value={defensivePower}
+                    onInc={handleIncDefensivePower}
+                    tone="DefensivePowerRank text-steel-300"
+                  />
+                )}
+              </div>
+            )}
             <div className="flex gap-1">
               <CardPlayButton
                 card={CARDS_BY_ID.MinusOneOP}
