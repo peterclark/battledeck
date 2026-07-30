@@ -110,6 +110,14 @@ describe("App", () => {
     expect(hit().querySelector(".text-6xl")).toHaveTextContent("1");
   });
 
+  it("card-play buttons sit inside the column of the number they change", () => {
+    const { dice, hit, wound } = setup();
+    expect(dice().querySelector(".PlusOneDice")).toBeInTheDocument();
+    expect(dice().querySelector(".MinusOneDice")).toBeInTheDocument();
+    expect(hit().querySelector(".PlusOneOS")).toBeInTheDocument();
+    expect(wound().querySelector(".MinusOneOP")).toBeInTheDocument();
+  });
+
   it("tapping a played-card chip removes that single play", () => {
     const { container, dice } = setup();
     fireEvent.click(container.querySelector(".PlusOneDice"));
@@ -147,7 +155,8 @@ describe("App", () => {
     expect(within(dice()).queryByText("1 CC")).not.toBeInTheDocument();
     expect(container.querySelectorAll(".PlayedCard")).toHaveLength(0);
     expect(container.querySelector(".PlusOneDice")).toBeDisabled();
-    expect(container.querySelector(".ClearCommandCardModifiers")).toBeDisabled();
+    // the chips row (and its Reset) only renders while plays are logged
+    expect(container.querySelector(".ClearCommandCardModifiers")).toBeNull();
   });
 
   it("reset arms on the first tap and resets on the second", () => {
@@ -295,10 +304,15 @@ describe("Units", () => {
     expect(
       within(container.querySelector(".DefensiveSkillRank")).getByText("2")
     ).toBeInTheDocument();
-    // OS 6 - DS 2 = 4 to hit; OP 5 - T 2 = 3 to wound
-    expect(within(hit()).getByText("4 base")).toBeInTheDocument();
+    // OS 6 - DS 2 = 4 to hit; OP 5 - T 2 = 3 to wound — the rank buttons
+    // under each number are the visible equation behind it
+    expect(
+      within(container.querySelector(".OffensiveSkillRank")).getByText("6")
+    ).toBeInTheDocument();
     expect(hit().querySelector(".text-6xl")).toHaveTextContent("4");
-    expect(within(wound()).getByText("3 base")).toBeInTheDocument();
+    expect(
+      within(container.querySelector(".DefensivePowerRank")).getByText("2")
+    ).toBeInTheDocument();
     expect(wound().querySelector(".text-6xl")).toHaveTextContent("3");
   });
 

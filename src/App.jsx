@@ -233,6 +233,26 @@ const UnitSlot = ({
   </div>
 );
 
+// A Command Card play, docked under the number it changes. Unlike the base
+// controls above it, this logs a play (a removable chip plus its own CC
+// breakdown line) rather than editing the base value — the scroll icon and
+// plate color mark the difference.
+const CardPlayButton = ({ card, disabled, onPlay }) => (
+  <button
+    className={className(
+      "CardPlay plate flex h-9 flex-1 items-center justify-center gap-1.5 text-sm",
+      card.id,
+      card.color === "bg-green-400" ? "plate-boon" : "plate-danger"
+    )}
+    disabled={disabled}
+    aria-label={`Play ${flatCardName(card.name)} Command Card`}
+    onClick={() => onPlay(card)}
+  >
+    <GiScrollUnfurled className="text-xs opacity-60" aria-hidden />
+    {card.name.split("\n")[0]}
+  </button>
+);
+
 const StatCard = ({ title, value, tone, lines }) => (
   <div className="flex items-start justify-center gap-1.5 pt-1">
     <AnimatedNumber
@@ -994,6 +1014,18 @@ const App = () => {
                 <FaPlus />
               </button>
             </div>
+            <div className="flex gap-1">
+              <CardPlayButton
+                card={CARDS_BY_ID.MinusOneDice}
+                disabled={ccLocked}
+                onPlay={handleCommandCard}
+              />
+              <CardPlayButton
+                card={CARDS_BY_ID.PlusOneDice}
+                disabled={ccLocked}
+                onPlay={handleCommandCard}
+              />
+            </div>
           </div>
 
           <div className="RollToHit flex flex-col gap-1">
@@ -1003,7 +1035,6 @@ const App = () => {
               tone="text-blood-300"
               lines={
                 <>
-                  <span>{offensiveSkill - defensiveSkill} base</span>
                   {ccLines(1)}
                   {abilityLines(1)}
                   {map(onModifiersForSkill, ({ id, modifier, count, code }) => (
@@ -1020,18 +1051,37 @@ const App = () => {
                 </>
               }
             />
-            <div className="flex h-12 gap-1">
+            {/* the rank buttons are the math behind the big number */}
+            <div className="flex h-12 items-center gap-0.5">
               <RankButton
                 label="OS"
                 value={offensiveSkill}
                 onInc={handleIncOffensiveSkill}
                 tone="OffensiveSkillRank text-blood-300"
               />
+              <span
+                className="font-display text-lg leading-none text-bone-500"
+                aria-hidden
+              >
+                &minus;
+              </span>
               <RankButton
                 label="DS"
                 value={defensiveSkill}
                 onInc={handleIncDefensiveSkill}
                 tone="DefensiveSkillRank text-steel-300"
+              />
+            </div>
+            <div className="flex gap-1">
+              <CardPlayButton
+                card={CARDS_BY_ID.MinusOneOS}
+                disabled={ccLocked}
+                onPlay={handleCommandCard}
+              />
+              <CardPlayButton
+                card={CARDS_BY_ID.PlusOneOS}
+                disabled={ccLocked}
+                onPlay={handleCommandCard}
               />
             </div>
           </div>
@@ -1043,7 +1093,6 @@ const App = () => {
               tone="text-steel-300"
               lines={
                 <>
-                  <span>{offensivePower - defensivePower} base</span>
                   {ccLines(2)}
                   {abilityLines(2)}
                   {map(onModifiersForPower, ({ id, modifier, count, code }) => (
@@ -1060,13 +1109,20 @@ const App = () => {
                 </>
               }
             />
-            <div className="flex h-12 gap-1">
+            {/* the rank buttons are the math behind the big number */}
+            <div className="flex h-12 items-center gap-0.5">
               <RankButton
                 label="OP"
                 value={offensivePower}
                 onInc={handleIncOffensivePower}
                 tone="OffensivePowerRank text-blood-300"
               />
+              <span
+                className="font-display text-lg leading-none text-bone-500"
+                aria-hidden
+              >
+                &minus;
+              </span>
               <RankButton
                 label="DP"
                 value={defensivePower}
@@ -1074,8 +1130,54 @@ const App = () => {
                 tone="DefensivePowerRank text-steel-300"
               />
             </div>
+            <div className="flex gap-1">
+              <CardPlayButton
+                card={CARDS_BY_ID.MinusOneOP}
+                disabled={ccLocked}
+                onPlay={handleCommandCard}
+              />
+              <CardPlayButton
+                card={CARDS_BY_ID.PlusOneOP}
+                disabled={ccLocked}
+                onPlay={handleCommandCard}
+              />
+            </div>
           </div>
         </div>
+        {playedCards.length > 0 && (
+          <div className="PlayedCards flex flex-wrap items-center justify-center gap-1 pt-1.5">
+            {map(playedCards, (id, index) => {
+              const card = CARDS_BY_ID[id];
+              return (
+                <button
+                  key={`played-${id}-${index}`}
+                  className={className(
+                    "PlayedCard plate flex items-center gap-1.5 px-2.5 py-1.5 text-[11px]",
+                    card.color === "bg-green-400" ? "plate-boon" : "plate-danger"
+                  )}
+                  aria-label={`Played ${flatCardName(card.name)}. Tap to remove.`}
+                  disabled={ccLocked}
+                  onClick={() => removePlayedCard(index)}
+                >
+                  {flatCardName(card.name)}
+                  <FaTimes className="text-[9px] opacity-60" aria-hidden />
+                </button>
+              );
+            })}
+            <ConfirmResetButton
+              className="ClearCommandCardModifiers plate plate-on-gold h-7 px-2.5 text-[10px] tracking-widest"
+              disabled={ccLocked}
+              armLabel="Again?"
+              onReset={() => {
+                setPlayedCards([]);
+                playDrum();
+                buzz(16);
+              }}
+            >
+              Reset
+            </ConfirmResetButton>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 px-3 pt-3">
@@ -1141,68 +1243,6 @@ const App = () => {
             </span>
           </div>
         )}
-      </div>
-
-      <div
-        className={className(
-          "flex flex-col gap-2 px-3 pt-3 transition-opacity duration-300",
-          ccLocked && "opacity-40 saturate-50"
-        )}
-      >
-        <div className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-bone-500">
-          <GiScrollUnfurled className="text-lg text-ember-600" aria-hidden />
-          Command cards
-        </div>
-        <div className="CommandCardModifiers flex h-16 gap-1">
-          {map(COMMAND_CARD_MODIFIERS, ({ id, name, color }) => (
-            <button
-              key={id}
-              className={className(
-                "plate flex-1 text-sm",
-                id,
-                color === "bg-green-400" ? "plate-boon" : "plate-danger"
-              )}
-              disabled={ccLocked}
-              onClick={() => handleCommandCard({ id, color })}
-            >
-              <span className="whitespace-pre-line">{name}</span>
-            </button>
-          ))}
-        </div>
-        {playedCards.length > 0 && (
-          <div className="PlayedCards flex flex-wrap justify-center gap-1">
-            {map(playedCards, (id, index) => {
-              const card = CARDS_BY_ID[id];
-              return (
-                <button
-                  key={`played-${id}-${index}`}
-                  className={className(
-                    "PlayedCard plate flex items-center gap-1.5 px-2.5 py-1.5 text-[11px]",
-                    card.color === "bg-green-400" ? "plate-boon" : "plate-danger"
-                  )}
-                  aria-label={`Played ${flatCardName(card.name)}. Tap to remove.`}
-                  disabled={ccLocked}
-                  onClick={() => removePlayedCard(index)}
-                >
-                  {flatCardName(card.name)}
-                  <FaTimes className="text-[9px] opacity-60" aria-hidden />
-                </button>
-              );
-            })}
-          </div>
-        )}
-        <ConfirmResetButton
-          className="ClearCommandCardModifiers plate plate-on-gold h-10 text-sm tracking-widest"
-          disabled={ccLocked}
-          armLabel="Tap again to reset"
-          onReset={() => {
-            setPlayedCards([]);
-            playDrum();
-            buzz(16);
-          }}
-        >
-          Reset
-        </ConfirmResetButton>
       </div>
 
       <div className="flex flex-col gap-2 px-3 pb-4 pt-3">
