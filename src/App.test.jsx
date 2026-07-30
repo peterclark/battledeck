@@ -284,7 +284,7 @@ describe("Units", () => {
   it("picking an attacker prefills dice, OS, and OP from its card", () => {
     const utils = setup();
     pickAttacker(utils);
-    const { container, dice, hit, wound } = utils;
+    const { dice, hit, wound } = utils;
     expect(within(dice()).getByText("7 Dice")).toBeInTheDocument();
     expect(dice().querySelector(".text-6xl")).toHaveTextContent("7");
     expect(within(hit()).getByText("6 OS - 0 DS")).toBeInTheDocument();
