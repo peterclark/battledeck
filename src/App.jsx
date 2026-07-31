@@ -77,12 +77,24 @@ const AnimatedNumber = ({ value, className: cls }) => (
 
 // Tap increments the rank; holding decrements (repeating while held).
 // Keyboard: Enter/Space raise, arrow keys raise/lower.
-// One calc-line term — the value a touch larger than its code so the
-// numbers read first
+// One calc-line term — value and code pushed together, the value two
+// sizes up and tinted by sign (green gain, red loss) so the numbers
+// read first
 const Term = ({ value, code }) => (
   <span className="Term whitespace-nowrap">
-    <span className="text-[11px]">{value}</span>
-    {code && <span className="text-[9px]"> {code}</span>}
+    <span
+      className={className(
+        "text-xs",
+        String(value).startsWith("-")
+          ? "text-blood-300"
+          : String(value).startsWith("+")
+            ? "text-moss-300"
+            : "text-bone-300"
+      )}
+    >
+      {value}
+    </span>
+    {code && <span className="text-[9px]">{code}</span>}
   </span>
 );
 
