@@ -22,7 +22,7 @@ The app computes three derived values from user taps:
 
 When an unclamped hit/wound total exceeds 5, the breakdown shows an `OK:` line for the game's Overkill rule (each point over 5 turns one rolled 6 into a 5); the big number stays clamped at 5.
 
-There are no manual base controls: unit selection sets the base numbers (wrapped modulo `MAX_ROLL=10`), and Command Cards, modifiers, and abilities do all the adjusting — the calc line under each big number is the equation. Each calc term (`Term`) renders its value one size up and its code one size down; each `StatCard` is `flex-1` so the card-play rows stay level across columns even when one column's calc line wraps.
+There are no manual base controls: unit selection sets the base numbers (wrapped modulo `MAX_ROLL=10`), and Command Cards, modifiers, and abilities do all the adjusting — the calc line under each big number is the equation. Each calc term (`Term`) joins its value and code with no gap — the value two sizes up and tinted by sign (`moss` gain, `blood` loss, `bone` for unsigned base values), the code one size down; each `StatCard` is `flex-1` so the card-play rows stay level across columns even when one column's calc line wraps.
 
 ### Modifier model (`src/constants.js`)
 
