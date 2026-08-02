@@ -92,6 +92,17 @@ export const KEYWORDS = {
     name: "Greater Undead",
     text: "Costs 3 Command Actions to Reanimate.",
   },
+  // Wuxing's Construct keyword — the full rule (Breakdown marks and their
+  // penalties) is on the Wuxing Army Ability card
+  construct: {
+    id: "construct",
+    name: "Construct",
+    text:
+      "Passes all Courage Checks. Taking damage that knocks it into the " +
+      "Yellow or Red — or any damage while in the Red — marks Breakdown, " +
+      "costing it (-2) -0/-0 and its Reliable reroll. See the Wuxing army " +
+      "abilities.",
+  },
   stupid: {
     id: "stupid",
     name: "Stupid",
