@@ -19,6 +19,15 @@ const CAVALRY_CHARGE = {
   when: ["chargingFourOrMoreDice", "chargingThreeOrLessDice"],
 };
 
+// The wolves' shared bonus, on both the Wolf Pack and Wolfkin cards.
+// Free Attacks after a Rout are their own attack step outside the
+// calculator's engagement, so this stays prose.
+const FREE_ATTACK_BONUS = {
+  name: "Free Attacks",
+  text:
+    "(+2) +0/+0 and +3/+0 (DS/Toughness) during post-Rout Free Attacks.",
+};
+
 // Archer melee penalty, as printed: "(-0) -2/-2 while Engaged"
 const ENGAGED = {
   name: "Engaged",
@@ -38,7 +47,9 @@ export default {
       // box on the card, and erasing it later spends the ability. What it
       // buys — setting an Attack Die to a "2" — happens on the table
       // rather than in the derived numbers, so it carries no effect.
-      box: { cost: 1 },
+      // the Wolf Pack's card prints no Spirit Guidance box and its back
+      // says it may not be given the ability
+      box: { cost: 1, except: ["wolfPack"] },
       text:
         "You may spend a Command Action to give one of your units Spirit " +
         "Guidance (mark the Spirit Guidance box on the unit card). You may " +
@@ -80,6 +91,59 @@ export default {
       // the card back prints equipment and flavor only
     },
     {
+      id: "brownies",
+      name: "Brownies",
+      points: 79,
+      melee: { dice: 5, offensiveSkill: 4, offensivePower: 4 },
+      defensiveSkill: 2,
+      defensivePower: 1,
+      courage: 13,
+      move: 3.5,
+      damage: { green: 2, yellow: 2, red: 2 },
+      // the card back prints equipment and flavor only
+    },
+    {
+      id: "centaurs",
+      name: "Centaurs",
+      points: 380,
+      melee: { dice: 6, offensiveSkill: 6, offensivePower: 5 },
+      // short javelins
+      ranged: { dice: 6, offensiveSkill: 6, offensivePower: 5, range: 3.5 },
+      defensiveSkill: 2,
+      defensivePower: 2,
+      courage: 13,
+      move: 6,
+      damage: { green: 3, yellow: 2, red: 2 },
+      keywords: ["cavalry"],
+      abilities: [
+        CAVALRY_CHARGE,
+        {
+          name: "Move & Shoot",
+          code: "M&S+",
+          text: "No range penalty for Move and Shoot.",
+          bonus: [0, 1, 0],
+          when: ["moveAndShoot"],
+          stance: "ranged",
+        },
+        {
+          name: "Long Range",
+          code: "LR+",
+          text: "No range penalty for Long Range.",
+          bonus: [0, 1, 0],
+          when: ["longRange"],
+          stance: "ranged",
+        },
+        {
+          name: "Javelins",
+          text:
+            "If Centaurs are not Engaged at the start of the turn and " +
+            "become Engaged on their front side, they make a Range Attack " +
+            "at the start of the Combat Phase, before normal attacks are " +
+            "rolled.",
+        },
+      ],
+    },
+    {
       id: "ravenwoodArchers",
       name: "Ravenwood Archers",
       points: 234,
@@ -94,6 +158,33 @@ export default {
       abilities: [ENGAGED],
     },
     {
+      id: "ravenwoodSpearmen",
+      name: "Ravenwood Spearmen",
+      points: 230,
+      class: "core",
+      melee: { dice: 6, offensiveSkill: 5, offensivePower: 5 },
+      defensiveSkill: 3,
+      defensivePower: 1,
+      courage: 12,
+      move: 3.5,
+      damage: { green: 4, yellow: 3, red: 2 },
+      // the card spells the Spears rules out in full, as the 2006 cards do
+      keywords: ["spears", "nets"],
+    },
+    {
+      id: "ravenwoodSwordsmen",
+      name: "Ravenwood Swordsmen",
+      points: 207,
+      class: "core",
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 5 },
+      defensiveSkill: 3,
+      defensivePower: 1,
+      courage: 12,
+      move: 3.5,
+      damage: { green: 4, yellow: 3, red: 2 },
+      keywords: ["nets"],
+    },
+    {
       id: "stagCavalry",
       name: "Stag Cavalry",
       points: 271,
@@ -105,6 +196,61 @@ export default {
       damage: { green: 3, yellow: 2, red: 1 },
       keywords: ["cavalry", "nets"],
       abilities: [CAVALRY_CHARGE],
+    },
+    {
+      id: "wolfPack",
+      name: "Wolf Pack",
+      points: 146,
+      // no Command Cards may be played while it attacks or defends, and
+      // the card prints no Spirit Guidance box (see the faction's
+      // box.except)
+      melee: {
+        dice: 5,
+        offensiveSkill: 5,
+        offensivePower: 5,
+        noCommandCards: true,
+      },
+      defensiveSkill: 2,
+      defensivePower: 1,
+      courage: 11,
+      move: 7,
+      damage: { green: 1, yellow: 5, red: 1 },
+      abilities: [
+        FREE_ATTACK_BONUS,
+        {
+          name: "Untamed",
+          text:
+            "Is unaffected by your Command Cards and may not be given " +
+            "Spirit Guidance. You may not play Command Cards while Wolf " +
+            "Pack is attacking or defending.",
+        },
+        {
+          name: "Pack Bond",
+          text:
+            "Unless your army currently contains a Wolfkin unit, Wolf Pack " +
+            "can only be given the Close Standing Order (with no " +
+            "Objective).",
+        },
+      ],
+    },
+    {
+      id: "wolfkin",
+      name: "Wolfkin",
+      points: 179,
+      class: "core",
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 5 },
+      defensiveSkill: 2,
+      defensivePower: 1,
+      courage: 12,
+      move: 5,
+      damage: { green: 3, yellow: 3, red: 2 },
+      abilities: [
+        FREE_ATTACK_BONUS,
+        {
+          name: "Rally",
+          text: "If Wolfkin Routs, it automatically Rallies at end of turn.",
+        },
+      ],
     },
   ],
 };
