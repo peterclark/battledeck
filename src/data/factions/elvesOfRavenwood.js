@@ -47,9 +47,9 @@ export default {
       // box on the card, and erasing it later spends the ability. What it
       // buys — setting an Attack Die to a "2" — happens on the table
       // rather than in the derived numbers, so it carries no effect.
-      // the Wolf Pack's card prints no Spirit Guidance box and its back
-      // says it may not be given the ability
-      box: { cost: 1, except: ["wolfPack"] },
+      // the two beast packs print no Spirit Guidance box, and their backs
+      // say they may not be given the ability
+      box: { cost: 1, except: ["bearPack", "wolfPack"] },
       text:
         "You may spend a Command Action to give one of your units Spirit " +
         "Guidance (mark the Spirit Guidance box on the unit card). You may " +
@@ -89,6 +89,40 @@ export default {
       move: 3.5,
       damage: { green: 4, yellow: 4, red: 2 },
       // the card back prints equipment and flavor only
+    },
+    {
+      id: "bearPack",
+      name: "Bear Pack",
+      points: 307,
+      // like the Wolf Pack: no Command Cards while it attacks or defends,
+      // and no Spirit Guidance box on the card
+      melee: {
+        dice: 6,
+        offensiveSkill: 5,
+        offensivePower: 6,
+        noCommandCards: true,
+      },
+      defensiveSkill: 1,
+      defensivePower: 3,
+      courage: 14,
+      move: 5,
+      damage: { green: 5, yellow: 5, red: 2 },
+      abilities: [
+        {
+          name: "Untamed",
+          text:
+            "Is unaffected by your Command Cards and may not be given " +
+            "Spirit Guidance. You may not play Command Cards while Bear " +
+            "Pack is attacking or defending.",
+        },
+        {
+          name: "Pack Bond",
+          text:
+            "Unless your army currently contains a Bearkin unit, Bear Pack " +
+            "can only be given the Close Standing Order (with no " +
+            "Objective).",
+        },
+      ],
     },
     {
       id: "brownies",
@@ -158,6 +192,20 @@ export default {
       abilities: [ENGAGED],
     },
     {
+      id: "ravenwoodBowmasters",
+      name: "Ravenwood Bowmasters",
+      points: 335,
+      class: "elite",
+      melee: { dice: 4, offensiveSkill: 7, offensivePower: 5 },
+      ranged: { dice: 4, offensiveSkill: 7, offensivePower: 5, range: 17.5 },
+      defensiveSkill: 2,
+      defensivePower: 1,
+      courage: 13,
+      move: 3.5,
+      damage: { green: 3, yellow: 3, red: 3 },
+      abilities: [ENGAGED],
+    },
+    {
       id: "ravenwoodSpearmen",
       name: "Ravenwood Spearmen",
       points: 230,
@@ -196,6 +244,19 @@ export default {
       damage: { green: 3, yellow: 2, red: 1 },
       keywords: ["cavalry", "nets"],
       abilities: [CAVALRY_CHARGE],
+    },
+    {
+      id: "treant",
+      name: "Treant",
+      points: 444,
+      class: "elite",
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 7 },
+      defensiveSkill: 1,
+      defensivePower: 4,
+      courage: 14,
+      move: 5,
+      damage: { green: 5, yellow: 5, red: 4 },
+      keywords: ["fearsome", "large"],
     },
     {
       id: "wolfPack",
