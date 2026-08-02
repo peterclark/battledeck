@@ -2,10 +2,31 @@
 // (2006 printing — like the Dwarves of Runegard these predate the Unit
 // Keywords cards, so shared rules are spelled out on the card backs).
 //
-// TRANSCRIPTION IN PROGRESS — the two faction rules cards are in; the
-// unit cards follow, so this faction is not yet listed in FACTIONS (an
-// empty faction would render an empty row in the picker and army
-// builder).
+// TRANSCRIPTION IN PROGRESS — the faction rules cards are in, along with
+// the unit cards photographed so far; the rest follow.
+
+// Same card-back Cavalry extra as the Hawkshold Knights and the Dwarven
+// Antonian Horsemen: the OP half feeds the attack, while the DS half
+// applies when this unit is the one Charging, which the calculator can't
+// gate on (it reads DS from the card when the unit is the target)
+const CAVALRY_CHARGE = {
+  name: "Cavalry",
+  code: "CAV",
+  text:
+    "(+0) +0/+1 and +1/+0 (DS/Toughness) while Charging, in addition to " +
+    "the normal Charging bonus.",
+  bonus: [0, 0, 1],
+  when: ["chargingFourOrMoreDice", "chargingThreeOrLessDice"],
+};
+
+// Archer melee penalty, as printed: "(-0) -2/-2 while Engaged"
+const ENGAGED = {
+  name: "Engaged",
+  code: "ENG",
+  text: "(-0) -2/-2 while Engaged.",
+  bonus: [0, -2, -2],
+  stance: "melee",
+};
 
 export default {
   id: "elvesOfRavenwood",
@@ -44,5 +65,46 @@ export default {
         "penalty.",
     },
   ],
-  units: [],
+  units: [
+    {
+      id: "bearkin",
+      name: "Bearkin",
+      points: 244,
+      class: "core",
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 6 },
+      defensiveSkill: 2,
+      defensivePower: 2,
+      courage: 13,
+      move: 3.5,
+      damage: { green: 4, yellow: 4, red: 2 },
+      // the card back prints equipment and flavor only
+    },
+    {
+      id: "ravenwoodArchers",
+      name: "Ravenwood Archers",
+      points: 234,
+      class: "core",
+      melee: { dice: 4, offensiveSkill: 6, offensivePower: 5 },
+      ranged: { dice: 4, offensiveSkill: 6, offensivePower: 5, range: 14 },
+      defensiveSkill: 2,
+      defensivePower: 1,
+      courage: 12,
+      move: 3.5,
+      damage: { green: 3, yellow: 3, red: 2 },
+      abilities: [ENGAGED],
+    },
+    {
+      id: "stagCavalry",
+      name: "Stag Cavalry",
+      points: 271,
+      melee: { dice: 6, offensiveSkill: 5, offensivePower: 5 },
+      defensiveSkill: 3,
+      defensivePower: 1,
+      courage: 12,
+      move: 6,
+      damage: { green: 3, yellow: 2, red: 1 },
+      keywords: ["cavalry", "nets"],
+      abilities: [CAVALRY_CHARGE],
+    },
+  ],
 };
