@@ -92,8 +92,15 @@ export const KEYWORDS = {
     name: "Greater Undead",
     text: "Costs 3 Command Actions to Reanimate.",
   },
-  // Wuxing's Construct keyword — the full rule (Breakdown marks and their
-  // penalties) is on the Wuxing Army Ability card
+  // Wuxing keywords — both rules are spelled out on the Wuxing Army
+  // Ability cards; units carry them by name
+  reliable: {
+    id: "reliable",
+    name: "Reliable",
+    text:
+      "Damage dice from engaged attacks reroll all 6s once, before " +
+      "Overkill and Command Card effects. Lost while Breakdown is marked.",
+  },
   construct: {
     id: "construct",
     name: "Construct",

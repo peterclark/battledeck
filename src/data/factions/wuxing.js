@@ -198,6 +198,23 @@ export default {
       ],
     },
     {
+      id: "terracottaGuardians",
+      name: "Terracotta Guardians",
+      points: 280,
+      melee: { dice: 5, offensiveSkill: 5, offensivePower: 6 },
+      defensiveSkill: 1,
+      defensivePower: 3,
+      // no Courage printed — Constructs pass every Courage Check
+      move: 3.5,
+      damage: { green: 4, yellow: 5, red: 2 },
+      keywords: ["construct", "reliable"],
+      // The card prints two Manipulate Qi boxes and a Breakdown box; the
+      // OP asterisk points at the army card's rules rather than a line of
+      // its own. Both marks are per-copy state the roster doesn't keep
+      // yet, so the Construct and Reliable keyword prose carries them.
+      abilities: [],
+    },
+    {
       id: "imperialCavalry",
       name: "Imperial Cavalry",
       points: 274,
