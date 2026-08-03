@@ -139,6 +139,12 @@ describe("faction data", () => {
       .toBeNull();
     // the Antonian Horsemen's card back rules out Rune of Uruz
     expect(unitBox(UNITS_BY_UID["dwarvesOfRunegard/antonianHorsemen"])).toBeNull();
+    // the Wolf Pack's does the same for Spirit Guidance, while its
+    // faction-mates carry the box
+    expect(unitBox(UNITS_BY_UID["elvesOfRavenwood/wolfPack"])).toBeNull();
+    expect(unitBox(UNITS_BY_UID["elvesOfRavenwood/wolfkin"]).name).toBe(
+      "Spirit Guidance"
+    );
     expect(unitBox(UNITS_BY_UID["dwarvesOfRunegard/dwarvenAxemen"]).name).toBe(
       "Rune of Uruz"
     );

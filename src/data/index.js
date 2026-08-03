@@ -1,5 +1,6 @@
 import { filter, find, flatMap, includes, keyBy, map, some } from "lodash";
 import dwarvesOfRunegard from "./factions/dwarvesOfRunegard";
+import elvesOfRavenwood from "./factions/elvesOfRavenwood";
 import highElves from "./factions/highElves";
 import lizardmen from "./factions/lizardmen";
 import menOfHawkshold from "./factions/menOfHawkshold";
@@ -15,6 +16,7 @@ export { KEYWORDS };
 // under ./factions and listing it here.
 export const FACTIONS = [
   dwarvesOfRunegard,
+  elvesOfRavenwood,
   highElves,
   lizardmen,
   menOfHawkshold,

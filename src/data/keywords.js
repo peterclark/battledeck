@@ -110,6 +110,15 @@ export const KEYWORDS = {
       "costing it (-2) -0/-0 and its Reliable reroll. See the Wuxing army " +
       "abilities.",
   },
+  // The Elves of Ravenwood's netters — the full procedure is on their
+  // faction rules card
+  nets: {
+    id: "nets",
+    name: "Nets",
+    text:
+      "Each 1 on this unit's initial to-hit roll adds an extra Attack Die, " +
+      "rolled as part of the same to-hit roll before any modification.",
+  },
   stupid: {
     id: "stupid",
     name: "Stupid",
