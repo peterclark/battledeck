@@ -92,6 +92,15 @@ export const KEYWORDS = {
     name: "Greater Undead",
     text: "Costs 3 Command Actions to Reanimate.",
   },
+  // The Elves of Ravenwood's netters — the full procedure is on their
+  // faction rules card
+  nets: {
+    id: "nets",
+    name: "Nets",
+    text:
+      "Each 1 on this unit's initial to-hit roll adds an extra Attack Die, " +
+      "rolled as part of the same to-hit roll before any modification.",
+  },
   stupid: {
     id: "stupid",
     name: "Stupid",
