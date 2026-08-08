@@ -719,10 +719,18 @@ const App = () => {
   }, []);
 
   // A Frightened unit can't have Command Cards played on it, and some
-  // special attacks are immune to Command Cards outright
-  useEffect(() => {
+  // special attacks are immune to Command Cards outright. The log is
+  // cleared on the transition into a lock — adjusted during render rather
+  // than in an effect, so the discard lands in the same pass as the lock
+  // instead of costing a second render (see React's "adjusting state when
+  // props change").
+  // starts false so a reload straight into a locked attack still discards
+  // any log the previous session left behind
+  const [wasCcLocked, setWasCcLocked] = useState(false);
+  if (ccLocked !== wasCcLocked) {
+    setWasCcLocked(ccLocked);
     if (ccLocked) setPlayedCards([]);
-  }, [ccLocked]);
+  }
 
   // Persist the calculator so a reload or tab eviction doesn't lose the game
   useEffect(() => {
