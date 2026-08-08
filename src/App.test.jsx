@@ -143,6 +143,26 @@ describe("App", () => {
     expect(container.querySelector(".ClearCommandCardModifiers")).toBeNull();
   });
 
+  it("a reload into a Frightened attack discards the stale card log", () => {
+    // the buttons are disabled while locked, so this state only arises
+    // from an older session — the log still has to go
+    const first = setup();
+    fireEvent.click(first.container.querySelector(".PlusOneDice"));
+    fireEvent.click(first.modifier("frightened"));
+    // Frightened cleared it; put a log back behind the lock by hand
+    const saved = JSON.parse(localStorage.getItem("battledeck-state-v1"));
+    localStorage.setItem(
+      "battledeck-state-v1",
+      JSON.stringify({ ...saved, playedCards: ["PlusOneDice"] })
+    );
+    first.unmount();
+
+    const second = setup();
+    expect(second.modifier("frightened")).toHaveClass("plate-on-blood");
+    expect(second.container.querySelectorAll(".PlayedCard")).toHaveLength(0);
+    expect(within(second.dice()).queryByText(term("+1CC"))).not.toBeInTheDocument();
+  });
+
   it("reset arms on the first tap and resets on the second", () => {
     const { dice, modifier } = setup();
     fireEvent.click(modifier("disrupted"));
