@@ -292,6 +292,16 @@ describe("faction data", () => {
             expect(MODIFIERS[id], `${ability.name} references ${id}`).toBeTruthy()
           );
         }
+        if (ability.whenNot) {
+          expect(
+            ability.bonus,
+            `${ability.name} whenNot without bonus`
+          ).toBeTruthy();
+          expect(ability.whenNot.length).toBeGreaterThan(0);
+          each(ability.whenNot, (id) =>
+            expect(MODIFIERS[id], `${ability.name} excludes ${id}`).toBeTruthy()
+          );
+        }
         if (ability.stance) {
           expect(["melee", "ranged"]).toContain(ability.stance);
           expect(ability.bonus, `${ability.name} stance without bonus`).toBeTruthy();
@@ -346,6 +356,19 @@ describe("faction data", () => {
       "Cavalry",
     ]);
     expect(activeAbilities(null, on, "melee")).toEqual([]);
+  });
+
+  it("activeAbilities gates a `whenNot` ability on the range bands", () => {
+    const battery = UNITS_BY_UID["wuxing/rocketArrowBattery"];
+    const codes = (mods) => map(activeAbilities(battery, mods, "ranged"), "code");
+    // no band toggled is Short Range: +2 dice, and no band penalty to undo
+    expect(codes({})).toEqual(["SR"]);
+    // stepping out to Long Range drops it and cancels that band's penalty
+    expect(codes({ longRange: { on: true } })).toEqual(["LR+"]);
+    expect(codes({ extremeRange: { on: true } })).toEqual(["ER+"]);
+    // and none of it reaches melee, where its Engaged penalty rules
+    expect(codes({})).not.toContain("ENG");
+    expect(map(activeAbilities(battery, {}, "melee"), "code")).toEqual(["ENG"]);
   });
 
   it("activeAbilities gates a `stance` ability on the attack mode", () => {
