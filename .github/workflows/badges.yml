@@ -1,0 +1,94 @@
+name: Badges
+
+# Runs after CI finishes on main and publishes shields.io endpoint JSON to the
+# orphan `badges` branch. Keeping the badge data on a branch (rather than in a
+# third-party coverage service) means no external account and no extra secrets
+# beyond the built-in GITHUB_TOKEN.
+#
+# NOTE: shields.io fetches these files anonymously. While this repository is
+# private the badges render as "inaccessible" for anyone but you. See
+# docs/ci-and-badges.md.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: badges
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish badge data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      # The coverage report belongs to the CI run that triggered this workflow.
+      - name: Download coverage from the CI run
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: coverage
+          path: coverage
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate badge data
+        env:
+          CI_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          mkdir -p badges
+
+          # Build status mirrors the CI run that triggered this workflow, so the
+          # badge stays meaningful even for a private repo where the built-in
+          # workflow badge SVG is not publicly readable.
+          if [ "$CI_CONCLUSION" = "success" ]; then
+            BUILD_MSG="passing"; BUILD_COLOR="brightgreen"
+          else
+            BUILD_MSG="failing"; BUILD_COLOR="red"
+          fi
+          printf '{\n  "schemaVersion": 1,\n  "label": "build",\n  "message": "%s",\n  "color": "%s"\n}\n' \
+            "$BUILD_MSG" "$BUILD_COLOR" > badges/build.json
+
+          if [ -f coverage/coverage-summary.json ]; then
+            node scripts/coverage-badge.mjs badges
+          else
+            echo "No coverage summary in the CI artifact; leaving the coverage badge unchanged."
+          fi
+
+      - name: Commit to the badges branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # `badges` is an orphan branch: badge data only, no project history.
+          git fetch origin badges --depth=1 || true
+          if git show-ref --quiet refs/remotes/origin/badges; then
+            git worktree add /tmp/badges badges
+          else
+            git worktree add --detach /tmp/badges
+            git -C /tmp/badges checkout --orphan badges
+            git -C /tmp/badges rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          cp badges/*.json /tmp/badges/
+          cd /tmp/badges
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Badge data unchanged; nothing to publish."
+            exit 0
+          fi
+          git commit -m "chore(badges): update from ${GITHUB_SHA::7}"
+          git push origin badges
