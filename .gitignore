@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 .eslintcache
+
+# Coverage output from `npm run test:coverage`
+coverage
+badges

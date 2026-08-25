@@ -16,5 +16,35 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-      - run: npm test
+      # Coverage rather than a plain `npm test`: the Badges workflow turns the
+      # summary into the README's coverage badge.
+      - run: npm run test:coverage
       - run: npm run build
+
+      - name: Summarise coverage
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            {
+              echo "### Coverage"
+              echo ""
+              echo "| Metric | % | Covered / Total |"
+              echo "| --- | --- | --- |"
+              node -e '
+                const t = JSON.parse(
+                  require("node:fs").readFileSync("./coverage/coverage-summary.json", "utf8")
+                ).total;
+                for (const k of ["lines", "statements", "branches", "functions"]) {
+                  console.log(`| ${k} | ${t[k].pct}% | ${t[k].covered} / ${t[k].total} |`);
+                }
+              '
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 14

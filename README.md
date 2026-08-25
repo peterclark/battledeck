@@ -1,5 +1,11 @@
 # BattleDeck
 
+[![CI](https://github.com/peterclark/battledeck/actions/workflows/ci.yml/badge.svg)](https://github.com/peterclark/battledeck/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fpeterclark%2Fbattledeck%2Fbadges%2Fcoverage.json)](https://github.com/peterclark/battledeck/actions/workflows/ci.yml)
+
+> These badges render publicly only once the repository is public. See
+> [docs/ci-and-badges.md](./docs/ci-and-badges.md) for the private-repo alternative.
+
 A tap-friendly attack calculator for the **Battleground: Fantasy Warfare** tabletop
 wargame (Your Move Games). Tap in your unit's attack dice, Skill/Power ranks, command
 card effects, and situational modifiers — BattleDeck derives the number of dice to
