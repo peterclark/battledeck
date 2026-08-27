@@ -36,7 +36,7 @@ jobs:
 
       # The coverage report belongs to the CI run that triggered this workflow.
       - name: Download coverage from the CI run
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         continue-on-error: true
         with:
           name: coverage
