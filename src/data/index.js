@@ -7,6 +7,7 @@ import menOfHawkshold from "./factions/menOfHawkshold";
 import monstersAndMercenaries from "./factions/monstersAndMercenaries";
 import orcArmy from "./factions/orcArmy";
 import undeadArmy from "./factions/undeadArmy";
+import wuxing from "./factions/wuxing";
 import { KEYWORDS } from "./keywords";
 
 export { KEYWORDS };
@@ -22,6 +23,7 @@ export const FACTIONS = [
   monstersAndMercenaries,
   orcArmy,
   undeadArmy,
+  wuxing,
 ];
 
 // Units flattened across factions. Unit ids only need to be unique within
@@ -146,10 +148,13 @@ const copyStateEffects = (unit, { boxed = 0, lashed = false } = {}) => {
 
 // Effects that adjust the current attack: only ones with a structured
 // `bonus` triple participate. An effect with a `when` list is live while
-// any of those modifiers is on; `stance` limits it to an attack mode (the
-// archers' Engaged penalty in melee); `whenTarget` requires the selected
-// defender to carry one of the listed keywords (Spears vs Cavalry).
-// `copyState` carries the selected copy's roster state for the
+// any of those modifiers is on; `whenNot` is the inverse — live only
+// while every listed modifier is off, which is how "at Short Range"
+// rules are expressed (the range bands are exhaustive, so short range is
+// neither Long nor Extreme). `stance` limits an effect to an attack mode
+// (the archers' Engaged penalty in melee); `whenTarget` requires the
+// selected defender to carry one of the listed keywords (Spears vs
+// Cavalry). `copyState` carries the selected copy's roster state for the
 // faction-ability effects above. All gates must pass. Prose-only rules
 // are informational and never returned.
 export const activeAbilities = (unit, modifiers, attackMode, target, copyState) =>
@@ -159,6 +164,7 @@ export const activeAbilities = (unit, modifiers, attackMode, target, copyState) 
       effect.bonus &&
       (!effect.stance || effect.stance === attackMode) &&
       (!effect.when || some(effect.when, (id) => modifiers[id]?.on)) &&
+      (!effect.whenNot || !some(effect.whenNot, (id) => modifiers[id]?.on)) &&
       (!effect.whenTarget ||
         some(effect.whenTarget, (id) => includes(target?.keywords, id)))
   );

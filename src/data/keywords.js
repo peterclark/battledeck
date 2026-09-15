@@ -92,6 +92,24 @@ export const KEYWORDS = {
     name: "Greater Undead",
     text: "Costs 3 Command Actions to Reanimate.",
   },
+  // Wuxing keywords — both rules are spelled out on the Wuxing Army
+  // Ability cards; units carry them by name
+  reliable: {
+    id: "reliable",
+    name: "Reliable",
+    text:
+      "Damage dice from engaged attacks reroll all 6s once, before " +
+      "Overkill and Command Card effects. Lost while Breakdown is marked.",
+  },
+  construct: {
+    id: "construct",
+    name: "Construct",
+    text:
+      "Passes all Courage Checks. Taking damage that knocks it into the " +
+      "Yellow or Red — or any damage while in the Red — marks Breakdown, " +
+      "costing it (-2) -0/-0 and its Reliable reroll. See the Wuxing army " +
+      "abilities.",
+  },
   // The Elves of Ravenwood's netters — the full procedure is on their
   // faction rules card
   nets: {
